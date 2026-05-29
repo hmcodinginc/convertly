@@ -1,0 +1,56 @@
+/* Marketing page layout rhythm (spacing only — mirrors app discipline) */
+
+.marketing-container {
+  --container-max: 90rem;
+}
+
+/* Section header block → content */
+.marketing-section-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-section-stack {
+    gap: 3rem;
+  }
+}
+
+/* Card padding tiers */
+.marketing-card {
+  padding: 1.5rem;
+}
+
+.marketing-card-compact {
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-card-compact {
+    padding: 1.5rem;
+  }
+}
+
+/* Nested tiles inside marketing cards */
+.marketing-tile {
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 640px) {
+  .marketing-tile {
+    padding: 1rem;
+  }
+}
+
+/* Primary CTA sizing on marketing */
+.marketing-cta-primary {
+  height: 2.75rem;
+  padding-inline: 1.5rem;
+}
+
+.marketing-cta-secondary {
+  height: 2.75rem;
+  padding-inline: 1.5rem;
+}

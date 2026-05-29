@@ -4,6 +4,7 @@ import { FadeIn } from "@/components/motion/FadeIn"
 import { Card } from "@/components/surfaces/Card"
 import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
+import { cn } from "@/lib/utils"
 
 const features = [
   {
@@ -42,14 +43,14 @@ const features = [
 
 function FeaturesSection() {
   return (
-    <Section aria-labelledby="features-title">
-      <div className="space-y-10 sm:space-y-12">
+    <Section aria-labelledby="features-title" containerClassName="marketing-container">
+      <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
             eyebrow="Product"
             title="Features built for focused growth execution"
+            titleId="features-title"
             description="A clean system of analysis and prioritization designed to help teams ship higher-converting experiences."
-            id="features-title"
           />
         </FadeIn>
 
@@ -57,10 +58,10 @@ function FeaturesSection() {
           {features.map((feature, index) => (
             <FadeIn key={feature.title} delay={0.05 + index * 0.05}>
               <Card
-                className={[
-                  "h-full border-[color-mix(in_srgb,var(--border)_90%,transparent)] transition-[transform,box-shadow,border-color] duration-[var(--motion-base)] ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--accent)_32%,var(--border))] hover:shadow-[var(--shadow-medium)]",
-                  feature.className,
-                ].join(" ")}
+                className={cn(
+                  "marketing-card h-full border-[color-mix(in_srgb,var(--border)_90%,transparent)] hover:translate-y-0",
+                  feature.className
+                )}
               >
                 {feature.visual === "hero" ? (
                   <div
@@ -71,16 +72,21 @@ function FeaturesSection() {
 
                 <div className="relative flex h-full flex-col gap-6">
                   <div className="space-y-3">
-                    <Heading level={3} size={feature.visual === "hero" ? "section" : "subsection"}>
+                    <Heading
+                      level={3}
+                      size={feature.visual === "hero" ? "section" : "subsection"}
+                    >
                       {feature.title}
                     </Heading>
-                    <Text variant="muted">{feature.description}</Text>
+                    <Text variant="muted" size="sm" className="max-w-none leading-6">
+                      {feature.description}
+                    </Text>
                   </div>
 
                   {feature.visual === "hero" ? (
                     <div className="mt-auto space-y-3">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]">
                           <Text size="sm" variant="muted" className="max-w-none">
                             Intent Match
                           </Text>
@@ -88,7 +94,7 @@ function FeaturesSection() {
                             +28%
                           </Heading>
                         </div>
-                        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-3">
+                        <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]">
                           <Text size="sm" variant="muted" className="max-w-none">
                             Friction Reduced
                           </Text>
@@ -97,8 +103,8 @@ function FeaturesSection() {
                           </Heading>
                         </div>
                       </div>
-                      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] p-3">
-                        <div className="mb-2 flex items-center justify-between">
+                      <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)]">
+                        <div className="mb-2 flex items-center justify-between gap-3">
                           <Text size="sm" variant="muted" className="max-w-none">
                             Recommendation Confidence
                           </Text>
@@ -115,28 +121,30 @@ function FeaturesSection() {
 
                   {feature.visual === "queue" ? (
                     <div className="mt-auto space-y-2">
-                      {["Homepage friction", "Pricing clarity", "Form completion"].map((item, itemIndex) => (
-                        <div
-                          key={item}
-                          className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] px-3 py-2"
-                        >
-                          <Text size="sm" variant="muted" className="max-w-none">
-                            {item}
-                          </Text>
-                          <Text size="sm" className="max-w-none">
-                            P{itemIndex + 1}
-                          </Text>
-                        </div>
-                      ))}
+                      {["Homepage friction", "Pricing clarity", "Form completion"].map(
+                        (item, itemIndex) => (
+                          <div
+                            key={item}
+                            className="flex items-center justify-between gap-3 marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]"
+                          >
+                            <Text size="sm" variant="muted" className="max-w-none">
+                              {item}
+                            </Text>
+                            <Text size="sm" className="max-w-none shrink-0">
+                              P{itemIndex + 1}
+                            </Text>
+                          </div>
+                        )
+                      )}
                     </div>
                   ) : null}
 
                   {feature.visual === "guidance" ? (
-                    <div className="mt-auto space-y-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-3">
+                    <div className="marketing-tile mt-auto border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
                       <Text size="sm" className="max-w-none">
                         AI analysis fragment
                       </Text>
-                      <div className="space-y-1.5">
+                      <div className="mt-2 space-y-1.5">
                         <div className="h-2 w-[90%] rounded-full bg-[color-mix(in_srgb,var(--muted)_26%,transparent)]" />
                         <div className="h-2 w-[72%] rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]" />
                         <div className="h-2 w-[84%] rounded-full bg-[color-mix(in_srgb,var(--muted)_16%,transparent)]" />
@@ -146,8 +154,8 @@ function FeaturesSection() {
 
                   {feature.visual === "progress" ? (
                     <div className="mt-auto space-y-3">
-                      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-3">
-                        <div className="mb-2 flex items-center justify-between">
+                      <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
+                        <div className="mb-2 flex items-center justify-between gap-3">
                           <Text size="sm" variant="muted" className="max-w-none">
                             Rollout Progress
                           </Text>
@@ -159,13 +167,13 @@ function FeaturesSection() {
                           <div className="h-full w-[64%] rounded-full bg-[color-mix(in_srgb,var(--accent)_78%,white)]" />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-2.5 text-center">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] text-center">
                           <Text size="sm" className="max-w-none">
                             12
                           </Text>
                         </div>
-                        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-2.5 text-center">
+                        <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] text-center">
                           <Text size="sm" className="max-w-none">
                             4 In Review
                           </Text>

@@ -9,6 +9,8 @@ type SectionHeaderProps = React.ComponentProps<"div"> & {
   title?: string
   description?: string
   centered?: boolean
+  variant?: "marketing" | "app"
+  titleId?: string
 }
 
 function SectionHeader({
@@ -16,15 +18,20 @@ function SectionHeader({
   title,
   description,
   centered = false,
+  variant = "marketing",
+  titleId,
   className,
   ...props
 }: SectionHeaderProps) {
   if (!eyebrow && !title && !description) return null
 
+  const isApp = variant === "app"
+
   return (
     <div
       data-slot="section-header"
-      className={cn("space-y-5", centered && "text-center", className)}
+      data-variant={variant}
+      className={cn(isApp ? "space-y-2" : "space-y-5", centered && "text-center", className)}
       {...props}
     >
       {eyebrow ? (
@@ -32,7 +39,8 @@ function SectionHeader({
           variant="muted"
           size="sm"
           className={cn(
-            "max-w-none font-medium tracking-[0.18em] uppercase",
+            "max-w-none font-medium uppercase",
+            "tracking-[0.16em]",
             centered && "mx-auto"
           )}
         >
@@ -42,9 +50,10 @@ function SectionHeader({
 
       {title ? (
         <Heading
+          id={titleId}
           level={2}
-          size="title"
-          className={cn("max-w-3xl", centered && "mx-auto")}
+          size={isApp ? "section" : "title"}
+          className={cn(isApp ? "max-w-none" : "max-w-3xl", centered && "mx-auto")}
         >
           {title}
         </Heading>
@@ -53,9 +62,9 @@ function SectionHeader({
       {description ? (
         <Text
           variant="muted"
-          size="lg"
-          balanced
-          className={cn("max-w-2xl", centered && "mx-auto")}
+          size={isApp ? "sm" : "lg"}
+          balanced={!isApp}
+          className={cn(isApp ? "max-w-2xl leading-6" : "max-w-2xl", centered && "mx-auto")}
         >
           {description}
         </Text>

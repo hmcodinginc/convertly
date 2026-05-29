@@ -21,26 +21,26 @@ const logoPlaceholders = [
 
 function SocialProofSection() {
   return (
-    <Section aria-labelledby="social-proof-title">
-      <div className="space-y-10 sm:space-y-12">
+    <Section aria-labelledby="social-proof-title" containerClassName="marketing-container">
+      <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
             centered
             eyebrow="Trust"
             title="Built for teams that care about conversion quality"
+            titleId="social-proof-title"
             description="Convertly supports product, marketing, and growth teams with focused insights they can act on quickly."
-            id="social-proof-title"
           />
         </FadeIn>
 
         <FadeIn delay={0.06}>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
             {trustIndicators.map((item) => (
               <Text
                 key={item}
                 size="sm"
                 variant="muted"
-                className="max-w-none tracking-wide"
+                className="max-w-none text-center tracking-wide"
               >
                 {item}
               </Text>
@@ -49,12 +49,12 @@ function SocialProofSection() {
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <Card className="bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] p-4 sm:p-5">
+          <Card className="marketing-card-compact bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] hover:translate-y-0">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {logoPlaceholders.map((logo) => (
                 <div
                   key={logo}
-                  className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 py-3 text-center"
+                  className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] text-center"
                 >
                   <Text
                     size="sm"

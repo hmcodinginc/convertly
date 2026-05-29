@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button"
+import { useAppAuthNavigate } from "@/hooks/useAppAuthNavigate"
+import { ROUTES } from "@/lib/routes"
 import { Section } from "@/components/layout/Section"
 import { Card } from "@/components/surfaces/Card"
 import { Heading } from "@/components/ui/typography/Heading"
@@ -6,21 +8,23 @@ import { Text } from "@/components/ui/typography/Text"
 import { FadeIn } from "@/components/motion/FadeIn"
 
 function HeroSection() {
+  const { navigateWithSession } = useAppAuthNavigate()
+
   return (
     <Section
       aria-labelledby="home-hero-title"
-      className="relative flex min-h-[80vh] items-center overflow-hidden"
-      containerClassName="[--container-max:90rem]"
+      className="relative flex min-h-[min(80vh,52rem)] items-center overflow-hidden pb-8 sm:pb-12"
+      containerClassName="marketing-container"
     >
-      <div className="relative">
+      <div className="relative w-full">
         <div className="pointer-events-none absolute inset-x-0 top-[-14rem] -z-10 h-[20rem] bg-[var(--gradient-primary)] opacity-12 blur-3xl" />
 
-        <div className="grid items-center gap-12 py-24 sm:py-32 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <div className="flex max-w-2xl flex-col gap-7 sm:gap-8">
+        <div className="grid items-center gap-10 py-16 sm:gap-12 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-24">
+          <div className="flex max-w-xl flex-col gap-6 sm:max-w-2xl sm:gap-7 lg:gap-8">
             <FadeIn>
               <Text
                 size="sm"
-                className="inline-flex w-fit max-w-none items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_26%,var(--border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_90%,transparent),color-mix(in_srgb,var(--surface)_80%,transparent))] px-3.5 py-1.5 text-[0.7rem] font-medium tracking-[0.18em] uppercase text-foreground/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_color-mix(in_srgb,var(--accent)_12%,transparent)]"
+                className="inline-flex w-fit max-w-none items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_26%,var(--border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_90%,transparent),color-mix(in_srgb,var(--surface)_80%,transparent))] px-3.5 py-1.5 text-[0.7rem] font-medium tracking-[0.16em] uppercase text-foreground/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_color-mix(in_srgb,var(--accent)_12%,transparent)]"
               >
                 AI Growth Intelligence
               </Text>
@@ -31,7 +35,7 @@ function HeroSection() {
                 id="home-hero-title"
                 level={1}
                 size="hero"
-                className="max-w-[11.5ch] text-balance leading-[1.02]"
+                className="max-w-[13ch] text-balance leading-[1.02] sm:max-w-[11.5ch]"
               >
                 Turn More Visitors Into Revenue.
               </Heading>
@@ -42,7 +46,7 @@ function HeroSection() {
                 variant="muted"
                 size="lg"
                 balanced
-                className="max-w-[44ch] text-foreground/68"
+                className="max-w-[42ch] text-foreground/68"
               >
                 Convertly analyzes your website experience and highlights the
                 highest-impact opportunities to improve conversion with clarity
@@ -51,21 +55,26 @@ function HeroSection() {
             </FadeIn>
 
             <FadeIn delay={0.18}>
-              <div className="flex flex-col items-start gap-3 pt-3 sm:flex-row">
-                <Button className="h-11 w-full px-6 sm:w-auto">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  className="marketing-cta-primary w-full sm:w-auto"
+                  onClick={() => void navigateWithSession(ROUTES.auditNew)}
+                >
                   Start Free Audit
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-11 w-full border-[var(--border)] px-6 sm:w-auto"
+                  className="marketing-cta-secondary w-full border-[var(--border)] sm:w-auto"
+                  asChild
                 >
-                  See How It Works
+                  <a href="#how-it-works-title">See How It Works</a>
                 </Button>
               </div>
             </FadeIn>
           </div>
 
-          <FadeIn delay={0.08} className="lg:pl-4">
+          <FadeIn delay={0.08} className="w-full lg:pl-4">
             <div className="relative mx-auto w-full max-w-xl">
               <div
                 aria-hidden="true"
@@ -76,34 +85,54 @@ function HeroSection() {
                 className="pointer-events-none absolute -right-4 bottom-5 z-0 hidden h-24 w-24 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_64%,transparent)] bg-[color-mix(in_srgb,var(--surface)_50%,transparent)] lg:block"
               />
 
-              <Card className="relative z-10 overflow-hidden p-4.5 sm:p-5.5">
+              <Card className="relative z-10 overflow-hidden marketing-card-compact hover:translate-y-0">
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,color-mix(in_srgb,var(--accent)_12%,transparent),transparent_58%)]"
                 />
-                <div className="relative space-y-4.5 sm:space-y-5">
-                  <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
-                    <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_95%,transparent)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-                      <Text size="sm" variant="muted" className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54">
+                <div className="relative flex flex-col gap-4 sm:gap-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="marketing-tile border border-[color-mix(in_srgb,var(--border)_95%,transparent)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-[0_1px_0_rgba(255,255,255,0.04)]">
+                      <Text
+                        size="sm"
+                        variant="muted"
+                        className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54"
+                      >
                         Opportunity Lift
                       </Text>
-                      <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-foreground">
+                      <Heading
+                        level={3}
+                        size="subsection"
+                        className="mt-2 text-[1.75rem] leading-none text-foreground"
+                      >
                         +31%
                       </Heading>
                     </div>
-                    <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_95%,transparent)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
-                      <Text size="sm" variant="muted" className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54">
+                    <div className="marketing-tile border border-[color-mix(in_srgb,var(--border)_95%,transparent)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] shadow-[0_1px_0_rgba(255,255,255,0.04)]">
+                      <Text
+                        size="sm"
+                        variant="muted"
+                        className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54"
+                      >
                         Confidence Score
                       </Text>
-                      <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-foreground">
+                      <Heading
+                        level={3}
+                        size="subsection"
+                        className="mt-2 text-[1.75rem] leading-none text-foreground"
+                      >
                         89
                       </Heading>
                     </div>
                   </div>
 
-                  <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_96%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                    <div className="mb-3.5 flex items-center justify-between">
-                      <Text size="sm" variant="muted" className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54">
+                  <div className="marketing-tile border border-[color-mix(in_srgb,var(--border)_96%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <Text
+                        size="sm"
+                        variant="muted"
+                        className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54"
+                      >
                         Workflow Coverage
                       </Text>
                       <Text size="sm" className="max-w-none text-sm font-medium text-foreground/90">
@@ -115,9 +144,12 @@ function HeroSection() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-3">
-                      <Text size="sm" className="max-w-none text-[0.78rem] font-medium tracking-[0.06em] uppercase text-foreground/74">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="marketing-tile border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
+                      <Text
+                        size="sm"
+                        className="max-w-none text-[0.78rem] font-medium tracking-[0.06em] uppercase text-foreground/74"
+                      >
                         AI Analysis
                       </Text>
                       <div className="mt-2 space-y-1.5">
@@ -125,8 +157,11 @@ function HeroSection() {
                         <div className="h-1.5 w-[66%] rounded-full bg-[color-mix(in_srgb,var(--muted)_18%,transparent)]" />
                       </div>
                     </div>
-                    <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] p-3">
-                      <Text size="sm" className="max-w-none text-[0.78rem] font-medium tracking-[0.06em] uppercase text-foreground/74">
+                    <div className="marketing-tile border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
+                      <Text
+                        size="sm"
+                        className="max-w-none text-[0.78rem] font-medium tracking-[0.06em] uppercase text-foreground/74"
+                      >
                         Next Actions
                       </Text>
                       <div className="mt-2 space-y-2">

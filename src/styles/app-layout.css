@@ -1,0 +1,106 @@
+/* Authenticated app layout rhythm (spacing only) */
+
+.app-page {
+  padding-block: 1.5rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .app-page {
+    padding-block: 2rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-page {
+    padding-inline: 2rem;
+  }
+}
+
+/* 32px below page header */
+.app-page-sections {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Section header → content */
+.app-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.app-section-header-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .app-section-header-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+/* Cards */
+.app-card-body {
+  padding: 1.5rem;
+}
+
+.app-card-metric {
+  padding: 1.25rem;
+}
+
+.app-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Table cards */
+.app-card-table {
+  padding: 0;
+}
+
+.app-card-table-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  padding: 1rem 1.25rem;
+}
+
+.app-card-table-footer {
+  border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  padding: 1rem 1.25rem;
+}
+
+/* Data tables */
+.app-table th,
+.app-table-th {
+  padding: 0.75rem 1.25rem;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.app-table td,
+.app-table-td {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  vertical-align: middle;
+}
+
+.app-table thead tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.app-table tbody tr:not(:last-child) {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
