@@ -32,8 +32,8 @@ const settingsSections = [
     title: "Account",
     description: "Profile and security preferences for your Convertly account.",
     fields: [
-      { label: "Email", value: "jordan@acme.io" },
-      { label: "Two-factor auth", value: "Enabled" },
+      { label: "Profile details", value: "View name, email, and sign-in method" },
+      { label: "Two-factor auth", value: "Coming soon" },
     ],
   },
 ] as const
@@ -94,9 +94,15 @@ function SettingsPage() {
               </div>
             ))}
           </dl>
-          <Button variant="outline" size="sm">
-            Edit {section.title.toLowerCase()}
-          </Button>
+          {section.id === "account" ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={ROUTES.profile}>View profile</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm">
+              Edit {section.title.toLowerCase()}
+            </Button>
+          )}
         </Card>
       ))}
     </AppPageShell>

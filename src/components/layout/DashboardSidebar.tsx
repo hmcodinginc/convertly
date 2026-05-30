@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { NavLink } from "react-router-dom"
 
+import { ConvertlyNavLogoLink } from "@/components/brand/ConvertlyLogo"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
@@ -58,12 +59,7 @@ function DashboardSidebar() {
   return (
     <aside className="flex w-full shrink-0 flex-col border-r border-[color-mix(in_srgb,var(--border)_65%,transparent)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] lg:w-[15.5rem]">
       <div className="flex h-14 items-center border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-4 lg:h-[4.5rem] lg:px-5">
-        <NavLink
-          to={ROUTES.dashboard}
-          className="text-sm font-medium tracking-[0.12em] text-foreground/95 uppercase transition-colors hover:text-foreground"
-        >
-          Convertly
-        </NavLink>
+        <ConvertlyNavLogoLink to={ROUTES.dashboard} end />
       </div>
 
       <nav

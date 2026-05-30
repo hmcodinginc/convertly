@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { MarketingNavLink } from "@/components/layout/MarketingNavLink"
 import { useAppAuthNavigate } from "@/hooks/useAppAuthNavigate"
 import { ROUTES } from "@/lib/routes"
 import { Section } from "@/components/layout/Section"
@@ -13,14 +14,14 @@ function HeroSection() {
   return (
     <Section
       aria-labelledby="home-hero-title"
-      className="relative flex min-h-[min(80vh,52rem)] items-center overflow-hidden pb-8 sm:pb-12"
+      className="relative flex min-h-[min(72vh,46rem)] items-center overflow-hidden pb-6 sm:pb-10"
       containerClassName="marketing-container"
     >
       <div className="relative w-full">
         <div className="pointer-events-none absolute inset-x-0 top-[-14rem] -z-10 h-[20rem] bg-[var(--gradient-primary)] opacity-12 blur-3xl" />
 
-        <div className="grid items-center gap-10 py-16 sm:gap-12 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-24">
-          <div className="flex max-w-xl flex-col gap-6 sm:max-w-2xl sm:gap-7 lg:gap-8">
+        <div className="grid items-center gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
+          <div className="flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 lg:gap-7">
             <FadeIn>
               <Text
                 size="sm"
@@ -35,7 +36,7 @@ function HeroSection() {
                 id="home-hero-title"
                 level={1}
                 size="hero"
-                className="max-w-[13ch] text-balance leading-[1.02] sm:max-w-[11.5ch]"
+                className="marketing-scroll-target max-w-[13ch] text-balance leading-[1.02] sm:max-w-[11.5ch]"
               >
                 Turn More Visitors Into Revenue.
               </Heading>
@@ -68,7 +69,9 @@ function HeroSection() {
                   className="marketing-cta-secondary w-full border-[var(--border)] sm:w-auto"
                   asChild
                 >
-                  <a href="#how-it-works-title">See How It Works</a>
+                  <MarketingNavLink sectionId="how-it-works-title">
+                    See How It Works
+                  </MarketingNavLink>
                 </Button>
               </div>
             </FadeIn>

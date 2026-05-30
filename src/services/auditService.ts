@@ -30,6 +30,12 @@ export async function getAuditDetail(id: string): Promise<AuditDetail | null> {
   )
 }
 
+export const SAMPLE_AUDIT_ID = "audit-1"
+
+export async function getSampleAuditDetail(): Promise<AuditDetail | null> {
+  return getAuditDetail(SAMPLE_AUDIT_ID)
+}
+
 export async function createAudit(input: CreateAuditInput): Promise<Audit> {
   await delay(120)
   const audit = auditListRepository.createAuditFromUrl(input.url)

@@ -1,0 +1,303 @@
+.auth-legal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Auth form page — vertical rhythm & optical balance
+   -------------------------------------------------------------------------- */
+
+.auth-form-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.auth-form-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 2.25rem;
+}
+
+.auth-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.375rem;
+}
+
+.auth-form-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.auth-form-submit {
+  min-height: 2.5rem;
+}
+
+.auth-form-inline-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+}
+
+/* Field hierarchy — label, input, hint, error */
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auth-field-label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.auth-field-hint {
+  margin-top: -0.125rem;
+  line-height: 1.375rem;
+  color: color-mix(in srgb, var(--foreground) 52%, transparent);
+}
+
+.auth-field-error {
+  margin-top: -0.125rem;
+  line-height: 1.375rem;
+  color: #fca5a5;
+}
+
+.auth-form-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+}
+
+.auth-form-terms-checkbox {
+  margin-top: 0.1875rem;
+  height: 1.125rem;
+  width: 1.125rem;
+  min-height: 1.125rem;
+  min-width: 1.125rem;
+}
+
+.auth-form-terms-label {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.625;
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+}
+
+/* Form-level messages — errors & success */
+
+.auth-form-message {
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+}
+
+.auth-form-message--error {
+  border: 1px solid color-mix(in srgb, #f87171 32%, transparent);
+  background: color-mix(in srgb, #f87171 7%, var(--surface));
+  color: #fca5a5;
+}
+
+.auth-form-message--success {
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: color-mix(in srgb, var(--foreground) 4%, var(--surface));
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+}
+
+.auth-form-success-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.375rem;
+}
+
+/* --------------------------------------------------------------------------
+   Showcase panel (left)
+   -------------------------------------------------------------------------- */
+
+.auth-showcase {
+  position: relative;
+  isolation: isolate;
+  background-color: color-mix(in srgb, var(--background) 94%, transparent);
+}
+
+.auth-showcase::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      90% 70% at 10% 0%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      70% 55% at 90% 100%,
+      rgba(79, 108, 182, 0.1),
+      transparent 68%
+    );
+}
+
+.auth-showcase-stage {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.auth-showcase-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  overflow: hidden;
+}
+
+.auth-showcase-slide-body {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.auth-showcase-tile {
+  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  background: color-mix(in srgb, var(--surface) 46%, transparent);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+  backdrop-filter: blur(8px);
+}
+
+.auth-showcase-progress {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  padding: 1rem 2rem 1.25rem;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--background) 72%, transparent)
+  );
+}
+
+.auth-showcase-brand {
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+  padding: 2rem 2rem 0.75rem;
+}
+
+.auth-showcase-legal {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 2rem 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Form column (right) — centering & responsive width
+   -------------------------------------------------------------------------- */
+
+.auth-form-column {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+  padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.auth-form-column-mobile {
+  flex-shrink: 0;
+}
+
+.auth-form-mobile-brand {
+  margin-bottom: 1.75rem;
+}
+
+.auth-form-shell {
+  display: flex;
+  width: 100%;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding-block: clamp(0.5rem, 2vh, 1.5rem);
+}
+
+.auth-form-shell-inner {
+  width: 100%;
+  max-width: min(100%, 28rem);
+  margin-inline: auto;
+}
+
+@media (min-width: 1024px) {
+  .auth-form-column {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .auth-form-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-block: clamp(1rem, 3vh, 2rem);
+  }
+
+  .auth-form-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .auth-showcase-progress {
+    padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .auth-form-shell-inner {
+    max-width: 30rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .auth-form-shell-inner {
+    max-width: 31rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .auth-form-header {
+    margin-bottom: 2rem;
+  }
+
+  .auth-form-stack {
+    gap: 1.25rem;
+  }
+
+  .auth-form-stack .auth-field input {
+    min-height: 2.75rem;
+  }
+
+  .auth-form-submit {
+    min-height: 2.75rem;
+  }
+
+  .auth-form-terms {
+    padding: 1rem;
+  }
+
+  .auth-form-terms-checkbox {
+    min-height: 1.25rem;
+    min-width: 1.25rem;
+  }
+}

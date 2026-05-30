@@ -25,7 +25,6 @@ function SocialProofSection() {
       <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
-            centered
             eyebrow="Trust"
             title="Built for teams that care about conversion quality"
             titleId="social-proof-title"

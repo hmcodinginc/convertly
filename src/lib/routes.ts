@@ -1,5 +1,9 @@
 export const ROUTES = {
   home: "/",
+  login: "/login",
+  signup: "/signup",
+  forgotPassword: "/forgot-password",
+  sampleReport: "/sample-report",
   dashboard: "/dashboard",
   auditNew: "/audit/new",
   audits: "/audits",
@@ -7,6 +11,7 @@ export const ROUTES = {
   workspace: "/workspace",
   billing: "/billing",
   settings: "/settings",
+  profile: "/profile",
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Section } from "@/components/layout/Section"
 import { FadeIn } from "@/components/motion/FadeIn"
 import { GlassPanel } from "@/components/surfaces/GlassPanel"
@@ -25,7 +26,7 @@ function CtaSection() {
 
           <GlassPanel className="relative border-[color-mix(in_srgb,var(--border)_80%,transparent)] bg-transparent px-6 py-12 sm:px-10 sm:py-14">
             <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
-              <Heading id="cta-title" level={2} size="title" className="text-balance">
+              <Heading id="cta-title" level={2} size="title" className="marketing-scroll-target text-balance">
                 Ready to unlock your next conversion breakthrough?
               </Heading>
 
@@ -45,8 +46,9 @@ function CtaSection() {
                 <Button
                   variant="outline"
                   className="marketing-cta-secondary w-full sm:w-auto"
+                  asChild
                 >
-                  Book a Demo
+                  <Link to={ROUTES.sampleReport}>View Sample Report</Link>
                 </Button>
               </div>
             </div>

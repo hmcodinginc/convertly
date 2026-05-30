@@ -31,33 +31,44 @@ function SectionHeader({
     <div
       data-slot="section-header"
       data-variant={variant}
-      className={cn(isApp ? "space-y-2" : "space-y-5", centered && "text-center", className)}
+      className={cn(
+        isApp ? "space-y-2" : "space-y-3",
+        centered && "text-center",
+        className
+      )}
       {...props}
     >
-      {eyebrow ? (
-        <Text
-          variant="muted"
-          size="sm"
-          className={cn(
-            "max-w-none font-medium uppercase",
-            "tracking-[0.16em]",
+      {(eyebrow || title) && (
+        <div className={cn("flex flex-col gap-2")}>
+          {eyebrow ? (
+            <Text
+              variant="muted"
+              size="sm"
+              className={cn(
+                "max-w-none font-medium uppercase",
+                "tracking-[0.16em]",
+                centered && "mx-auto"
+              )}
+            >
+              {eyebrow}
+            </Text>
+          ) : null}
+
+          {title ? (
+            <Heading
+              id={titleId}
+              level={2}
+              size={isApp ? "section" : "title"}
+              className={cn(
+            isApp ? "max-w-none" : "max-w-3xl marketing-scroll-target",
             centered && "mx-auto"
           )}
-        >
-          {eyebrow}
-        </Text>
-      ) : null}
-
-      {title ? (
-        <Heading
-          id={titleId}
-          level={2}
-          size={isApp ? "section" : "title"}
-          className={cn(isApp ? "max-w-none" : "max-w-3xl", centered && "mx-auto")}
-        >
-          {title}
-        </Heading>
-      ) : null}
+            >
+              {title}
+            </Heading>
+          ) : null}
+        </div>
+      )}
 
       {description ? (
         <Text

@@ -1,6 +1,7 @@
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { ConvertlyMarkAnimated } from "@/components/brand/ConvertlyMarkAnimated"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/surfaces/Card"
@@ -12,8 +13,8 @@ type PageLoadingProps = {
 
 function PageLoading({ label = "Loading…" }: PageLoadingProps) {
   return (
-    <Card className="app-card-body flex items-center justify-center gap-3 hover:translate-y-0">
-      <Loader2 className="size-4 animate-spin text-muted" aria-hidden />
+    <Card className="app-card-body flex flex-col items-center justify-center gap-4 hover:translate-y-0">
+      <ConvertlyMarkAnimated size={28} variant="loading" />
       <Text variant="muted" size="sm" className="max-w-none">
         {label}
       </Text>

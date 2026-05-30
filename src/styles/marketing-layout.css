@@ -4,16 +4,31 @@
   --container-max: 90rem;
 }
 
+/* Fixed navbar offset for in-page section navigation */
+:root {
+  --marketing-nav-offset: 6.5rem;
+}
+
+.marketing-scroll-target {
+  scroll-margin-top: var(--marketing-nav-offset);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --marketing-nav-offset: 7rem;
+  }
+}
+
 /* Section header block → content */
 .marketing-section-stack {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2rem;
 }
 
 @media (min-width: 640px) {
   .marketing-section-stack {
-    gap: 3rem;
+    gap: 2.5rem;
   }
 }
 
