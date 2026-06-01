@@ -23,6 +23,8 @@ function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard
+  const passwordWasReset =
+    (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -58,6 +60,12 @@ function LoginPage() {
           Sign in to access your audits, workspace, and conversion insights.
         </Text>
       </div>
+
+      {passwordWasReset ? (
+        <AuthFormMessage variant="success">
+          Password updated. Sign in with your new password.
+        </AuthFormMessage>
+      ) : null}
 
       <form className="auth-form-stack" onSubmit={handleSubmit} noValidate>
         <TextField

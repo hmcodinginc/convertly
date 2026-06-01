@@ -11,6 +11,7 @@ import AuditsPage from "@/pages/AuditsPage"
 import BillingPage from "@/pages/BillingPage"
 import DashboardPage from "@/pages/DashboardPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
+import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import HomePage from "@/pages/HomePage"
 import LoginPage from "@/pages/LoginPage"
 import NewAuditPage from "@/pages/NewAuditPage"
@@ -27,6 +28,10 @@ function AppRouter() {
         <Routes>
         <Route path={ROUTES.home} element={<HomePage />} />
         <Route path={ROUTES.sampleReport} element={<SampleReportPage />} />
+
+        <Route element={<AuthLayout />}>
+          <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+        </Route>
 
         <Route element={<GuestRoute />}>
           <Route element={<AuthLayout />}>

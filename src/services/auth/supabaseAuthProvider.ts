@@ -1,8 +1,9 @@
 import type { User } from "@supabase/supabase-js"
 
+import { getPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import { ROUTES } from "@/lib/routes"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
-import type { AccountInfo } from "@/types/account"
+import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
 import type {
   AuthResult,
   AuthSession,
@@ -220,7 +221,7 @@ export async function resetPasswordWithSupabase(
   input: ForgotPasswordInput
 ): Promise<void> {
   const supabase = getSupabaseClient()
-  const redirectTo = `${window.location.origin}${ROUTES.login}`
+  const redirectTo = getPasswordResetRedirectUrl()
 
   const { error } = await supabase.auth.resetPasswordForEmail(
     input.email.trim().toLowerCase(),
@@ -229,5 +230,181 @@ export async function resetPasswordWithSupabase(
 
   if (error) {
     throw toAuthError(error)
+  }
+}
+
+export async function updateProfileWithSupabase(input: UpdateProfileInput): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !userData.user) {
+    throw new Error("Not signed in.")
+  }
+
+  const email = userData.user.email ?? ""
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      email,
+    },
+  })
+
+  if (error) {
+    throw toAuthError(error)
+  }
+
+  const { error: refreshError } = await supabase.auth.refreshSession()
+  if (refreshError) {
+    throw toAuthError(refreshError)
+  }
+}
+
+function hasRecoveryUrlHint(): boolean {
+  if (typeof window === "undefined") return false
+  return (
+    window.location.hash.includes("type=recovery") ||
+    window.location.search.includes("type=recovery")
+  )
+}
+
+export async function waitForPasswordRecoverySession(): Promise<boolean> {
+  if (!hasRecoveryUrlHint()) {
+    return false
+  }
+
+  const supabase = getSupabaseClient()
+  const attempts = 12
+
+  for (let index = 0; index < attempts; index += 1) {
+    const { data, error } = await supabase.auth.getSession()
+    if (!error && data.session) {
+      return true
+    }
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100)
+    })
+  }
+
+  return false
+}
+
+export async function hasPasswordRecoverySession(): Promise<boolean> {
+  return waitForPasswordRecoverySession()
+}
+
+export function subscribeToPasswordRecovery(onRecovery: () => void): () => void {
+  const supabase = getSupabaseClient()
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") {
+      onRecovery()
+    }
+  })
+
+  return () => subscription.unsubscribe()
+}
+
+export async function completePasswordRecoveryWithSupabase(password: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+  if (sessionError || !sessionData.session) {
+    throw new Error("Reset link invalid or expired. Request a new password reset email.")
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password })
+  if (updateError) {
+    throw toAuthError(updateError)
+  }
+
+  await supabase.auth.signOut().catch(() => undefined)
+
+  if (typeof window !== "undefined") {
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+}
+
+async function reauthenticateWithPassword(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  email: string,
+  password: string
+): Promise<void> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error || !data.session) {
+    throw new Error("Current password is incorrect.")
+  }
+}
+
+export async function changePasswordWithSupabase(
+  email: string,
+  input: ChangePasswordInput
+): Promise<void> {
+  const supabase = getSupabaseClient()
+  const normalizedEmail = email.trim().toLowerCase()
+
+  await reauthenticateWithPassword(supabase, normalizedEmail, input.currentPassword)
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: input.newPassword,
+  })
+
+  if (updateError) {
+    const message = updateError.message.toLowerCase()
+    if (message.includes("reauthenticate") || message.includes("nonce")) {
+      throw new Error(
+        "Additional verification is required. Use the password reset email link to update your password."
+      )
+    }
+    throw toAuthError(updateError)
+  }
+
+  const { error: refreshError } = await supabase.auth.refreshSession()
+  if (refreshError) {
+    throw toAuthError(refreshError)
+  }
+}
+
+type DeleteAccountResponse = {
+  ok?: boolean
+  error?: string
+}
+
+export async function deleteAccountWithSupabase(): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.functions.invoke<DeleteAccountResponse>(
+    "delete-account",
+    { method: "POST" }
+  )
+
+  if (error) {
+    const context = error as { context?: Response }
+    if (context.context) {
+      try {
+        const body = (await context.context.json()) as DeleteAccountResponse
+        if (body.error) {
+          throw new Error(body.error)
+        }
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message !== error.message) {
+          throw parseError
+        }
+      }
+    }
+    throw toAuthError(error)
+  }
+
+  if (data?.error) {
+    throw new Error(data.error)
+  }
+
+  if (!data?.ok) {
+    throw new Error("Unable to delete account. Please try again.")
   }
 }

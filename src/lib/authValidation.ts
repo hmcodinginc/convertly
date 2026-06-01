@@ -66,3 +66,32 @@ export function validateSignupFields(input: {
 
   return errors
 }
+
+export type ChangePasswordField = "currentPassword" | "newPassword" | "confirmPassword"
+
+export function validateChangePasswordFields(input: {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}): FieldErrors<ChangePasswordField> {
+  const errors: FieldErrors<ChangePasswordField> = {}
+
+  const currentError = validateRequired(input.currentPassword, "Current password")
+  if (currentError) errors.currentPassword = currentError
+
+  const passwordError = validatePassword(input.newPassword)
+  if (passwordError) errors.newPassword = passwordError
+
+  const confirmError = validateConfirmPassword(input.newPassword, input.confirmPassword)
+  if (confirmError) errors.confirmPassword = confirmError
+
+  if (
+    input.currentPassword &&
+    input.newPassword &&
+    input.currentPassword === input.newPassword
+  ) {
+    errors.newPassword = "New password must be different from your current password."
+  }
+
+  return errors
+}

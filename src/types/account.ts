@@ -9,3 +9,14 @@ export type AccountInfo = {
   plan: "Free"
   authProvider: string
 }
+
+export type UpdateProfileInput = {
+  firstName: string
+  lastName: string
+}
+
+export type ChangePasswordInput = {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}

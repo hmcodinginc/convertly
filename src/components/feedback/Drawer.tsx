@@ -10,6 +10,8 @@ type DrawerProps = {
   description?: string
   children: ReactNode
   className?: string
+  headerClassName?: string
+  contentClassName?: string
   side?: "left" | "right"
 }
 
@@ -20,6 +22,8 @@ function Drawer({
   description,
   children,
   className,
+  headerClassName,
+  contentClassName,
   side = "right",
 }: DrawerProps) {
   useEffect(() => {
@@ -53,7 +57,7 @@ function Drawer({
       <button
         type="button"
         aria-label="Close drawer"
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--background)_55%,transparent)] backdrop-blur-[2px]"
+        className="absolute inset-0 bg-[color-mix(in_srgb,var(--background)_58%,transparent)] backdrop-blur-md"
         onClick={onClose}
       />
       <aside
@@ -68,16 +72,21 @@ function Drawer({
           className
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-5">
-          <div className="min-w-0 space-y-1">
+        <div
+          className={cn(
+            "flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-6",
+            headerClassName
+          )}
+        >
+          <div className="min-w-0 space-y-1.5">
             <h2
               id="drawer-title"
-              className="text-lg font-semibold tracking-tight text-foreground"
+              className="text-xl font-semibold tracking-tight text-foreground"
             >
               {title}
             </h2>
             {description ? (
-              <p className="text-sm leading-6 text-muted">{description}</p>
+              <p className="text-sm leading-relaxed text-muted">{description}</p>
             ) : null}
           </div>
           <button
@@ -89,7 +98,9 @@ function Drawer({
             <X className="size-4" aria-hidden />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
+        <div className={cn("flex-1 overflow-y-auto px-6 py-5", contentClassName)}>
+          {children}
+        </div>
       </aside>
     </div>
   )

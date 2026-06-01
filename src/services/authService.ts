@@ -329,6 +329,54 @@ export async function requestPasswordReset(input: ForgotPasswordInput): Promise<
 
 
 
+export async function hasPasswordRecoverySession(): Promise<boolean> {
+
+  if (shouldUseLocalAuth()) {
+
+    return false
+
+  }
+
+
+
+  return supabaseAuth.waitForPasswordRecoverySession()
+
+}
+
+
+
+export function subscribeToPasswordRecovery(onRecovery: () => void): () => void {
+
+  if (shouldUseLocalAuth()) {
+
+    return () => undefined
+
+  }
+
+
+
+  return supabaseAuth.subscribeToPasswordRecovery(onRecovery)
+
+}
+
+
+
+export async function completePasswordRecovery(password: string): Promise<void> {
+
+  if (shouldUseLocalAuth()) {
+
+    throw new Error("Password recovery is unavailable in local auth mode.")
+
+  }
+
+
+
+  return supabaseAuth.completePasswordRecoveryWithSupabase(password)
+
+}
+
+
+
 export async function logout(): Promise<void> {
 
   if (shouldUseLocalAuth()) {
