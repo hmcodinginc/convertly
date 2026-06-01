@@ -11,12 +11,12 @@ const trustIndicators = [
 ]
 
 const logoPlaceholders = [
-  "Company One",
-  "Company Two",
-  "Company Three",
-  "Company Four",
-  "Company Five",
-  "Company Six",
+  "Vectra",
+  "Halcyon",
+  "Baseline",
+  "Meridian",
+  "Orbitly",
+  "Slate",
 ]
 
 function SocialProofSection() {
@@ -53,7 +53,7 @@ function SocialProofSection() {
               {logoPlaceholders.map((logo) => (
                 <div
                   key={logo}
-                  className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] text-center"
+                  className="marketing-tile flex min-h-14 items-center justify-center border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] text-center"
                 >
                   <Text
                     size="sm"

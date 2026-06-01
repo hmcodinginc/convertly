@@ -86,18 +86,20 @@ function NewAuditPage() {
         />
       }
     >
-      <Card className="app-card-body app-card-stack hover:translate-y-0">
+      <Card className="app-card-body audit-target-card hover:translate-y-0">
         <SectionHeader
           variant="app"
           title="Audit target"
           description="Enter the primary domain or URL to include in this run."
+          className="audit-target-card__header"
         />
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-          <label className="block space-y-2">
-            <Text size="sm" className="max-w-none font-medium text-foreground/80">
-              Website URL
-            </Text>
+        <div className="audit-target-card__field">
+          <label htmlFor="audit-target-url" className="audit-target-card__label">
+            Website URL
+          </label>
+          <div className="audit-target-card__row">
             <input
+              id="audit-target-url"
               type="url"
               value={url}
               onChange={(e) => {
@@ -108,26 +110,27 @@ function NewAuditPage() {
               disabled={isRunning}
               aria-invalid={Boolean(urlError)}
               className={cn(
-                "h-10 w-full rounded-[var(--radius-md)] border bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-sm text-foreground outline-none focus:border-[color-mix(in_srgb,var(--accent)_45%,var(--border))] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:opacity-60",
-                urlError
-                  ? "border-[color-mix(in_srgb,#f87171_50%,var(--border))]"
-                  : "border-[color-mix(in_srgb,var(--border)_90%,transparent)]"
+                "app-input min-w-0 w-full disabled:opacity-60",
+                urlError &&
+                  "border-[color-mix(in_srgb,#f87171_50%,var(--border))] focus:border-[color-mix(in_srgb,#f87171_50%,var(--border))]"
               )}
             />
-            {urlError ? (
-              <Text size="sm" className="max-w-none text-[#fca5a5]">
-                {urlError}
-              </Text>
-            ) : null}
-          </label>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isRunning}
-            onClick={() => void handleValidateUrl()}
-          >
-            Validate URL
-          </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              className="w-full sm:w-auto"
+              disabled={isRunning}
+              onClick={() => void handleValidateUrl()}
+            >
+              Validate URL
+            </Button>
+          </div>
+          {urlError ? (
+            <Text size="sm" className="audit-target-card__error max-w-none text-[#fca5a5]">
+              {urlError}
+            </Text>
+          ) : null}
         </div>
       </Card>
 
@@ -136,20 +139,20 @@ function NewAuditPage() {
         title="Choose audit type"
         description="Select the scope that matches your current growth initiative."
       >
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {auditTypes.map((type) => (
             <button
               key={type.id}
               type="button"
               disabled={isRunning}
               onClick={() => setSelectedType(type.id)}
-              className="text-left disabled:opacity-60"
+              className="h-full text-left disabled:opacity-60"
             >
               <Card
                 className={cn(
-                  "app-card-metric flex h-full flex-col gap-4 hover:translate-y-0",
+                  "app-card-metric flex h-full min-h-[11.5rem] flex-col gap-4 transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:translate-y-0 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_55%,transparent)]",
                   selectedType === type.id &&
-                    "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
+                    "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
                 )}
               >
                 <div className="space-y-2">
@@ -170,9 +173,11 @@ function NewAuditPage() {
       </AppPageSection>
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Button
             type="button"
+            size="sm"
+            className="w-full sm:w-auto"
             disabled={isRunning}
             onClick={() => void handleStartAudit()}
           >
@@ -185,7 +190,12 @@ function NewAuditPage() {
               "Start audit"
             )}
           </Button>
-          <Button variant="outline" disabled={isRunning}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            disabled={isRunning}
+          >
             Save as draft
           </Button>
         </div>

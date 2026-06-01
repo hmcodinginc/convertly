@@ -10,6 +10,7 @@ type DrawerProps = {
   description?: string
   children: ReactNode
   className?: string
+  side?: "left" | "right"
 }
 
 function Drawer({
@@ -19,6 +20,7 @@ function Drawer({
   description,
   children,
   className,
+  side = "right",
 }: DrawerProps) {
   useEffect(() => {
     if (!open) return
@@ -41,7 +43,13 @@ function Drawer({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="presentation">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex",
+        side === "left" ? "justify-start" : "justify-end"
+      )}
+      role="presentation"
+    >
       <button
         type="button"
         aria-label="Close drawer"
@@ -53,7 +61,10 @@ function Drawer({
         aria-modal="true"
         aria-labelledby="drawer-title"
         className={cn(
-          "relative flex h-full w-full max-w-md flex-col border-l border-[color-mix(in_srgb,var(--border)_75%,transparent)] bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
+          "relative flex h-full w-full max-w-md flex-col bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
+          side === "left"
+            ? "border-r border-[color-mix(in_srgb,var(--border)_75%,transparent)]"
+            : "border-l border-[color-mix(in_srgb,var(--border)_75%,transparent)]",
           className
         )}
       >

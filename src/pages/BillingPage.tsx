@@ -49,86 +49,31 @@ function BillingPage() {
 
   return (
     <AppPageShell header={header}>
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card className="app-card-body app-card-stack hover:translate-y-0">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <SectionHeader
-              variant="app"
-              title="Current plan"
-              description={`Renews ${plan.renewalDate}`}
-            />
-            <StatusBadge label={plan.status} variant="success" />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-medium tracking-tight text-foreground">
-              {plan.price}
-            </span>
-            <Text variant="muted" size="sm" className="max-w-none">
-              {plan.interval}
-            </Text>
-          </div>
-          <Text size="sm" className="max-w-none font-medium text-foreground/90">
-            {plan.name} plan
-          </Text>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm">
-              Manage subscription
-            </Button>
-            <Button size="sm">Upgrade plan</Button>
-          </div>
-        </Card>
-
-        <Card className="app-card-body app-card-stack hover:translate-y-0">
+      <Card className="app-card-body app-card-stack hover:translate-y-0">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <SectionHeader
             variant="app"
-            title="Audit credits"
-            description={`Resets ${credits.resetsOn}`}
+            title="Current plan"
+            description={`Renews ${plan.renewalDate}`}
           />
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-3xl font-medium tabular-nums tracking-tight text-foreground">
-                {credits.remaining}
-              </p>
-              <Text variant="muted" size="sm" className="mt-1 max-w-none">
-                of {credits.total} remaining
-              </Text>
-            </div>
-            <Text size="sm" className="max-w-none font-medium text-[#86efac]">
-              {creditsPercent}% left
-            </Text>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--surface)_80%,transparent)]">
-            <div
-              className="h-full rounded-full bg-[var(--accent)]"
-              style={{ width: `${creditsPercent}%` }}
-            />
-          </div>
-        </Card>
-      </div>
-
-      <Card className="app-card-table hover:translate-y-0">
-        <div className="app-card-table-header">
-          <SectionHeader
-            variant="app"
-            title="Usage summary"
-            description="Current billing period consumption."
-          />
+          <StatusBadge label={plan.status} variant="success" />
         </div>
-        <div className="grid gap-px bg-[color-mix(in_srgb,var(--border)_50%,transparent)] sm:grid-cols-2">
-          {usage.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between gap-4 bg-[color-mix(in_srgb,var(--card)_96%,transparent)] px-5 py-3"
-            >
-              <Text size="sm" className="max-w-none font-medium text-foreground/85">
-                {item.label}
-              </Text>
-              <Text size="sm" className="max-w-none tabular-nums text-foreground/75">
-                {item.value}
-                <span className="text-muted"> / {item.limit}</span>
-              </Text>
-            </div>
-          ))}
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-medium tracking-tight text-foreground">
+            {plan.price}
+          </span>
+          <Text variant="muted" size="sm" className="max-w-none">
+            {plan.interval}
+          </Text>
+        </div>
+        <Text size="sm" className="max-w-none font-medium text-foreground/90">
+          {plan.name} plan
+        </Text>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm">
+            Manage subscription
+          </Button>
+          <Button size="sm">Upgrade plan</Button>
         </div>
       </Card>
 
@@ -174,6 +119,61 @@ function BillingPage() {
           ))}
         </div>
       </AppPageSection>
+
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card className="app-card-table hover:translate-y-0">
+          <div className="app-card-table-header">
+            <SectionHeader
+              variant="app"
+              title="Usage summary"
+              description="Current billing period consumption."
+            />
+          </div>
+          <div className="grid gap-px bg-[color-mix(in_srgb,var(--border)_50%,transparent)] sm:grid-cols-2">
+            {usage.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between gap-4 bg-[color-mix(in_srgb,var(--card)_96%,transparent)] px-5 py-3.5"
+              >
+                <Text size="sm" className="max-w-none font-medium text-foreground/85">
+                  {item.label}
+                </Text>
+                <Text size="sm" className="max-w-none tabular-nums text-foreground/75">
+                  {item.value}
+                  <span className="text-muted"> / {item.limit}</span>
+                </Text>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="app-card-body app-card-stack hover:translate-y-0">
+          <SectionHeader
+            variant="app"
+            title="Audit credits"
+            description={`Resets ${credits.resetsOn}`}
+          />
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-3xl font-medium tabular-nums tracking-tight text-foreground">
+                {credits.remaining}
+              </p>
+              <Text variant="muted" size="sm" className="mt-1 max-w-none">
+                of {credits.total} remaining
+              </Text>
+            </div>
+            <Text size="sm" className="max-w-none font-medium text-[#86efac]">
+              {creditsPercent}% left
+            </Text>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--surface)_80%,transparent)]">
+            <div
+              className="h-full rounded-full bg-[var(--accent)]"
+              style={{ width: `${creditsPercent}%` }}
+            />
+          </div>
+        </Card>
+      </div>
 
       <Text variant="muted" size="sm" className="max-w-none">
         Need enterprise limits?{" "}

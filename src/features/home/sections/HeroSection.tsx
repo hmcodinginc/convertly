@@ -14,13 +14,13 @@ function HeroSection() {
   return (
     <Section
       aria-labelledby="home-hero-title"
-      className="relative flex min-h-[min(72vh,46rem)] items-center overflow-hidden pb-6 sm:pb-10"
+      className="relative flex min-h-0 items-center overflow-hidden pb-4 pt-2 sm:min-h-[min(72vh,46rem)] sm:pb-10 sm:pt-0"
       containerClassName="marketing-container"
     >
       <div className="relative w-full">
         <div className="pointer-events-none absolute inset-x-0 top-[-14rem] -z-10 h-[20rem] bg-[var(--gradient-primary)] opacity-12 blur-3xl" />
 
-        <div className="grid items-center gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
+        <div className="grid items-center gap-6 py-8 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
           <div className="flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 lg:gap-7">
             <FadeIn>
               <Text

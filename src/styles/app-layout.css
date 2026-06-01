@@ -62,6 +62,63 @@
   gap: 1.5rem;
 }
 
+.app-card-stack-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* New audit — audit target field */
+.audit-target-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.audit-target-card__header {
+  gap: 0.375rem !important;
+}
+
+.audit-target-card__header p {
+  margin-top: 0.125rem;
+}
+
+.audit-target-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.audit-target-card__label {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+}
+
+.audit-target-card__row {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .audit-target-card__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+  }
+}
+
+.audit-target-card__row .app-input,
+.audit-target-card__row [data-slot="button"] {
+  height: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.audit-target-card__error {
+  margin-top: 0.125rem;
+}
+
 /* Table cards */
 .app-card-table {
   padding: 0;
@@ -103,4 +160,53 @@
 
 .app-table tbody tr:not(:last-child) {
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.app-table tbody tr {
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.app-table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+/* Toolbar rows (search, filters, actions) */
+.app-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .app-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.app-input {
+  height: 2.25rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding-inline: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+}
+
+.app-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.app-input-search {
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .app-input-search {
+    max-width: 20rem;
+  }
 }

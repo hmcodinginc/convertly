@@ -63,7 +63,7 @@ function WorkspacePage() {
   const usagePercent = Math.round((auditLimits.auditsUsed / auditLimits.auditsIncluded) * 100)
 
   return (
-    <AppPageShell header={header}>
+    <AppPageShell header={header} sectionsClassName="gap-5">
       <Card className="app-card-body app-card-stack hover:translate-y-0">
         <SectionHeader
           variant="app"
@@ -113,7 +113,7 @@ function WorkspacePage() {
           </DataTableHead>
           <DataTableBody>
             {domains.map((domain) => (
-              <DataTableRow key={domain.id}>
+              <DataTableRow key={domain.id} interactive>
                 <DataTableCell className="font-mono text-xs text-foreground/90">
                   {domain.hostname}
                 </DataTableCell>
@@ -159,7 +159,7 @@ function WorkspacePage() {
           </DataTableHead>
           <DataTableBody>
             {team.map((member) => (
-              <DataTableRow key={member.id}>
+              <DataTableRow key={member.id} interactive>
                 <DataTableCell className="font-medium text-foreground">
                   {member.name}
                 </DataTableCell>

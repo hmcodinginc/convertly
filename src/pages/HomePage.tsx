@@ -15,7 +15,7 @@ function HomePage() {
   }, [])
 
   return (
-    <main className="app-atmosphere">
+    <main className="marketing-page app-atmosphere overflow-x-hidden">
       <Navbar />
       <HeroSection />
       <SocialProofSection />

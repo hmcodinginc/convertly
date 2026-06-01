@@ -54,12 +54,16 @@ function FeaturesSection() {
           />
         </FadeIn>
 
-        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="marketing-features-grid sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
-            <FadeIn key={feature.title} delay={0.05 + index * 0.05}>
+            <FadeIn
+              key={feature.title}
+              delay={0.05 + index * 0.05}
+              className="h-auto min-h-0 max-lg:self-start lg:h-full"
+            >
               <Card
                 className={cn(
-                  "marketing-card h-full border-[color-mix(in_srgb,var(--border)_90%,transparent)] hover:translate-y-0",
+                  "marketing-feature-card h-auto min-h-0 border-[color-mix(in_srgb,var(--border)_90%,transparent)] hover:translate-y-0 lg:h-full",
                   feature.className
                 )}
               >
@@ -70,8 +74,8 @@ function FeaturesSection() {
                   />
                 ) : null}
 
-                <div className="relative flex h-full flex-col gap-6">
-                  <div className="space-y-3">
+                <div className="marketing-feature-card__body relative">
+                  <div className="space-y-2">
                     <Heading
                       level={3}
                       size={feature.visual === "hero" ? "section" : "subsection"}
@@ -84,7 +88,7 @@ function FeaturesSection() {
                   </div>
 
                   {feature.visual === "hero" ? (
-                    <div className="mt-auto space-y-3">
+                    <div className="space-y-3 lg:mt-auto">
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]">
                           <Text size="sm" variant="muted" className="max-w-none">
@@ -120,7 +124,7 @@ function FeaturesSection() {
                   ) : null}
 
                   {feature.visual === "queue" ? (
-                    <div className="mt-auto space-y-2">
+                    <div className="space-y-2 lg:mt-auto">
                       {["Homepage friction", "Pricing clarity", "Form completion"].map(
                         (item, itemIndex) => (
                           <div
@@ -140,7 +144,7 @@ function FeaturesSection() {
                   ) : null}
 
                   {feature.visual === "guidance" ? (
-                    <div className="marketing-tile mt-auto border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
+                    <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] lg:mt-auto">
                       <Text size="sm" className="max-w-none">
                         AI analysis fragment
                       </Text>
@@ -153,7 +157,7 @@ function FeaturesSection() {
                   ) : null}
 
                   {feature.visual === "progress" ? (
-                    <div className="mt-auto space-y-3">
+                    <div className="space-y-3 lg:mt-auto">
                       <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
                         <div className="mb-2 flex items-center justify-between gap-3">
                           <Text size="sm" variant="muted" className="max-w-none">

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion"
-import { LogOut, Settings, User } from "lucide-react"
+import { CreditCard, LogOut, Settings, User } from "lucide-react"
 import * as React from "react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -100,6 +100,12 @@ function DashboardUserMenu({ className }: DashboardUserMenuProps) {
                 to={ROUTES.settings}
                 icon={Settings}
                 label="Settings"
+                onSelect={() => setOpen(false)}
+              />
+              <MenuLink
+                to={ROUTES.billing}
+                icon={CreditCard}
+                label="Billing"
                 onSelect={() => setOpen(false)}
               />
             </div>

@@ -48,10 +48,20 @@ function DataTableBody({ children }: { children: ReactNode }) {
 function DataTableRow({
   children,
   className,
+  interactive = false,
   ...props
-}: React.ComponentProps<"tr">) {
+}: React.ComponentProps<"tr"> & {
+  interactive?: boolean
+}) {
   return (
-    <tr className={className} {...props}>
+    <tr
+      className={cn(
+        interactive &&
+          "cursor-pointer focus-within:bg-[color-mix(in_srgb,var(--surface)_72%,transparent)]",
+        className
+      )}
+      {...props}
+    >
       {children}
     </tr>
   )

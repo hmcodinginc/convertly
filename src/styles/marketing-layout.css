@@ -6,7 +6,7 @@
 
 /* Fixed navbar offset for in-page section navigation */
 :root {
-  --marketing-nav-offset: 6.5rem;
+  --marketing-nav-offset: 5.25rem;
 }
 
 .marketing-scroll-target {
@@ -23,12 +23,90 @@
 .marketing-section-stack {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 @media (min-width: 640px) {
   .marketing-section-stack {
     gap: 2.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .marketing-page .section-padding {
+    padding-block: 2.75rem;
+  }
+
+  .marketing-page .marketing-card {
+    padding: 1.25rem;
+  }
+}
+
+/* Features grid — content-height cards below lg; equal rows at lg+ */
+.marketing-features-grid {
+  display: grid;
+  align-items: start;
+  gap: 1rem;
+  grid-auto-rows: auto;
+}
+
+/* Grid children (FadeIn wrappers) must not stretch with row height */
+.marketing-features-grid > * {
+  height: auto;
+  min-height: 0;
+  align-self: start;
+}
+
+.marketing-feature-card {
+  height: auto;
+  min-height: 0;
+  padding: 1.25rem;
+}
+
+.marketing-feature-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: auto;
+  min-height: 0;
+}
+
+/* Uniform gap between inner feature points (tiles) — all breakpoints */
+.marketing-feature-card__body > .space-y-2,
+.marketing-feature-card__body > .space-y-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.marketing-feature-card__body > .space-y-2 > * + *,
+.marketing-feature-card__body > .space-y-3 > * + * {
+  margin-top: 0;
+}
+
+.marketing-feature-card__body .grid.gap-3 {
+  gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .marketing-features-grid {
+    align-items: stretch;
+    grid-auto-rows: 1fr;
+  }
+
+  .marketing-features-grid > * {
+    height: 100%;
+    align-self: stretch;
+  }
+
+  .marketing-feature-card {
+    height: 100%;
+    padding: 1.5rem;
+  }
+
+  .marketing-feature-card__body {
+    gap: 1.5rem;
+    height: 100%;
   }
 }
 
@@ -68,4 +146,14 @@
 .marketing-cta-secondary {
   height: 2.75rem;
   padding-inline: 1.5rem;
+}
+
+/* Desktop: center content block inside full-width CTA (mobile unchanged) */
+@media (min-width: 1024px) {
+  .marketing-cta-section [data-slot="glass-panel"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 }

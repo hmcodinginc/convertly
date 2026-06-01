@@ -63,7 +63,7 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
             </DataTableHead>
             <DataTableBody>
               {audits.slice(0, 5).map((audit) => (
-                <DataTableRow key={audit.id}>
+                <DataTableRow key={audit.id} interactive>
                   <DataTableCell>
                     <AuditTableLink auditId={audit.id}>{audit.name}</AuditTableLink>
                   </DataTableCell>

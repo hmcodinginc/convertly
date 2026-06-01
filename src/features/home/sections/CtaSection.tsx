@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+
 import { Section } from "@/components/layout/Section"
 import { FadeIn } from "@/components/motion/FadeIn"
 import { GlassPanel } from "@/components/surfaces/GlassPanel"
@@ -14,7 +15,7 @@ function CtaSection() {
   return (
     <Section aria-labelledby="cta-title" containerClassName="marketing-container">
       <FadeIn>
-        <div className="relative overflow-hidden rounded-[var(--radius-xl)]">
+        <div className="marketing-cta-section relative w-full overflow-hidden rounded-[var(--radius-xl)]">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[var(--gradient-primary)] opacity-14"

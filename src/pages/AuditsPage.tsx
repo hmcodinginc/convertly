@@ -68,15 +68,15 @@ function AuditsPage() {
 
   return (
     <AppPageShell header={header}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="app-toolbar">
         <input
           type="search"
           placeholder="Search audits..."
           aria-label="Search audits"
-          className="h-9 w-full max-w-sm rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_90%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-3 text-sm outline-none focus:border-[color-mix(in_srgb,var(--accent)_45%,var(--border))]"
+          className="app-input app-input-search"
         />
         {!isEmpty ? (
-          <div className="flex gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button variant="outline" size="sm">
               Filter
             </Button>
@@ -115,7 +115,7 @@ function AuditsPage() {
             </DataTableHead>
             <DataTableBody>
               {audits?.map((audit) => (
-                <DataTableRow key={audit.id}>
+                <DataTableRow key={audit.id} interactive>
                   <DataTableCell>
                     <AuditTableLink auditId={audit.id}>{audit.name}</AuditTableLink>
                   </DataTableCell>
