@@ -1,4 +1,6 @@
 import { shouldUseLocalAuth } from "@/lib/env"
+import { resetPasswordRecoveryState } from "@/lib/passwordRecoveryPersistence"
+import { clearAllProfileDrawerState } from "@/lib/profileDrawerPersistence"
 import { validateChangePasswordFields } from "@/lib/authValidation"
 import { validateProfileNameFields } from "@/lib/profileValidation"
 import { resetSupabaseClient } from "@/services/auth/supabaseClient"
@@ -55,6 +57,8 @@ async function deleteAccountLocal(): Promise<void> {
   }
 
   clearApplicationStorage()
+  clearAllProfileDrawerState()
+  resetPasswordRecoveryState()
 }
 
 export async function updateProfile(input: UpdateProfileInput): Promise<void> {
@@ -110,6 +114,8 @@ export async function deleteAccount(): Promise<void> {
   }
 
   clearApplicationStorage()
+  clearAllProfileDrawerState()
+  resetPasswordRecoveryState()
   await authRepository.clearSession()
   resetSupabaseClient()
 }

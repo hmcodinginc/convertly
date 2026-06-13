@@ -66,7 +66,22 @@ export function clearMarketingHash(): void {
   }
 }
 
+export function isSupabaseAuthCallbackHash(): boolean {
+  if (typeof window === "undefined") return false
+
+  const hash = window.location.hash
+
+  return (
+    hash.includes("access_token=") ||
+    hash.includes("type=signup") ||
+    hash.includes("type=recovery") ||
+    hash.includes("type=magiclink")
+  )
+}
+
 export function handleMarketingHashOnLoad(): void {
+  if (isSupabaseAuthCallbackHash()) return
+
   const sectionId = window.location.hash.replace(/^#/, "")
   if (!sectionId) return
 

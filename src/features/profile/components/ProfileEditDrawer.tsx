@@ -10,6 +10,7 @@ type ProfileEditDrawerProps = {
   isSubmitting: boolean
   onClose: () => void
   onSave: (input: UpdateProfileInput) => Promise<void>
+  onPersistValues?: (values: { firstName: string; lastName: string }) => void
 }
 
 function ProfileEditDrawer({
@@ -20,6 +21,7 @@ function ProfileEditDrawer({
   isSubmitting,
   onClose,
   onSave,
+  onPersistValues,
 }: ProfileEditDrawerProps) {
   return (
     <Drawer
@@ -32,13 +34,13 @@ function ProfileEditDrawer({
       contentClassName="!py-5"
     >
       <ProfileEditForm
-        key={`${open}-${firstName}-${lastName}`}
         initialFirstName={firstName}
         initialLastName={lastName}
         email={email}
         onSave={onSave}
         onCancel={onClose}
         isSubmitting={isSubmitting}
+        onPersistValues={onPersistValues}
       />
     </Drawer>
   )

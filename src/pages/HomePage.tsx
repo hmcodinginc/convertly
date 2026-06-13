@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import { useLocation } from "react-router-dom"
+import { Navigate, useLocation } from "react-router-dom"
 
+import { useAuthSession } from "@/components/auth/AuthSessionProvider"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { Navbar } from "@/components/layout/Navbar"
 import { CtaSection } from "@/features/home/sections/CtaSection"
@@ -10,9 +11,11 @@ import { HeroSection } from "@/features/home/sections/HeroSection"
 import { HowItWorksSection } from "@/features/home/sections/HowItWorksSection"
 import { SocialProofSection } from "@/features/home/sections/SocialProofSection"
 import { handleMarketingHashOnLoad } from "@/lib/marketingNavigation"
+import { ROUTES } from "@/lib/routes"
 
 function HomePage() {
   const location = useLocation()
+  const { isAuthenticated, isLoading } = useAuthSession()
   const [deletedNotice, setDeletedNotice] = useState(
     () => (location.state as { accountDeleted?: boolean } | null)?.accountDeleted === true
   )
@@ -26,6 +29,10 @@ function HomePage() {
     const timer = window.setTimeout(() => setDeletedNotice(false), 6000)
     return () => window.clearTimeout(timer)
   }, [deletedNotice])
+
+  if (!isLoading && isAuthenticated && !deletedNotice) {
+    return <Navigate to={ROUTES.dashboard} replace />
+  }
 
   return (
     <main className="marketing-page app-atmosphere overflow-x-hidden">

@@ -1,6 +1,13 @@
 import * as React from "react"
 
 import { shouldUseLocalAuth } from "@/lib/env"
+import {
+  logAuthInit,
+  logAuthLoading,
+  logAuthSessionFound,
+  logAuthSessionNull,
+} from "@/lib/authDebugLog"
+import { bootstrapPasswordRecoveryFromUrl } from "@/lib/passwordRecoveryPersistence"
 import * as authService from "@/services/authService"
 import * as supabaseAuth from "@/services/auth/supabaseAuthProvider"
 import type { AuthSession } from "@/types/auth"
@@ -23,6 +30,7 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = React.useState(true)
 
   const refreshSession = React.useCallback(async () => {
+    logAuthLoading(true)
     setIsLoading(true)
 
     try {
@@ -30,13 +38,16 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
       setSession(nextSession)
 
       if (nextSession) {
+        logAuthSessionFound()
         const nextAccount = await authService.getAccount()
         setAccount(nextAccount)
       } else {
+        logAuthSessionNull()
         setAccount(null)
       }
     } finally {
       setIsLoading(false)
+      logAuthLoading(false)
     }
   }, [])
 
@@ -46,6 +57,12 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
     setAccount(null)
   }, [])
 
+  React.useLayoutEffect(() => {
+    logAuthInit()
+    if (shouldUseLocalAuth()) return
+    bootstrapPasswordRecoveryFromUrl()
+  }, [])
+
   React.useEffect(() => {
     void refreshSession()
 
@@ -53,11 +70,18 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const unsubscribe = supabaseAuth.subscribeToAuthChanges(() => {
+    const unsubscribeAuth = supabaseAuth.subscribeToAuthChanges(() => {
       void refreshSession()
     })
 
-    return unsubscribe
+    const unsubscribeRecovery = authService.subscribeToPasswordRecovery(() => {
+      void refreshSession()
+    })
+
+    return () => {
+      unsubscribeAuth()
+      unsubscribeRecovery()
+    }
   }, [refreshSession])
 
   const value = React.useMemo(

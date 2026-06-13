@@ -94,11 +94,7 @@ function DeleteAccountModal({ open, onClose, onConfirmDelete }: DeleteAccountMod
               )}
             </Button>
           </div>
-          <Text
-            variant="muted"
-            size="sm"
-            className="max-w-none text-right text-[color-mix(in_srgb,#fca5a5_85%,var(--muted))]"
-          >
+          <Text variant="muted" size="sm" className="max-w-none text-right">
             This action cannot be undone.
           </Text>
         </div>
@@ -111,10 +107,10 @@ function DeleteAccountModal({ open, onClose, onConfirmDelete }: DeleteAccountMod
             aria-hidden
           />
           <div className="space-y-2">
-            <Text size="sm" className="max-w-none font-semibold leading-6 text-[#fecaca]">
+            <Text size="sm" className="max-w-none font-semibold leading-6">
               You are about to permanently delete your Convertly account.
             </Text>
-            <Text size="sm" className="max-w-none leading-6 text-foreground/85">
+            <Text variant="muted" size="sm" className="max-w-none leading-6">
               This cannot be reversed. All data listed below will be removed.
             </Text>
           </div>
@@ -124,7 +120,7 @@ function DeleteAccountModal({ open, onClose, onConfirmDelete }: DeleteAccountMod
           <Text size="sm" className="max-w-none font-medium text-foreground/88">
             This action will permanently remove:
           </Text>
-          <ul className="list-inside list-disc space-y-1.5 text-sm text-[color-mix(in_srgb,#fca5a5_75%,var(--muted))]">
+          <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
             {deletionItems.map((item) => (
               <li key={item}>{item}</li>
             ))}

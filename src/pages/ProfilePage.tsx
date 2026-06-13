@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
 import { useAuthSession } from "@/components/auth/AuthSessionProvider"
@@ -21,9 +21,23 @@ import { Card } from "@/components/surfaces/Card"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/typography/Text"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
+import {
+  clearEditDrawerState,
+  clearPasswordDrawerState,
+  persistEditDrawerState,
+  persistPasswordDrawerState,
+  readEditDrawerState,
+  readPasswordDrawerState,
+} from "@/lib/profileDrawerPersistence"
+import {
+  finalizePasswordRecovery,
+  isPasswordRecoveryActive,
+} from "@/lib/passwordRecoveryPersistence"
 import { validateProfileNameFields } from "@/lib/profileValidation"
+import { shouldUseLocalAuth } from "@/lib/env"
 import { ROUTES } from "@/lib/routes"
 import * as accountService from "@/services/accountService"
+import * as authService from "@/services/authService"
 import type { ChangePasswordInput, UpdateProfileInput } from "@/types/account"
 
 function formatAccountDate(value: string): string {
@@ -49,11 +63,29 @@ function ProfilePage() {
   const navigate = useNavigate()
   const { account, isLoading, refreshSession, logout } = useAuthSession()
   const isDesktop = useMediaQuery("(min-width: 1024px)")
+  const persistedEdit = readEditDrawerState()
+  const persistedPassword = readPasswordDrawerState()
+  const recoveryActiveOnLoad = isPasswordRecoveryActive()
 
-  const [editDrawerOpen, setEditDrawerOpen] = useState(false)
-  const [passwordDrawerOpen, setPasswordDrawerOpen] = useState(false)
-  const [mobileEditMode, setMobileEditMode] = useState(false)
-  const [mobilePasswordMode, setMobilePasswordMode] = useState(false)
+  const [editDrawerOpen, setEditDrawerOpen] = useState(() => persistedEdit?.open ?? false)
+  const [passwordDrawerOpen, setPasswordDrawerOpen] = useState(
+    () => persistedPassword?.open ?? recoveryActiveOnLoad
+  )
+  const [isRecoveryMode, setIsRecoveryMode] = useState(
+    () => recoveryActiveOnLoad || (persistedPassword?.recoveryMode ?? false)
+  )
+  const [editFirstName, setEditFirstName] = useState(() => persistedEdit?.firstName ?? "")
+  const [editLastName, setEditLastName] = useState(() => persistedEdit?.lastName ?? "")
+  const [passwordNewValue, setPasswordNewValue] = useState(
+    () => persistedPassword?.newPassword ?? ""
+  )
+  const [passwordConfirmValue, setPasswordConfirmValue] = useState(
+    () => persistedPassword?.confirmPassword ?? ""
+  )
+  const [mobileEditMode, setMobileEditMode] = useState(() => persistedEdit?.open ?? false)
+  const [mobilePasswordMode, setMobilePasswordMode] = useState(
+    () => persistedPassword?.open ?? recoveryActiveOnLoad
+  )
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [mobileFirstName, setMobileFirstName] = useState("")
   const [mobileLastName, setMobileLastName] = useState("")
@@ -67,6 +99,7 @@ function ProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const recoveryDismissedRef = useRef(false)
 
   const resetMobileEdit = useCallback((firstName: string, lastName: string) => {
     setMobileFirstName(firstName)
@@ -75,41 +108,166 @@ function ProfilePage() {
     setMobileFormError(null)
   }, [])
 
+  const syncEditPersistence = useCallback(
+    (open: boolean, firstName: string, lastName: string) => {
+      if (!open) {
+        clearEditDrawerState()
+        return
+      }
+
+      persistEditDrawerState({ open: true, firstName, lastName })
+    },
+    []
+  )
+
+  const syncPasswordPersistence = useCallback(
+    (
+      open: boolean,
+      recoveryMode: boolean,
+      newPassword: string,
+      confirmPassword: string
+    ) => {
+      if (!open) {
+        clearPasswordDrawerState()
+        return
+      }
+
+      persistPasswordDrawerState({
+        open: true,
+        recoveryMode,
+        newPassword,
+        confirmPassword,
+      })
+    },
+    []
+  )
+
+  const dismissRecoveryUi = useCallback(() => {
+    recoveryDismissedRef.current = true
+    finalizePasswordRecovery()
+    clearPasswordDrawerState()
+    setPasswordDrawerOpen(false)
+    setMobilePasswordMode(false)
+    setIsRecoveryMode(false)
+    setPasswordNewValue("")
+    setPasswordConfirmValue("")
+    syncPasswordPersistence(false, false, "", "")
+  }, [syncPasswordPersistence])
+
+  useEffect(() => {
+    if (!account || shouldUseLocalAuth() || recoveryDismissedRef.current) return
+
+    const activateRecoveryUi = () => {
+      if (recoveryDismissedRef.current || !isPasswordRecoveryActive()) return
+
+      const persisted = readPasswordDrawerState()
+      setIsRecoveryMode(true)
+      setPasswordSuccess(null)
+
+      if (isDesktop) {
+        setPasswordDrawerOpen(true)
+        setMobilePasswordMode(false)
+      } else {
+        setMobilePasswordMode(true)
+        setMobileEditMode(false)
+        setPasswordDrawerOpen(false)
+      }
+
+      syncPasswordPersistence(
+        true,
+        true,
+        persisted?.newPassword ?? "",
+        persisted?.confirmPassword ?? ""
+      )
+    }
+
+    if (isPasswordRecoveryActive()) {
+      activateRecoveryUi()
+    }
+
+    return authService.subscribeToPasswordRecovery(activateRecoveryUi)
+  }, [account, isDesktop, syncPasswordPersistence])
+
+  useEffect(() => {
+    if (!account) return
+
+    if (persistedEdit?.open && !editFirstName && !editLastName) {
+      setEditFirstName(account.firstName)
+      setEditLastName(account.lastName)
+      resetMobileEdit(account.firstName, account.lastName)
+      return
+    }
+
+    if (!persistedEdit?.open) {
+      resetMobileEdit(account.firstName, account.lastName)
+    }
+  }, [account, editFirstName, editLastName, persistedEdit?.open, resetMobileEdit])
+
   const openEdit = useCallback(() => {
     if (!account) return
     setSaveSuccess(null)
     setSaveError(null)
+    setEditFirstName(account.firstName)
+    setEditLastName(account.lastName)
     resetMobileEdit(account.firstName, account.lastName)
 
     if (isDesktop) {
       setEditDrawerOpen(true)
+      syncEditPersistence(true, account.firstName, account.lastName)
       return
     }
 
     setMobilePasswordMode(false)
     setMobileEditMode(true)
-  }, [account, isDesktop, resetMobileEdit])
+    syncEditPersistence(true, account.firstName, account.lastName)
+  }, [account, isDesktop, resetMobileEdit, syncEditPersistence])
 
   const closeEdit = useCallback(() => {
     if (!account) return
     setEditDrawerOpen(false)
     setMobileEditMode(false)
+    setEditFirstName(account.firstName)
+    setEditLastName(account.lastName)
     resetMobileEdit(account.firstName, account.lastName)
-  }, [account, resetMobileEdit])
+    syncEditPersistence(false, account.firstName, account.lastName)
+  }, [account, resetMobileEdit, syncEditPersistence])
 
   const closeMobilePassword = useCallback(() => {
     setMobilePasswordMode(false)
-  }, [])
+    setPasswordDrawerOpen(false)
+    setPasswordNewValue("")
+    setPasswordConfirmValue("")
+    syncPasswordPersistence(false, isPasswordRecoveryActive(), "", "")
+  }, [syncPasswordPersistence])
+
+  const closePasswordDrawer = useCallback(() => {
+    setPasswordDrawerOpen(false)
+    setMobilePasswordMode(false)
+    setPasswordNewValue("")
+    setPasswordConfirmValue("")
+    syncPasswordPersistence(false, isPasswordRecoveryActive(), "", "")
+  }, [syncPasswordPersistence])
 
   const openChangePassword = useCallback(() => {
     setPasswordSuccess(null)
+    const recovery = isPasswordRecoveryActive()
+    setIsRecoveryMode(recovery)
+
     if (isDesktop) {
       setPasswordDrawerOpen(true)
+      syncPasswordPersistence(true, recovery, passwordNewValue, passwordConfirmValue)
       return
     }
+
     setMobileEditMode(false)
     setMobilePasswordMode(true)
-  }, [isDesktop])
+    syncPasswordPersistence(true, recovery, passwordNewValue, passwordConfirmValue)
+  }, [
+    isDesktop,
+    passwordConfirmValue,
+    passwordNewValue,
+    syncPasswordPersistence,
+  ])
 
   const handleSaveProfile = useCallback(
     async (input: UpdateProfileInput) => {
@@ -123,6 +281,8 @@ function ProfilePage() {
         if (!isDesktop) {
           setMobileEditMode(false)
         }
+        setEditDrawerOpen(false)
+        syncEditPersistence(false, input.firstName, input.lastName)
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unable to save profile."
@@ -132,7 +292,7 @@ function ProfilePage() {
         setIsSaving(false)
       }
     },
-    [isDesktop, refreshSession]
+    [isDesktop, refreshSession, syncEditPersistence]
   )
 
   const handleMobileSave = useCallback(async () => {
@@ -164,17 +324,29 @@ function ProfilePage() {
       setPasswordSuccess(null)
 
       try {
-        await accountService.changePassword(account.email, input)
-        setPasswordSuccess("Password updated successfully.")
-        setPasswordDrawerOpen(false)
-        setMobilePasswordMode(false)
+        if (isRecoveryMode || isPasswordRecoveryActive()) {
+          await authService.completePasswordRecovery(input.newPassword, { keepSession: true })
+          dismissRecoveryUi()
+          setPasswordSuccess("Password updated successfully.")
+          await refreshSession()
+        } else {
+          await accountService.changePassword(account.email, input)
+          finalizePasswordRecovery()
+          setPasswordSuccess("Password updated successfully.")
+          setPasswordDrawerOpen(false)
+          setMobilePasswordMode(false)
+          setPasswordNewValue("")
+          setPasswordConfirmValue("")
+          clearPasswordDrawerState()
+          syncPasswordPersistence(false, false, "", "")
+        }
       } catch (error) {
         throw error
       } finally {
         setIsChangingPassword(false)
       }
     },
-    [account]
+    [account, dismissRecoveryUi, isRecoveryMode, refreshSession, syncPasswordPersistence]
   )
 
   const handleForgotPassword = useCallback(async () => {
@@ -292,6 +464,16 @@ function ProfilePage() {
             onForgotPassword={handleForgotPassword}
             onCancel={closeMobilePassword}
             isSubmitting={isChangingPassword}
+            recoveryMode={isRecoveryMode}
+            initialNewPassword={passwordNewValue}
+            initialConfirmPassword={passwordConfirmValue}
+            onPersistValues={({ newPassword, confirmPassword }) => {
+              if (recoveryDismissedRef.current) return
+              setPasswordNewValue(newPassword)
+              setPasswordConfirmValue(confirmPassword)
+              if (!passwordDrawerOpen && !mobilePasswordMode) return
+              syncPasswordPersistence(true, isRecoveryMode, newPassword, confirmPassword)
+            }}
           />
         ) : null}
 
@@ -371,21 +553,36 @@ function ProfilePage() {
 
       <ProfileEditDrawer
         open={editDrawerOpen && isDesktop}
-        firstName={account.firstName}
-        lastName={account.lastName}
+        firstName={editFirstName || account.firstName}
+        lastName={editLastName || account.lastName}
         email={account.email}
         isSubmitting={isSaving}
         onClose={closeEdit}
         onSave={handleSaveProfile}
+        onPersistValues={({ firstName, lastName }) => {
+          setEditFirstName(firstName)
+          setEditLastName(lastName)
+          syncEditPersistence(true, firstName, lastName)
+        }}
       />
 
       <ChangePasswordDrawer
         open={passwordDrawerOpen && isDesktop}
         email={account.email}
         isSubmitting={isChangingPassword}
-        onClose={() => setPasswordDrawerOpen(false)}
+        recoveryMode={isRecoveryMode}
+        initialNewPassword={passwordNewValue}
+        initialConfirmPassword={passwordConfirmValue}
+        onClose={closePasswordDrawer}
         onChangePassword={handleChangePassword}
         onForgotPassword={handleForgotPassword}
+        onPersistValues={({ newPassword, confirmPassword }) => {
+          if (recoveryDismissedRef.current) return
+          setPasswordNewValue(newPassword)
+          setPasswordConfirmValue(confirmPassword)
+          if (!passwordDrawerOpen && !mobilePasswordMode) return
+          syncPasswordPersistence(true, isRecoveryMode, newPassword, confirmPassword)
+        }}
       />
 
       <DeleteAccountModal

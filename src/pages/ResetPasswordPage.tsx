@@ -1,32 +1,25 @@
-import { Loader2 } from "lucide-react"
-import { useEffect, useState, type FormEvent } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useEffect, useLayoutEffect, useState } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
-import { TextField } from "@/components/forms/TextField"
 import { Button } from "@/components/ui/button"
 import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
-import {
-  validateConfirmPassword,
-  validatePassword,
-  type FieldErrors,
-} from "@/lib/authValidation"
 import { shouldUseLocalAuth } from "@/lib/env"
+import { bootstrapPasswordRecoveryFromUrl } from "@/lib/passwordRecoveryPersistence"
 import { ROUTES } from "@/lib/routes"
 import * as authService from "@/services/authService"
 
-type ResetField = "password" | "confirmPassword"
-
 function ResetPasswordPage() {
   const navigate = useNavigate()
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors<ResetField>>({})
-  const [formError, setFormError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const location = useLocation()
   const [isRecoveryReady, setIsRecoveryReady] = useState(false)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
+
+  useLayoutEffect(() => {
+    if (shouldUseLocalAuth()) return
+    bootstrapPasswordRecoveryFromUrl()
+  }, [])
 
   useEffect(() => {
     if (shouldUseLocalAuth()) {
@@ -62,36 +55,13 @@ function ResetPasswordPage() {
     }
   }, [])
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setFormError(null)
-
-    const errors: FieldErrors<ResetField> = {}
-    const passwordError = validatePassword(password)
-    if (passwordError) errors.password = passwordError
-
-    const confirmError = validateConfirmPassword(password, confirmPassword)
-    if (confirmError) errors.confirmPassword = confirmError
-
-    setFieldErrors(errors)
-    if (Object.keys(errors).length > 0) return
-
-    setIsSubmitting(true)
-
-    try {
-      await authService.completePasswordRecovery(password)
-      navigate(ROUTES.login, {
-        replace: true,
-        state: { passwordReset: true },
-      })
-    } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "Unable to reset password."
-      )
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  useEffect(() => {
+    if (!isRecoveryReady || isCheckingSession) return
+    navigate(
+      { pathname: ROUTES.profile, hash: location.hash, search: location.search },
+      { replace: true }
+    )
+  }, [isRecoveryReady, isCheckingSession, location.hash, location.search, navigate])
 
   if (shouldUseLocalAuth()) {
     return (
@@ -137,67 +107,9 @@ function ResetPasswordPage() {
 
   return (
     <div className="auth-form-page">
-      <div className="auth-form-header">
-        <Heading level={1} size="section">
-          Set a new password
-        </Heading>
-        <Text variant="muted" size="sm" className="max-w-none leading-6">
-          Choose a strong password for your Convertly account.
-        </Text>
-      </div>
-
-      <form className="auth-form-stack" onSubmit={handleSubmit} noValidate>
-        <TextField
-          label="New Password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value)
-            if (fieldErrors.password) {
-              setFieldErrors((current) => ({ ...current, password: undefined }))
-            }
-          }}
-          error={fieldErrors.password}
-          hint="Minimum 8 characters with uppercase, lowercase, number, and special character."
-          disabled={isSubmitting}
-        />
-        <TextField
-          label="Confirm New Password"
-          type="password"
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(event) => {
-            setConfirmPassword(event.target.value)
-            if (fieldErrors.confirmPassword) {
-              setFieldErrors((current) => ({ ...current, confirmPassword: undefined }))
-            }
-          }}
-          error={fieldErrors.confirmPassword}
-          disabled={isSubmitting}
-        />
-
-        {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
-
-        <Button type="submit" className="auth-form-submit h-10 w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Updating password…
-            </>
-          ) : (
-            "Update password"
-          )}
-        </Button>
-      </form>
-
-      <div className="auth-form-footer">
-        <Text size="sm" variant="muted" className="max-w-none leading-6">
-          <Link to={ROUTES.login} className="text-foreground/88 transition-colors hover:text-foreground">
-            Back to sign in
-          </Link>
-        </Text>
-      </div>
+      <Text variant="muted" size="sm" className="max-w-none">
+        Redirecting to your profile…
+      </Text>
     </div>
   )
 }

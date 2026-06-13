@@ -14,6 +14,7 @@ type ProfileEditFormProps = {
   onSave: (input: UpdateProfileInput) => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
+  onPersistValues?: (values: { firstName: string; lastName: string }) => void
 }
 
 function ProfileEditForm({
@@ -23,6 +24,7 @@ function ProfileEditForm({
   onSave,
   onCancel,
   isSubmitting = false,
+  onPersistValues,
 }: ProfileEditFormProps) {
   const [firstName, setFirstName] = useState(initialFirstName)
   const [lastName, setLastName] = useState(initialLastName)
@@ -67,7 +69,9 @@ function ProfileEditForm({
             autoComplete="given-name"
             value={firstName}
             onChange={(event) => {
-              setFirstName(event.target.value)
+              const value = event.target.value
+              setFirstName(value)
+              onPersistValues?.({ firstName: value, lastName })
               if (fieldErrors.firstName) {
                 setFieldErrors((current) => ({ ...current, firstName: undefined }))
               }
@@ -80,7 +84,9 @@ function ProfileEditForm({
             autoComplete="family-name"
             value={lastName}
             onChange={(event) => {
-              setLastName(event.target.value)
+              const value = event.target.value
+              setLastName(value)
+              onPersistValues?.({ firstName, lastName: value })
               if (fieldErrors.lastName) {
                 setFieldErrors((current) => ({ ...current, lastName: undefined }))
               }

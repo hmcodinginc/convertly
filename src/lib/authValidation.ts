@@ -95,3 +95,18 @@ export function validateChangePasswordFields(input: {
 
   return errors
 }
+
+export function validateRecoveryPasswordFields(input: {
+  newPassword: string
+  confirmPassword: string
+}): FieldErrors<"newPassword" | "confirmPassword"> {
+  const errors: FieldErrors<"newPassword" | "confirmPassword"> = {}
+
+  const passwordError = validatePassword(input.newPassword)
+  if (passwordError) errors.newPassword = passwordError
+
+  const confirmError = validateConfirmPassword(input.newPassword, input.confirmPassword)
+  if (confirmError) errors.confirmPassword = confirmError
+
+  return errors
+}

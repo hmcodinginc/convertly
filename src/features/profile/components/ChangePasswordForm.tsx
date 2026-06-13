@@ -6,6 +6,7 @@ import { TextField } from "@/components/forms/TextField"
 import { Button } from "@/components/ui/button"
 import {
   validateChangePasswordFields,
+  validateRecoveryPasswordFields,
   type ChangePasswordField,
 } from "@/lib/authValidation"
 import type { ChangePasswordInput } from "@/types/account"
@@ -16,6 +17,10 @@ type ChangePasswordFormProps = {
   onForgotPassword: () => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
+  recoveryMode?: boolean
+  initialNewPassword?: string
+  initialConfirmPassword?: string
+  onPersistValues?: (values: { newPassword: string; confirmPassword: string }) => void
 }
 
 function ChangePasswordForm({
@@ -24,10 +29,14 @@ function ChangePasswordForm({
   onForgotPassword,
   onCancel,
   isSubmitting = false,
+  recoveryMode = false,
+  initialNewPassword = "",
+  initialConfirmPassword = "",
+  onPersistValues,
 }: ChangePasswordFormProps) {
   const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [newPassword, setNewPassword] = useState(initialNewPassword)
+  const [confirmPassword, setConfirmPassword] = useState(initialConfirmPassword)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ChangePasswordField, string>>>(
     {}
   )
@@ -41,10 +50,36 @@ function ChangePasswordForm({
     []
   )
 
+  const persistValues = (nextNewPassword: string, nextConfirmPassword: string) => {
+    onPersistValues?.({
+      newPassword: nextNewPassword,
+      confirmPassword: nextConfirmPassword,
+    })
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError(null)
     setForgotSuccess(null)
+
+    if (recoveryMode) {
+      const errors = validateRecoveryPasswordFields({ newPassword, confirmPassword })
+      setFieldErrors(errors)
+      if (Object.keys(errors).length > 0) return
+
+      try {
+        await onChangePassword({
+          currentPassword: "",
+          newPassword,
+          confirmPassword,
+        })
+        setNewPassword("")
+        setConfirmPassword("")
+      } catch (error) {
+        setFormError(error instanceof Error ? error.message : "Unable to change password.")
+      }
+      return
+    }
 
     const errors = validateChangePasswordFields({
       currentPassword,
@@ -94,29 +129,35 @@ function ChangePasswordForm({
       noValidate
     >
       <div className="profile-drawer-section">
-        <p className="profile-drawer-section-title">Verify and update</p>
+        <p className="profile-drawer-section-title">
+          {recoveryMode ? "Set a new password" : "Verify and update"}
+        </p>
         <div className="profile-drawer-fields">
-          <TextField
-            label="Current Password"
-            type="password"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={(event) => {
-              setCurrentPassword(event.target.value)
-              if (fieldErrors.currentPassword) {
-                setFieldErrors((current) => ({ ...current, currentPassword: undefined }))
-              }
-            }}
-            error={fieldErrors.currentPassword}
-            disabled={isSubmitting}
-          />
+          {!recoveryMode ? (
+            <TextField
+              label="Current Password"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => {
+                setCurrentPassword(event.target.value)
+                if (fieldErrors.currentPassword) {
+                  setFieldErrors((current) => ({ ...current, currentPassword: undefined }))
+                }
+              }}
+              error={fieldErrors.currentPassword}
+              disabled={isSubmitting}
+            />
+          ) : null}
           <TextField
             label="New Password"
             type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(event) => {
-              setNewPassword(event.target.value)
+              const value = event.target.value
+              setNewPassword(value)
+              persistValues(value, confirmPassword)
               if (fieldErrors.newPassword) {
                 setFieldErrors((current) => ({ ...current, newPassword: undefined }))
               }
@@ -131,7 +172,9 @@ function ChangePasswordForm({
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(event) => {
-              setConfirmPassword(event.target.value)
+              const value = event.target.value
+              setConfirmPassword(value)
+              persistValues(newPassword, value)
               if (fieldErrors.confirmPassword) {
                 setFieldErrors((current) => ({ ...current, confirmPassword: undefined }))
               }
@@ -142,21 +185,23 @@ function ChangePasswordForm({
         </div>
       </div>
 
-      <div className="profile-recovery-box">
-        <p className="profile-recovery-text">
-          Forgot your current password?
-          <br />
-          Send a password reset email to your account inbox.
-        </p>
-        <button
-          type="button"
-          className="profile-recovery-link"
-          onClick={() => void handleForgotPassword()}
-          disabled={isSubmitting || isSendingReset}
-        >
-          {isSendingReset ? "Sending password reset email…" : "Send password reset email"}
-        </button>
-      </div>
+      {!recoveryMode ? (
+        <div className="profile-recovery-box">
+          <p className="profile-recovery-text">
+            Forgot your current password?
+            <br />
+            Send a password reset email to your account inbox.
+          </p>
+          <button
+            type="button"
+            className="profile-recovery-link"
+            onClick={() => void handleForgotPassword()}
+            disabled={isSubmitting || isSendingReset}
+          >
+            {isSendingReset ? "Sending password reset email…" : "Send password reset email"}
+          </button>
+        </div>
+      ) : null}
 
       {forgotSuccess ? (
         <AuthFormMessage variant="success">{forgotSuccess}</AuthFormMessage>

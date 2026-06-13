@@ -1,4 +1,11 @@
 import { shouldUseLocalAuth } from "@/lib/env"
+import {
+  bootstrapPasswordRecoveryFromUrl,
+  clearPasswordRecovery,
+  finalizePasswordRecovery,
+  isPasswordRecoveryActive,
+  resetPasswordRecoveryState,
+} from "@/lib/passwordRecoveryPersistence"
 
 import { delay } from "@/services/internal/delay"
 
@@ -361,7 +368,20 @@ export function subscribeToPasswordRecovery(onRecovery: () => void): () => void 
 
 
 
-export async function completePasswordRecovery(password: string): Promise<void> {
+export {
+  bootstrapPasswordRecoveryFromUrl,
+  clearPasswordRecovery,
+  finalizePasswordRecovery,
+  isPasswordRecoveryActive,
+  resetPasswordRecoveryState,
+}
+
+
+
+export async function completePasswordRecovery(
+  password: string,
+  options?: { keepSession?: boolean }
+): Promise<void> {
 
   if (shouldUseLocalAuth()) {
 
@@ -371,7 +391,7 @@ export async function completePasswordRecovery(password: string): Promise<void> 
 
 
 
-  return supabaseAuth.completePasswordRecoveryWithSupabase(password)
+  return supabaseAuth.completePasswordRecoveryWithSupabase(password, options)
 
 }
 
@@ -390,6 +410,8 @@ export async function logout(): Promise<void> {
   }
 
 
+
+  resetPasswordRecoveryState()
 
   await supabaseAuth.signOutWithSupabase()
 

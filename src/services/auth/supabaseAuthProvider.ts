@@ -1,6 +1,19 @@
-import type { User } from "@supabase/supabase-js"
+import {
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+  type User,
+} from "@supabase/supabase-js"
 
-import { getPasswordResetRedirectUrl } from "@/lib/authRedirects"
+import { getEmailConfirmationRedirectUrl, getPasswordResetRedirectUrl } from "@/lib/authRedirects"
+import { logAuthEvent } from "@/lib/authDebugLog"
+import {
+  activatePasswordRecovery,
+  bootstrapPasswordRecoveryFromUrl,
+  finalizePasswordRecovery,
+  isPasswordRecoveryActive,
+  isPasswordRecoveryCompleted,
+} from "@/lib/passwordRecoveryPersistence"
 import { ROUTES } from "@/lib/routes"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
@@ -62,7 +75,8 @@ export function subscribeToAuthChanges(onChange: () => void): () => void {
   const supabase = getSupabaseClient()
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange(() => {
+  } = supabase.auth.onAuthStateChange((event) => {
+    logAuthEvent(event)
     onChange()
   })
 
@@ -159,6 +173,7 @@ export async function signUpWithSupabase(input: SignupInput): Promise<AuthResult
     email,
     password: input.password,
     options: {
+      emailRedirectTo: getEmailConfirmationRedirectUrl(),
       data: {
         firstName: input.firstName.trim(),
         lastName: input.lastName.trim(),
@@ -261,21 +276,8 @@ export async function updateProfileWithSupabase(input: UpdateProfileInput): Prom
   }
 }
 
-function hasRecoveryUrlHint(): boolean {
-  if (typeof window === "undefined") return false
-  return (
-    window.location.hash.includes("type=recovery") ||
-    window.location.search.includes("type=recovery")
-  )
-}
-
-export async function waitForPasswordRecoverySession(): Promise<boolean> {
-  if (!hasRecoveryUrlHint()) {
-    return false
-  }
-
+async function pollForSupabaseSession(attempts: number, delayMs: number): Promise<boolean> {
   const supabase = getSupabaseClient()
-  const attempts = 12
 
   for (let index = 0; index < attempts; index += 1) {
     const { data, error } = await supabase.auth.getSession()
@@ -283,11 +285,25 @@ export async function waitForPasswordRecoverySession(): Promise<boolean> {
       return true
     }
     await new Promise((resolve) => {
-      setTimeout(resolve, 100)
+      setTimeout(resolve, delayMs)
     })
   }
 
   return false
+}
+
+export async function waitForPasswordRecoverySession(): Promise<boolean> {
+  if (isPasswordRecoveryCompleted()) {
+    return false
+  }
+
+  bootstrapPasswordRecoveryFromUrl()
+
+  if (!isPasswordRecoveryActive()) {
+    return false
+  }
+
+  return pollForSupabaseSession(24, 150)
 }
 
 export async function hasPasswordRecoverySession(): Promise<boolean> {
@@ -300,6 +316,8 @@ export function subscribeToPasswordRecovery(onRecovery: () => void): () => void 
     data: { subscription },
   } = supabase.auth.onAuthStateChange((event) => {
     if (event === "PASSWORD_RECOVERY") {
+      logAuthEvent(event)
+      activatePasswordRecovery()
       onRecovery()
     }
   })
@@ -307,7 +325,14 @@ export function subscribeToPasswordRecovery(onRecovery: () => void): () => void 
   return () => subscription.unsubscribe()
 }
 
-export async function completePasswordRecoveryWithSupabase(password: string): Promise<void> {
+type CompletePasswordRecoveryOptions = {
+  keepSession?: boolean
+}
+
+export async function completePasswordRecoveryWithSupabase(
+  password: string,
+  options: CompletePasswordRecoveryOptions = {}
+): Promise<void> {
   const supabase = getSupabaseClient()
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
@@ -320,10 +345,19 @@ export async function completePasswordRecoveryWithSupabase(password: string): Pr
     throw toAuthError(updateError)
   }
 
-  await supabase.auth.signOut().catch(() => undefined)
+  finalizePasswordRecovery()
 
   if (typeof window !== "undefined") {
     window.history.replaceState({}, document.title, window.location.pathname)
+  }
+
+  if (options.keepSession) {
+    const { error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) {
+      throw toAuthError(refreshError)
+    }
+  } else {
+    await supabase.auth.signOut().catch(() => undefined)
   }
 }
 
@@ -376,28 +410,60 @@ type DeleteAccountResponse = {
   error?: string
 }
 
+const DELETE_ACCOUNT_FUNCTION = "delete-account"
+
+async function readFunctionsErrorMessage(error: FunctionsHttpError): Promise<string | null> {
+  const response = error.context
+  if (!response || typeof response.json !== "function") {
+    return null
+  }
+
+  try {
+    const body = (await response.json()) as DeleteAccountResponse
+    return body.error ?? null
+  } catch {
+    return null
+  }
+}
+
+function toDeleteAccountInvokeError(error: unknown): Error {
+  if (error instanceof FunctionsFetchError) {
+    return new Error(
+      "Could not reach the delete-account service. The Edge Function may not be deployed yet. Ask your administrator to deploy it, then try again."
+    )
+  }
+
+  if (error instanceof FunctionsRelayError) {
+    return new Error(
+      "The delete-account service is temporarily unavailable. Please try again in a moment."
+    )
+  }
+
+  if (error instanceof FunctionsHttpError) {
+    return error
+  }
+
+  if (error instanceof Error) {
+    return error
+  }
+
+  return new Error("Unable to delete account. Please try again.")
+}
+
 export async function deleteAccountWithSupabase(): Promise<void> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.functions.invoke<DeleteAccountResponse>(
-    "delete-account",
+    DELETE_ACCOUNT_FUNCTION,
     { method: "POST" }
   )
 
   if (error) {
-    const context = error as { context?: Response }
-    if (context.context) {
-      try {
-        const body = (await context.context.json()) as DeleteAccountResponse
-        if (body.error) {
-          throw new Error(body.error)
-        }
-      } catch (parseError) {
-        if (parseError instanceof Error && parseError.message !== error.message) {
-          throw parseError
-        }
-      }
+    if (error instanceof FunctionsHttpError) {
+      const message = await readFunctionsErrorMessage(error)
+      throw new Error(message ?? "Unable to delete account. Please try again.")
     }
-    throw toAuthError(error)
+
+    throw toDeleteAccountInvokeError(error)
   }
 
   if (data?.error) {
