@@ -5,7 +5,7 @@ import {
 } from "@/features/audits/data/auditDetails"
 import type { AuditDetail } from "@/types/audit"
 import { auditDetailStorageKey } from "@/services/storage/keys"
-import { getItem, setItem } from "@/services/storage/localStorageClient"
+import { getItem, removeItem, setItem } from "@/services/storage/localStorageClient"
 
 function getAuditDetail(
   id: string,
@@ -46,4 +46,9 @@ function createAuditDetail(id: string, name: string, domain: string): AuditDetai
   return detail
 }
 
-export { createAuditDetail, getAuditDetail, saveAuditDetail }
+function removeAuditDetail(id: string): void {
+  delete auditDetailsMap[id]
+  removeItem(auditDetailStorageKey(id))
+}
+
+export { createAuditDetail, getAuditDetail, removeAuditDetail, saveAuditDetail }

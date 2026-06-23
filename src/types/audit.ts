@@ -1,10 +1,16 @@
-export type AuditStatus = "Completed" | "Running" | "Scheduled"
+import type { AuditSessionStatus } from "@/types/auditEngine"
+
+/** Legacy sample-data statuses preserved for existing mock audits */
+export type LegacyAuditStatus = "Completed" | "Running" | "Scheduled"
+
+export type AuditStatus = AuditSessionStatus | LegacyAuditStatus
 
 /** List / table representation of an audit */
 export type Audit = {
   id: string
   name: string
   domain: string
+  websiteUrl?: string
   completedAt: string
   pagesScanned: number
   conversionScore: number
@@ -48,7 +54,7 @@ export type PageFinding = {
 
 export type ScoreBreakdownItem = {
   id: string
-  label: "Clarity" | "Trust" | "Friction" | "Performance" | "CTA Strength"
+  label: "Conversion" | "Trust" | "Mobile" | "UX" | "Clarity" | "Friction" | "Performance" | "CTA Strength"
   score: number
   trend: "up" | "down" | "neutral"
   trendValue: string

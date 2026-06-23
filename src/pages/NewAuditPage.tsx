@@ -1,7 +1,7 @@
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
 import { AppPageSection } from "@/components/layout/AppPageSection"
@@ -11,6 +11,7 @@ import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { auditDetailPath } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
+import type { AuditSessionStatus } from "@/types/auditEngine"
 import { cn } from "@/lib/utils"
 
 const auditTypes = [
@@ -37,43 +38,89 @@ const auditTypes = [
   },
 ] as const
 
-const AUDIT_SIMULATION_MS = 2200
-
 function NewAuditPage() {
   const navigate = useNavigate()
   const [url, setUrl] = useState("")
   const [selectedType, setSelectedType] = useState<string>(auditTypes[0].id)
   const [urlError, setUrlError] = useState<string | null>(null)
+  const [urlWarning, setUrlWarning] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
+  const [activeAuditId, setActiveAuditId] = useState<string | null>(null)
+  const [sessionStatus, setSessionStatus] = useState<AuditSessionStatus>("pending")
+
+  useEffect(() => {
+    if (!activeAuditId || !isRunning) return
+
+    const interval = window.setInterval(async () => {
+      const session = await auditService.getAuditSession(activeAuditId)
+      if (session) {
+        setSessionStatus(session.status)
+      }
+    }, 400)
+
+    return () => window.clearInterval(interval)
+  }, [activeAuditId, isRunning])
 
   const handleStartAudit = async () => {
-    const valid = await auditService.isValidAuditUrl(url)
-    if (!valid) {
-      setUrlError("Enter a valid website URL (e.g. https://yourcompany.com)")
+    const validation = await auditService.validateAuditUrlInput(url)
+    if (!validation.valid) {
+      setUrlError(validation.errors[0] ?? "Enter a valid website URL")
+      setUrlWarning(null)
       return
     }
 
     setUrlError(null)
+    setUrlWarning(validation.warnings[0] ?? null)
     setIsRunning(true)
+    setSessionStatus("pending")
 
-    window.setTimeout(async () => {
-      try {
-        const audit = await auditService.createAudit({ url })
-        navigate(auditDetailPath(audit.id))
-      } catch {
-        setUrlError("Unable to start audit. Please try again.")
+    try {
+      const audit = await auditService.createAudit({ url: validation.sanitizedUrl })
+      setActiveAuditId(audit.id)
+
+      const finalStatus = await auditService.waitForAuditCompletion(audit.id)
+
+      if (finalStatus === "failed") {
+        setUrlError("Audit could not be completed. Check the URL and try again.")
         setIsRunning(false)
+        setActiveAuditId(null)
+        return
       }
-    }, AUDIT_SIMULATION_MS)
+
+      navigate(auditDetailPath(audit.id))
+    } catch {
+      setUrlError("Unable to start audit. Please try again.")
+      setIsRunning(false)
+      setActiveAuditId(null)
+    }
   }
 
   const handleValidateUrl = async () => {
-    const valid = await auditService.isValidAuditUrl(url)
-    if (!valid) {
-      setUrlError("Enter a valid website URL (e.g. https://yourcompany.com)")
+    const validation = await auditService.validateAuditUrlInput(url)
+    if (!validation.valid) {
+      setUrlError(validation.errors[0] ?? "Enter a valid website URL")
+      setUrlWarning(null)
       return
     }
+
     setUrlError(null)
+    setUrlWarning(validation.warnings[0] ?? null)
+  }
+
+  if (isRunning) {
+    return (
+      <AppPageShell
+        header={
+          <AppPageHeader
+            eyebrow="Audits"
+            title="Running audit"
+            description="Convertly is discovering pages and preparing your conversion report."
+          />
+        }
+      >
+        <AuditRunningExperience status={sessionStatus} />
+      </AppPageShell>
+    )
   }
 
   return (
@@ -105,6 +152,7 @@ function NewAuditPage() {
               onChange={(e) => {
                 setUrl(e.target.value)
                 if (urlError) setUrlError(null)
+                if (urlWarning) setUrlWarning(null)
               }}
               placeholder="https://yourcompany.com"
               disabled={isRunning}
@@ -129,6 +177,11 @@ function NewAuditPage() {
           {urlError ? (
             <Text size="sm" className="audit-target-card__error max-w-none text-[#fca5a5]">
               {urlError}
+            </Text>
+          ) : null}
+          {!urlError && urlWarning ? (
+            <Text size="sm" className="max-w-none text-[#fde68a]">
+              {urlWarning}
             </Text>
           ) : null}
         </div>
@@ -181,14 +234,7 @@ function NewAuditPage() {
             disabled={isRunning}
             onClick={() => void handleStartAudit()}
           >
-            {isRunning ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Running audit…
-              </>
-            ) : (
-              "Start audit"
-            )}
+            Start audit
           </Button>
           <Button
             variant="outline"
@@ -199,12 +245,6 @@ function NewAuditPage() {
             Save as draft
           </Button>
         </div>
-        {isRunning ? (
-          <Text variant="muted" size="sm" className="max-w-none">
-            Scanning funnel pages and generating recommendations. You will be redirected
-            when the audit completes.
-          </Text>
-        ) : null}
       </div>
     </AppPageShell>
   )

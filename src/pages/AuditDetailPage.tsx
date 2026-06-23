@@ -1,7 +1,9 @@
+import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
 
-import { StatusBadge } from "@/components/dashboard/StatusBadge"
+import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
+import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import { PageError, PageLoading } from "@/components/feedback/PageState"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
@@ -15,15 +17,17 @@ import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSect
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
 import { ScoreBreakdownSection } from "@/features/audits/sections/ScoreBreakdownSection"
 import { useAsyncData } from "@/hooks/useAsyncData"
+import { isAuditInProgress, isAuditSessionStatus } from "@/lib/auditStatus"
 import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
-import type { AuditDetail } from "@/types/audit"
+import type { AuditDetail, AuditStatus } from "@/types/audit"
+import type { AuditSessionStatus } from "@/types/auditEngine"
 
-const auditStatusVariant = {
-  Completed: "success",
-  Running: "accent",
-  Scheduled: "neutral",
-} as const
+function toSessionStatus(status: AuditStatus): AuditSessionStatus {
+  if (isAuditSessionStatus(status)) return status
+  if (status === "Running") return "analyzing"
+  return "pending"
+}
 
 function AuditDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -35,6 +39,18 @@ function AuditDetailPage() {
     },
     [id]
   )
+
+  const inProgress = audit ? isAuditInProgress(audit.status) : false
+
+  useEffect(() => {
+    if (!id || !inProgress) return
+
+    const interval = window.setInterval(() => {
+      void reload()
+    }, 1500)
+
+    return () => window.clearInterval(interval)
+  }, [id, inProgress, reload])
 
   if (!id) {
     return (
@@ -97,6 +113,8 @@ function AuditDetailPage() {
 }
 
 function AuditDetailContent({ audit }: { audit: AuditDetail }) {
+  const running = isAuditInProgress(audit.status)
+
   return (
     <AppPageShell
       header={
@@ -119,10 +137,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
                   >
                     Audit report
                   </Text>
-                  <StatusBadge
-                    label={audit.status}
-                    variant={auditStatusVariant[audit.status]}
-                  />
+                  <AuditStatusBadge status={audit.status} />
                 </div>
                 <AppPageHeader
                   title={audit.name}
@@ -156,6 +171,13 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
         </>
       }
     >
+      {running ? (
+        <AuditRunningExperience
+          status={toSessionStatus(audit.status)}
+          className="mb-6"
+        />
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[1fr_17rem] xl:items-start">
         <AuditSummarySection audit={audit} />
         <AuditTimelineSection events={audit.timeline} compact />
@@ -167,7 +189,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
       <AuditRecommendationsSection recommendations={audit.recommendations} />
       <AuditMetadataSection audit={audit} />
 
-      {audit.status === "Running" ? (
+      {running ? (
         <Text
           variant="muted"
           size="sm"

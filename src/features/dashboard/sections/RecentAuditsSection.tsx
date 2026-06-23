@@ -2,7 +2,7 @@ import { FileSearch } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { AuditTableLink } from "@/components/dashboard/AuditTableLink"
-import { StatusBadge } from "@/components/dashboard/StatusBadge"
+import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import {
   DataTable,
   DataTableBody,
@@ -18,12 +18,6 @@ import { AppPageSection } from "@/components/layout/AppPageSection"
 import { Card } from "@/components/surfaces/Card"
 import { ROUTES } from "@/lib/routes"
 import type { Audit } from "@/types/audit"
-
-const auditStatusVariant = {
-  Completed: "success",
-  Running: "accent",
-  Scheduled: "neutral",
-} as const
 
 type RecentAuditsSectionProps = {
   audits: Audit[]
@@ -80,10 +74,7 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
                     {audit.conversionScore}
                   </DataTableCell>
                   <DataTableCell>
-                    <StatusBadge
-                      label={audit.status}
-                      variant={auditStatusVariant[audit.status]}
-                    />
+                    <AuditStatusBadge status={audit.status} />
                   </DataTableCell>
                 </DataTableRow>
               ))}
