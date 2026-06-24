@@ -1,0 +1,11 @@
+# Minimal Supabase project config for Edge Function deployment.
+# See: https://supabase.com/docs/guides/functions/deploy
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.audit-fetch]
+verify_jwt = true
+
+[functions.audit-render]
+verify_jwt = true
