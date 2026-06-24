@@ -1,4 +1,6 @@
+import "./playwrightEnv.js"
 import http from "node:http"
+import { runBrowserStartupDiagnostics } from "./browserDiagnostics.js"
 import { renderPage } from "./playwrightRenderer.js"
 import { assertSafeUrl } from "./urlSafety.js"
 
@@ -51,6 +53,7 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.info(`[PLAYWRIGHT] Render worker listening on port ${PORT}`)
+  await runBrowserStartupDiagnostics()
 })

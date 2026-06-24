@@ -31,3 +31,8 @@ export function logPipeline(message: string, fields: LogFields = {}): void {
   const suffix = formatFields(fields)
   console.info(`[PIPELINE] ${message}${suffix ? ` ${suffix}` : ""}`)
 }
+
+export function logDiscovery(message: string, fields: LogFields = {}): void {
+  const suffix = formatFields(fields)
+  console.info(`[DISCOVERY] ${message}${suffix ? ` ${suffix}` : ""}`)
+}

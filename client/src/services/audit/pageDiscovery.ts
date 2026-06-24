@@ -1,10 +1,12 @@
 import { inferPageTypeFromPath } from "@/services/audit/constants"
 import { MAX_RENDERED_PAGES } from "@/services/audit/fetch/constants"
+import { logDiscovery } from "@/services/audit/fetch/auditPipelineLogger"
 import { createAuditFetchContext, type AuditFetchContext } from "@/services/audit/fetch/types"
 import { hybridPageAcquire } from "@/services/audit/fetch/hybridPageAcquire"
 import {
-  extractDiscoveryLinks,
+  extractDiscoveryLinksDetailed,
   extractPageTitle,
+  logLinkExtractionDiagnostics,
   MAX_DISCOVERED_PAGES,
 } from "@/services/audit/linkExtractor"
 import type { DiscoveredPageCandidate } from "@/types/auditEngine"
@@ -47,18 +49,50 @@ function shouldSkipAsDuplicate(
   return true
 }
 
+function duplicateSkipReason(
+  spaMode: boolean,
+  pageSource: "static" | "rendered"
+): string {
+  if (spaMode && pageSource === "rendered") {
+    return "duplicate-rendered-content-hash"
+  }
+  return "duplicate-static-content-hash"
+}
+
 export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
   async discover(
     baseUrl: string,
     context: AuditFetchContext = createAuditFetchContext()
   ): Promise<DiscoveredPageCandidate[]> {
     const origin = normalizeBaseUrl(baseUrl)
+
+    logDiscovery("Starting page discovery", {
+      baseUrl,
+      origin,
+      maxPages: MAX_DISCOVERED_PAGES,
+      robots: "not-checked",
+    })
+
     const homepageUrl = buildPageUrl(origin, "/")
     const homepageFetch = await hybridPageAcquire(homepageUrl, context, { isHomepage: true })
 
     if (!homepageFetch.ok || !homepageFetch.html || !homepageFetch.contentHash) {
+      logDiscovery("Homepage unreachable — discovery aborted", {
+        url: homepageUrl,
+        ok: homepageFetch.ok,
+        status: homepageFetch.status,
+        error: homepageFetch.error,
+      })
       return []
     }
+
+    logDiscovery("Homepage verified", {
+      url: homepageFetch.finalUrl,
+      path: new URL(homepageFetch.finalUrl).pathname || "/",
+      contentSource: homepageFetch.contentSource,
+      contentHash: homepageFetch.contentHash?.slice(0, 12),
+      spaMode: context.spaMode,
+    })
 
     const homepagePath = new URL(homepageFetch.finalUrl).pathname || "/"
     const normalizedHomepagePath = homepagePath === "" ? "/" : homepagePath
@@ -72,20 +106,50 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
       },
     ]
 
-    const links = extractDiscoveryLinks(homepageFetch.finalUrl, homepageFetch.html)
+    const linkResult = extractDiscoveryLinksDetailed(homepageFetch.finalUrl, homepageFetch.html)
+    logLinkExtractionDiagnostics(homepageFetch.finalUrl, linkResult)
 
-    for (const link of links) {
-      if (verified.length >= MAX_DISCOVERED_PAGES) break
+    for (const link of linkResult.extracted) {
+      if (verified.length >= MAX_DISCOVERED_PAGES) {
+        logDiscovery("Candidate rejected", {
+          path: link.path,
+          url: link.url,
+          reason: `max-pages-reached:${MAX_DISCOVERED_PAGES}`,
+        })
+        break
+      }
 
       const normalizedPath = link.path === "" ? "/" : link.path
-      if (verified.some((page) => page.path === normalizedPath)) continue
+      if (verified.some((page) => page.path === normalizedPath)) {
+        logDiscovery("Candidate rejected", {
+          path: normalizedPath,
+          url: link.url,
+          reason: "duplicate-path-already-verified",
+        })
+        continue
+      }
 
       const forceRender =
         context.spaMode && context.renderedPageCount < MAX_RENDERED_PAGES
 
+      logDiscovery("Verifying candidate", {
+        path: normalizedPath,
+        url: link.url,
+        forceRender,
+      })
+
       const pageFetch = await hybridPageAcquire(link.url, context, { forceRender })
 
       if (!pageFetch.ok || pageFetch.status !== 200 || !pageFetch.html || !pageFetch.contentHash) {
+        logDiscovery("Candidate rejected", {
+          path: normalizedPath,
+          url: link.url,
+          reason: "fetch-failed",
+          ok: pageFetch.ok,
+          status: pageFetch.status,
+          contentSource: pageFetch.contentSource,
+          error: pageFetch.error,
+        })
         continue
       }
 
@@ -99,6 +163,14 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
           pageFetch.contentSource
         )
       ) {
+        logDiscovery("Candidate rejected", {
+          path: normalizedPath,
+          url: pageFetch.finalUrl,
+          reason: duplicateSkipReason(context.spaMode, pageFetch.contentSource),
+          pageHash: pageFetch.contentHash?.slice(0, 12),
+          homepageHash: context.homepageContentHash?.slice(0, 12),
+          contentSource: pageFetch.contentSource,
+        })
         continue
       }
 
@@ -109,7 +181,23 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
         discoveryStatus: "reachable",
         title: extractPageTitle(pageFetch.html, "Page"),
       })
+
+      logDiscovery("URL verified", {
+        path: normalizedPath,
+        url: pageFetch.finalUrl,
+        pageType: inferPageTypeFromPath(normalizedPath),
+        contentSource: pageFetch.contentSource,
+        contentHash: pageFetch.contentHash?.slice(0, 12),
+      })
     }
+
+    logDiscovery("Discovery complete", {
+      baseUrl,
+      homepageContentSource: homepageFetch.contentSource,
+      candidatesExtracted: linkResult.extracted.length,
+      verifiedPageCount: verified.length,
+      paths: verified.map((page) => page.path).join(","),
+    })
 
     return verified
   },

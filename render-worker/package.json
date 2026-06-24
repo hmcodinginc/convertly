@@ -4,10 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build:browsers": "node scripts/install-browsers.js",
+    "postinstall": "node scripts/install-browsers.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "playwright": "^1.61.1"
+    "playwright": "1.61.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

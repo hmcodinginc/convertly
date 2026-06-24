@@ -2,6 +2,7 @@ import { MAX_RENDERED_PAGES } from "@/services/audit/fetch/constants"
 import { hashContent } from "@/services/audit/fetch/contentHash"
 import {
   logPipeline,
+  logPlaywright,
   logQuality,
   logStatic,
 } from "@/services/audit/fetch/auditPipelineLogger"
