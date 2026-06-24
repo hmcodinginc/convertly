@@ -28,7 +28,12 @@ const PHASE_DELAYS_MS = {
   finalizing: 600,
 } as const
 
-function getPageTitle(pageType: AuditPage["pageType"]): string {
+function getPageTitle(
+  candidateTitle: string | undefined,
+  pageType: AuditPage["pageType"]
+): string {
+  if (candidateTitle?.trim()) return candidateTitle.trim()
+
   return (
     COMMON_PAGE_DEFINITIONS.find((definition) => definition.pageType === pageType)?.title ??
     "Page"
@@ -44,7 +49,7 @@ async function mapDiscoveredPages(auditId: string, baseUrl: string): Promise<Aud
     pageType: candidate.pageType,
     url: candidate.url,
     path: candidate.path,
-    title: getPageTitle(candidate.pageType),
+    title: getPageTitle(candidate.title, candidate.pageType),
     discoveryStatus: candidate.discoveryStatus,
     discoveredAt: new Date().toISOString(),
     screenshots: {
@@ -117,6 +122,13 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await delay(PHASE_DELAYS_MS.crawling)
 
     const discovered = await mapDiscoveredPages(auditId, session.websiteUrl)
+
+    if (discovered.length === 0) {
+      throw new Error(
+        "Unable to analyze the homepage. Verify the URL is public and reachable over HTTPS."
+      )
+    }
+
     const pagesWithScreenshots = attachScreenshotsToPages(discovered)
     const savedPages = await createPages(pagesWithScreenshots)
 
@@ -125,7 +137,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await createHistoryEvent(
       auditId,
       "analyzing",
-      `Discovered ${savedPages.length} pages on ${parseDomainFromUrl(session.websiteUrl)}`
+      `Discovered ${savedPages.length} verified pages on ${parseDomainFromUrl(session.websiteUrl)}`
     )
 
     await delay(PHASE_DELAYS_MS.analyzing)

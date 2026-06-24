@@ -1,37 +1,18 @@
+import { fetchPageRemote } from "@/services/audit/remotePageFetch"
 import type { AuditPage } from "@/types/auditEngine"
 
 export type PageContentSnapshot = {
   page: AuditPage
   html: string | null
   document: Document | null
+  fetchSucceeded: boolean
+  status: number | null
+  contentHash: string | null
 }
 
 export async function fetchPageHtml(url: string): Promise<string | null> {
-  const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 8000)
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      mode: "cors",
-      signal: controller.signal,
-      redirect: "follow",
-      headers: { Accept: "text/html" },
-    })
-
-    if (!response.ok) return null
-
-    const contentType = response.headers.get("content-type") ?? ""
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
-      return null
-    }
-
-    return await response.text()
-  } catch {
-    return null
-  } finally {
-    window.clearTimeout(timeout)
-  }
+  const result = await fetchPageRemote(url)
+  return result.ok ? result.html : null
 }
 
 export function parseHtmlDocument(html: string): Document {
@@ -44,11 +25,16 @@ export async function fetchPageContentSnapshots(
   const snapshots: PageContentSnapshot[] = []
 
   for (const page of pages) {
-    const html = await fetchPageHtml(page.url)
+    const result = await fetchPageRemote(page.url)
+    const html = result.ok ? result.html : null
+
     snapshots.push({
       page,
       html,
       document: html ? parseHtmlDocument(html) : null,
+      fetchSucceeded: Boolean(result.ok && html),
+      status: result.status || null,
+      contentHash: result.contentHash,
     })
   }
 
@@ -77,4 +63,11 @@ export function siteHasReachablePageType(
 export function htmlContainsLinkPattern(html: string | null, patterns: RegExp[]): boolean {
   if (!html) return false
   return patterns.some((pattern) => pattern.test(html))
+}
+
+export function getSuccessfulHtml(snapshots: PageContentSnapshot[]): string {
+  return snapshots
+    .filter((snapshot) => snapshot.fetchSucceeded && snapshot.html)
+    .map((snapshot) => snapshot.html!)
+    .join("\n")
 }

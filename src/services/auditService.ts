@@ -23,7 +23,7 @@ import {
   getSessionById,
   getSessionsByUserId,
 } from "@/services/repositories/audit/provider"
-import { isDeletableAudit } from "@/lib/auditHistoryUtils"
+import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
 import { shouldUseSupabaseAudits } from "@/lib/env"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
 import type {
@@ -89,8 +89,8 @@ export async function getAuditById(id: string): Promise<Audit | null> {
 export async function getAuditDetail(id: string): Promise<AuditDetail | null> {
   await delay()
 
-  if (auditDetailsMap[id]) {
-    return auditDetailsMap[id]
+  if (isSampleAuditId(id)) {
+    return auditDetailsMap[id] ?? null
   }
 
   const sessionData = await getAuditSessionData(id)
@@ -100,11 +100,7 @@ export async function getAuditDetail(id: string): Promise<AuditDetail | null> {
     return detail
   }
 
-  const summary = await auditListRepository.getAuditById(id)
-  return auditDetailRepository.getAuditDetail(
-    id,
-    summary ? { name: summary.name, domain: summary.domain } : undefined
-  )
+  return auditDetailRepository.getCachedAuditDetail(id)
 }
 
 export { SAMPLE_AUDIT_ID }

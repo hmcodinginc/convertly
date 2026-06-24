@@ -173,6 +173,27 @@ export function hasWeakCtaLanguage(document: Document): boolean {
   })
 }
 
+export function getWeakCtaTexts(document: Document): string[] {
+  const ctas = getCtaElements(document)
+  return ctas
+    .map((cta) => getVisibleText(cta))
+    .filter((text) => {
+      const normalized = text.toLowerCase()
+      return WEAK_CTA_PHRASES.some(
+        (phrase) => normalized === phrase || normalized.startsWith(`${phrase} `)
+      )
+    })
+    .slice(0, 3)
+}
+
+export function getHeroCtaTexts(document: Document): string[] {
+  const hero = getHeroRoot(document)
+  return getCtaElements(hero)
+    .map((element) => getVisibleText(element))
+    .filter(Boolean)
+    .slice(0, 3)
+}
+
 export function countNavigationLinks(document: Document): number {
   const nav = document.querySelector("nav, header")
   if (!nav) return 0

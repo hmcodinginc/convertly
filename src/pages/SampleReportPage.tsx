@@ -110,8 +110,8 @@ function SampleReportContent({ audit }: { audit: AuditDetail }) {
       </div>
 
       <ScoreBreakdownSection categories={audit.scoreBreakdown} />
-      <PageFindingsSection pages={audit.pageFindings} />
-      <PrioritizedIssuesSection issues={audit.issues} />
+      <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
+      <PrioritizedIssuesSection issues={audit.issues} auditStatus={audit.status} />
       <AuditRecommendationsSection recommendations={audit.recommendations} />
       <AuditMetadataSection audit={audit} />
 

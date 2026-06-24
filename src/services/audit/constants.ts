@@ -1,13 +1,13 @@
 import type { AuditPageType } from "@/types/auditEngine"
 
-export type CommonPageDefinition = {
+export type PathTypeDefinition = {
   pageType: AuditPageType
   paths: string[]
   title: string
 }
 
-/** Known public page paths — extend this list as discovery expands */
-export const COMMON_PAGE_DEFINITIONS: CommonPageDefinition[] = [
+/** Path labels for discovered pages — not used to invent URLs */
+export const PATH_TYPE_DEFINITIONS: PathTypeDefinition[] = [
   { pageType: "homepage", paths: ["/", "/home"], title: "Homepage" },
   { pageType: "pricing", paths: ["/pricing", "/plans", "/price"], title: "Pricing" },
   { pageType: "about", paths: ["/about", "/about-us", "/company"], title: "About" },
@@ -17,6 +17,21 @@ export const COMMON_PAGE_DEFINITIONS: CommonPageDefinition[] = [
   { pageType: "login", paths: ["/login", "/sign-in", "/signin"], title: "Login" },
   { pageType: "signup", paths: ["/signup", "/sign-up", "/register", "/get-started"], title: "Signup" },
 ]
+
+/** @deprecated Use PATH_TYPE_DEFINITIONS — kept for path label inference only */
+export const COMMON_PAGE_DEFINITIONS = PATH_TYPE_DEFINITIONS
+
+export function inferPageTypeFromPath(path: string): AuditPageType {
+  const normalized = path.toLowerCase().replace(/\/$/, "") || "/"
+
+  for (const definition of PATH_TYPE_DEFINITIONS) {
+    if (definition.paths.some((candidate) => candidate.replace(/\/$/, "") === normalized)) {
+      return definition.pageType
+    }
+  }
+
+  return "custom"
+}
 
 export const AUDIT_LOADING_PHASES = [
   "Discovering pages",

@@ -47,6 +47,9 @@ export type PageFinding = {
   id: string
   label: string
   path: string
+  url?: string
+  pageType?: string
+  discoveryStatus?: string
   score: number
   issuesCount: number
   status: PageFindingStatus
@@ -54,7 +57,16 @@ export type PageFinding = {
 
 export type ScoreBreakdownItem = {
   id: string
-  label: "Conversion" | "Trust" | "Mobile" | "UX" | "Clarity" | "Friction" | "Performance" | "CTA Strength"
+  label:
+    | "Growth"
+    | "Conversion"
+    | "Trust"
+    | "Mobile"
+    | "UX"
+    | "Clarity"
+    | "Friction"
+    | "Performance"
+    | "CTA Strength"
   score: number
   trend: "up" | "down" | "neutral"
   trendValue: string
@@ -81,12 +93,16 @@ export type AuditDetail = {
   id: string
   name: string
   domain: string
+  websiteUrl?: string
+  createdAt?: string
+  completedAtDate?: string
   completedAt: string
   pagesAnalyzed: number
   overallScore: number
   previousScore: number
   scoreDelta: number
   status: AuditStatus
+  errorMessage?: string
   issues: Issue[]
   recommendations: Recommendation[]
   scoreBreakdown: ScoreBreakdownItem[]

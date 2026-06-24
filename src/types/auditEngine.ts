@@ -152,6 +152,7 @@ export type DiscoveredPageCandidate = {
   path: string
   url: string
   discoveryStatus: PageDiscoveryStatus
+  title?: string
 }
 
 export type AuditUrlValidationResult = {

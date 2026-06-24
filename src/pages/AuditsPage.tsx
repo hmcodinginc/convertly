@@ -1,6 +1,6 @@
 import { FileSearch, Loader2, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import { AuditTableLink } from "@/components/dashboard/AuditTableLink"
 import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
@@ -31,12 +31,13 @@ import {
   isDeletableAudit,
   type AuditStatusFilter,
 } from "@/lib/auditHistoryUtils"
-import { ROUTES } from "@/lib/routes"
+import { ROUTES, auditDetailPath } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
 import type { Audit } from "@/types/audit"
 import { cn } from "@/lib/utils"
 
 function AuditsPage() {
+  const navigate = useNavigate()
   const { data: audits, isLoading, isError, error, reload, isEmpty } = useAsyncData(
     () => auditService.getAudits(),
     [],
@@ -220,9 +221,28 @@ function AuditsPage() {
             </DataTableHead>
             <DataTableBody>
               {filteredAudits.map((audit) => (
-                <DataTableRow key={audit.id} interactive>
+                <DataTableRow
+                  key={audit.id}
+                  interactive
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Open audit report for ${audit.name}`}
+                  onClick={() => navigate(auditDetailPath(audit.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      navigate(auditDetailPath(audit.id))
+                    }
+                  }}
+                >
                   <DataTableCell>
-                    <AuditTableLink auditId={audit.id}>{audit.name}</AuditTableLink>
+                    <AuditTableLink
+                      auditId={audit.id}
+                      className="relative z-[1]"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {audit.name}
+                    </AuditTableLink>
                   </DataTableCell>
                   <DataTableCell className="font-mono text-xs text-foreground/80">
                     {audit.domain}

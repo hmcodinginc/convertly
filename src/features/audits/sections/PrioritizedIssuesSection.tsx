@@ -6,7 +6,8 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
-import type { Issue } from "@/types/audit"
+import { isAuditInProgress } from "@/lib/auditStatus"
+import type { AuditStatus, Issue } from "@/types/audit"
 import { cn } from "@/lib/utils"
 
 const severityOrder = ["Critical", "High", "Medium", "Low"] as const
@@ -27,9 +28,22 @@ const defaultExpanded: Record<string, boolean> = {
 
 type PrioritizedIssuesSectionProps = {
   issues: Issue[]
+  auditStatus: AuditStatus
 }
 
-function PrioritizedIssuesSection({ issues }: PrioritizedIssuesSectionProps) {
+function getEmptyIssuesMessage(status: AuditStatus): string {
+  if (isAuditInProgress(status)) {
+    return "This audit is still running. Issues will appear here when the scan completes."
+  }
+
+  if (status === "failed") {
+    return "No findings were recorded before this audit failed."
+  }
+
+  return "No conversion issues were detected in this audit."
+}
+
+function PrioritizedIssuesSection({ issues, auditStatus }: PrioritizedIssuesSectionProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(defaultExpanded)
 
   const grouped = severityOrder.map((severity) => ({
@@ -50,8 +64,8 @@ function PrioritizedIssuesSection({ issues }: PrioritizedIssuesSectionProps) {
       {issues.length === 0 ? (
         <EmptyState
           icon={AlertTriangle}
-          title="No issues detected yet"
-          description="This audit is still running. Issues will appear here when the scan completes."
+          title="No issues detected"
+          description={getEmptyIssuesMessage(auditStatus)}
         />
       ) : (
         <div className="flex flex-col gap-3">

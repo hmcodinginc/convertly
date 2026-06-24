@@ -1,9 +1,11 @@
-import { COMMON_PAGE_DEFINITIONS } from "@/services/audit/constants"
-import type {
-  AuditPageType,
-  DiscoveredPageCandidate,
-  PageDiscoveryStatus,
-} from "@/types/auditEngine"
+import { inferPageTypeFromPath } from "@/services/audit/constants"
+import {
+  extractPageTitle,
+  extractSameOriginLinks,
+  MAX_DISCOVERED_PAGES,
+} from "@/services/audit/linkExtractor"
+import { fetchPageRemote } from "@/services/audit/remotePageFetch"
+import type { DiscoveredPageCandidate } from "@/types/auditEngine"
 
 export type PageDiscoveryProvider = {
   discover: (baseUrl: string) => Promise<DiscoveredPageCandidate[]>
@@ -17,91 +19,65 @@ function buildPageUrl(baseUrl: string, path: string): string {
   return new URL(path, base.origin).toString()
 }
 
-async function probePageReachability(url: string): Promise<PageDiscoveryStatus> {
-  const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 4000)
-
-  try {
-    const response = await fetch(url, {
-      method: "HEAD",
-      mode: "cors",
-      signal: controller.signal,
-      redirect: "follow",
-    })
-
-    if (response.ok || response.status === 405) {
-      return "reachable"
-    }
-
-    if (response.status === 404) {
-      return "unreachable"
-    }
-
-    return "unknown"
-  } catch {
-    try {
-      await fetch(url, {
-        method: "GET",
-        mode: "no-cors",
-        signal: controller.signal,
-      })
-      return "unknown"
-    } catch {
-      return "candidate"
-    }
-  } finally {
-    window.clearTimeout(timeout)
-  }
+function normalizeBaseUrl(baseUrl: string): string {
+  const parsed = new URL(baseUrl)
+  return parsed.origin
 }
 
-function dedupeByPageType(
-  candidates: DiscoveredPageCandidate[]
-): DiscoveredPageCandidate[] {
-  const seen = new Set<AuditPageType>()
-  const result: DiscoveredPageCandidate[] = []
-
-  for (const candidate of candidates) {
-    if (seen.has(candidate.pageType)) continue
-    seen.add(candidate.pageType)
-    result.push(candidate)
-  }
-
-  return result
-}
-
-/**
- * Discovers common public pages by probing known paths.
- * Reachability may be unknown when cross-origin policies block verification.
- */
-export const candidatePageDiscoveryProvider: PageDiscoveryProvider = {
+export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
   async discover(baseUrl: string): Promise<DiscoveredPageCandidate[]> {
-    const candidates: DiscoveredPageCandidate[] = []
+    const origin = normalizeBaseUrl(baseUrl)
+    const homepageUrl = buildPageUrl(origin, "/")
+    const homepageFetch = await fetchPageRemote(homepageUrl)
 
-    for (const definition of COMMON_PAGE_DEFINITIONS) {
-      for (const path of definition.paths) {
-        const url = buildPageUrl(baseUrl, path)
-        const discoveryStatus = await probePageReachability(url)
-
-        candidates.push({
-          pageType: definition.pageType,
-          path,
-          url,
-          discoveryStatus,
-        })
-
-        if (discoveryStatus === "reachable") {
-          break
-        }
-      }
+    if (!homepageFetch.ok || !homepageFetch.html || !homepageFetch.contentHash) {
+      return []
     }
 
-    return dedupeByPageType(candidates)
+    const homepagePath = new URL(homepageFetch.finalUrl).pathname || "/"
+    const verified: DiscoveredPageCandidate[] = [
+      {
+        pageType: "homepage",
+        path: homepagePath === "" ? "/" : homepagePath,
+        url: homepageFetch.finalUrl,
+        discoveryStatus: "reachable",
+        title: extractPageTitle(homepageFetch.html, "Homepage"),
+      },
+    ]
+
+    const links = extractSameOriginLinks(homepageFetch.finalUrl, homepageFetch.html)
+
+    for (const link of links) {
+      if (verified.length >= MAX_DISCOVERED_PAGES) break
+
+      const normalizedPath = link.path === "" ? "/" : link.path
+      if (verified.some((page) => page.path === normalizedPath)) continue
+
+      const pageFetch = await fetchPageRemote(link.url)
+      if (!pageFetch.ok || pageFetch.status !== 200 || !pageFetch.html || !pageFetch.contentHash) {
+        continue
+      }
+
+      if (pageFetch.contentHash === homepageFetch.contentHash) {
+        continue
+      }
+
+      verified.push({
+        pageType: inferPageTypeFromPath(normalizedPath),
+        path: normalizedPath,
+        url: pageFetch.finalUrl,
+        discoveryStatus: "reachable",
+        title: extractPageTitle(pageFetch.html, "Page"),
+      })
+    }
+
+    return verified
   },
 }
 
 export async function discoverPages(
   baseUrl: string,
-  provider: PageDiscoveryProvider = candidatePageDiscoveryProvider
+  provider: PageDiscoveryProvider = linkBasedPageDiscoveryProvider
 ): Promise<DiscoveredPageCandidate[]> {
   return provider.discover(baseUrl)
 }

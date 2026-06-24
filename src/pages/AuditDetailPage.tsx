@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom"
 
 import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
 import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
+import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { PageError, PageLoading } from "@/components/feedback/PageState"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
@@ -114,6 +115,8 @@ function AuditDetailPage() {
 
 function AuditDetailContent({ audit }: { audit: AuditDetail }) {
   const running = isAuditInProgress(audit.status)
+  const failed = audit.status === "failed"
+  const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
 
   return (
     <AppPageShell
@@ -141,7 +144,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
                 </div>
                 <AppPageHeader
                   title={audit.name}
-                  description={`${audit.domain} · ${audit.completedAt} · ${audit.pagesAnalyzed} pages analyzed`}
+                  description={`${audit.websiteUrl ?? audit.domain} · ${headerDate} · ${audit.pagesAnalyzed} pages analyzed`}
                   className="border-0 pb-0"
                 />
               </div>
@@ -151,7 +154,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
                     {audit.overallScore}
                   </p>
                   <Text variant="muted" size="sm" className="mt-1 max-w-none">
-                    Conversion score
+                    Growth Score
                   </Text>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -164,13 +167,17 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
                 {audit.overallScore}
               </p>
               <Text variant="muted" size="sm" className="mt-1 max-w-none">
-                Conversion score
+                Growth Score
               </Text>
             </div>
           </header>
         </>
       }
     >
+      {failed && audit.errorMessage ? (
+        <AuthFormMessage className="mb-6">{audit.errorMessage}</AuthFormMessage>
+      ) : null}
+
       {running ? (
         <AuditRunningExperience
           status={toSessionStatus(audit.status)}
@@ -184,8 +191,8 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
       </div>
 
       <ScoreBreakdownSection categories={audit.scoreBreakdown} />
-      <PageFindingsSection pages={audit.pageFindings} />
-      <PrioritizedIssuesSection issues={audit.issues} />
+      <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
+      <PrioritizedIssuesSection issues={audit.issues} auditStatus={audit.status} />
       <AuditRecommendationsSection recommendations={audit.recommendations} />
       <AuditMetadataSection audit={audit} />
 

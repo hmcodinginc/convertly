@@ -10,7 +10,13 @@ import type {
   ScoreBreakdownItem,
   TimelineEvent,
 } from "@/types/audit"
-import type { AuditSessionData, AuditScoreCategory, FindingSeverity } from "@/types/auditEngine"
+import type {
+  AuditPageType,
+  AuditSessionData,
+  AuditScoreCategory,
+  FindingSeverity,
+  PageDiscoveryStatus,
+} from "@/types/auditEngine"
 
 const SEVERITY_TO_ISSUE: Record<FindingSeverity, Issue["severity"]> = {
   critical: "Critical",
@@ -20,13 +26,34 @@ const SEVERITY_TO_ISSUE: Record<FindingSeverity, Issue["severity"]> = {
 }
 
 const SCORE_LABELS: Record<string, ScoreBreakdownItem["label"]> = {
+  growth: "Growth",
   conversion: "Conversion",
   trust: "Trust",
   mobile: "Mobile",
   ux: "UX",
 }
 
+const PAGE_TYPE_LABELS: Record<AuditPageType, string> = {
+  homepage: "Homepage",
+  pricing: "Pricing",
+  about: "About",
+  contact: "Contact",
+  services: "Services",
+  features: "Features",
+  login: "Login",
+  signup: "Signup",
+  custom: "Custom",
+}
+
+const DISCOVERY_STATUS_LABELS: Record<PageDiscoveryStatus, string> = {
+  candidate: "Candidate",
+  reachable: "Reachable",
+  unreachable: "Unreachable",
+  unknown: "Unknown",
+}
+
 const REPORT_SCORE_CATEGORIES: AuditScoreCategory[] = [
+  "growth",
   "conversion",
   "trust",
   "mobile",
@@ -94,6 +121,9 @@ function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
       id: page.id,
       label: page.title,
       path: page.path,
+      url: page.url,
+      pageType: PAGE_TYPE_LABELS[page.pageType],
+      discoveryStatus: DISCOVERY_STATUS_LABELS[page.discoveryStatus],
       score: Math.max(35, 94 - issuesCount * 8),
       issuesCount,
       status: pageStatus(issuesCount),
@@ -110,9 +140,15 @@ function mapFindingsToRecommendations(data: AuditSessionData): Recommendation[] 
       title: finding.title,
       summary: finding.recommendation,
       priority: priorityFromSeverity(finding.severity, index),
-      estimatedLift: "Impact modeled after fix",
+      estimatedLift: liftLabelForSeverity(finding.severity),
       category: finding.category,
     }))
+}
+
+function liftLabelForSeverity(severity: FindingSeverity): string {
+  if (severity === "critical" || severity === "high") return "High-impact improvement"
+  if (severity === "medium") return "Moderate-impact improvement"
+  return "Incremental improvement"
 }
 
 function mapHistoryToTimeline(data: AuditSessionData): TimelineEvent[] {
@@ -140,9 +176,14 @@ export function resolveGrowthScore(data: AuditSessionData): number {
 }
 
 function buildScoreBreakdown(data: AuditSessionData): ScoreBreakdownItem[] {
+  const growthScore = resolveGrowthScore(data)
+
   return REPORT_SCORE_CATEGORIES.map((category) => {
     const scoreRecord = data.scores.find((score) => score.category === category)
-    const score = Math.round(scoreRecord?.score ?? 0)
+    const score =
+      category === "growth"
+        ? growthScore
+        : Math.round(scoreRecord?.score ?? 0)
     const label = SCORE_LABELS[category] ?? "Conversion"
 
     return {
@@ -159,7 +200,11 @@ function buildScoreBreakdown(data: AuditSessionData): ScoreBreakdownItem[] {
 export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail {
   const { session } = data
   const domain = parseDomainFromUrl(session.websiteUrl)
-  const completedAt = formatDisplayDate(session.updatedAt)
+  const createdAt = formatDisplayDate(session.createdAt)
+  const completedAtDate =
+    session.status === "completed" || session.status === "failed"
+      ? formatDisplayDate(session.updatedAt)
+      : undefined
   const growthScore = resolveGrowthScore(data)
   const inProgress = isAuditInProgress(session.status)
 
@@ -167,12 +212,16 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
     id: session.id,
     name: buildAuditName(domain),
     domain,
-    completedAt,
+    websiteUrl: session.websiteUrl,
+    createdAt,
+    completedAtDate,
+    completedAt: completedAtDate ?? createdAt,
     pagesAnalyzed: data.pages.length,
     overallScore: inProgress ? 0 : growthScore,
     previousScore: 0,
     scoreDelta: 0,
     status: session.status,
+    errorMessage: session.errorMessage,
     issues: inProgress ? [] : mapFindingsToIssues(data),
     recommendations: inProgress ? [] : mapFindingsToRecommendations(data),
     scoreBreakdown: inProgress ? [] : buildScoreBreakdown(data),

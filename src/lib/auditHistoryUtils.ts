@@ -39,6 +39,10 @@ export function isDeletableAudit(id: string): boolean {
   return true
 }
 
+export function isSampleAuditId(id: string): boolean {
+  return SAMPLE_AUDIT_IDS.has(id) || id in auditDetailsMap
+}
+
 export function matchesAuditSearch(audit: Audit, query: string): boolean {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return true
