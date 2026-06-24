@@ -1,6 +1,7 @@
 import { COMMON_PAGE_DEFINITIONS } from "@/services/audit/constants"
 import { discoverPages } from "@/services/audit/pageDiscovery"
 import { fetchPageContentSnapshots } from "@/services/audit/pageContentService"
+import { createAuditFetchContext } from "@/services/audit/fetch/types"
 import { createScorePlaceholders, runAuditRules } from "@/services/audit/auditRules"
 import { attachScreenshotsToPages } from "@/services/audit/screenshotService"
 import {
@@ -40,8 +41,12 @@ function getPageTitle(
   )
 }
 
-async function mapDiscoveredPages(auditId: string, baseUrl: string): Promise<AuditPage[]> {
-  const candidates = await discoverPages(baseUrl)
+async function mapDiscoveredPages(
+  auditId: string,
+  baseUrl: string,
+  fetchContext: ReturnType<typeof createAuditFetchContext>
+): Promise<AuditPage[]> {
+  const candidates = await discoverPages(baseUrl, undefined, fetchContext)
 
   return candidates.map((candidate) => ({
     id: crypto.randomUUID(),
@@ -121,7 +126,8 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await recordPhase(session, "crawling", "Discovering public pages")
     await delay(PHASE_DELAYS_MS.crawling)
 
-    const discovered = await mapDiscoveredPages(auditId, session.websiteUrl)
+    const fetchContext = createAuditFetchContext()
+    const discovered = await mapDiscoveredPages(auditId, session.websiteUrl, fetchContext)
 
     if (discovered.length === 0) {
       throw new Error(
@@ -142,7 +148,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
 
     await delay(PHASE_DELAYS_MS.analyzing)
 
-    const pageSnapshots = await fetchPageContentSnapshots(savedPages)
+    const pageSnapshots = await fetchPageContentSnapshots(savedPages, fetchContext)
     await createScores(createScorePlaceholders(auditId))
 
     const { findings: scoredFindings } = await runAuditRules({

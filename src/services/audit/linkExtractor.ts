@@ -15,12 +15,25 @@ function normalizePath(pathname: string): string {
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`
 }
 
-export function extractSameOriginLinks(baseUrl: string, html: string): ExtractedLink[] {
+const DISCOVERY_LINK_SELECTORS = [
+  "nav a[href]",
+  "header a[href]",
+  "footer a[href]",
+  "main a[href]",
+  "[role='navigation'] a[href]",
+  "a[class*='cta' i][href]",
+  "a[class*='btn' i][href]",
+  "a[class*='button' i][href]",
+].join(", ")
+
+function collectLinksFromAnchors(
+  baseUrl: string,
+  anchors: HTMLAnchorElement[]
+): ExtractedLink[] {
   const base = new URL(baseUrl)
-  const document = parseHtmlDocument(html)
   const links = new Map<string, ExtractedLink>()
 
-  for (const anchor of Array.from(document.querySelectorAll("a[href]"))) {
+  for (const anchor of anchors) {
     const href = anchor.getAttribute("href")?.trim()
     if (!href) continue
 
@@ -39,14 +52,36 @@ export function extractSameOriginLinks(baseUrl: string, html: string): Extracted
     if (resolved.protocol !== "https:" && resolved.protocol !== "http:") continue
 
     const path = normalizePath(resolved.pathname)
-    const url = resolved.protocol === "https:" ? resolved.toString() : resolved.toString()
+    const url = resolved.toString()
 
     if (!links.has(path)) {
       links.set(path, { path, url })
     }
   }
 
-  return Array.from(links.values()).slice(0, MAX_DISCOVERED_PAGES - 1)
+  return Array.from(links.values())
+}
+
+export function extractDiscoveryLinks(baseUrl: string, html: string): ExtractedLink[] {
+  const document = parseHtmlDocument(html)
+  const prioritized = collectLinksFromAnchors(
+    baseUrl,
+    Array.from(document.querySelectorAll(DISCOVERY_LINK_SELECTORS)) as HTMLAnchorElement[]
+  )
+
+  if (prioritized.length > 0) {
+    return prioritized.slice(0, MAX_DISCOVERED_PAGES - 1)
+  }
+
+  return extractSameOriginLinks(baseUrl, html)
+}
+
+export function extractSameOriginLinks(baseUrl: string, html: string): ExtractedLink[] {
+  const document = parseHtmlDocument(html)
+  return collectLinksFromAnchors(
+    baseUrl,
+    Array.from(document.querySelectorAll("a[href]")) as HTMLAnchorElement[]
+  ).slice(0, MAX_DISCOVERED_PAGES - 1)
 }
 
 export function extractPageTitle(html: string, fallback = "Page"): string {

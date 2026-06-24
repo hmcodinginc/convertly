@@ -28,3 +28,7 @@ export function shouldUseLocalAuth(): boolean {
 export function shouldUseSupabaseAudits(): boolean {
   return isSupabaseConfigured() && !shouldUseLocalAuth()
 }
+
+export function isAuditRenderConfigured(): boolean {
+  return Boolean(readEnv("VITE_AUDIT_RENDER_URL"))
+}
