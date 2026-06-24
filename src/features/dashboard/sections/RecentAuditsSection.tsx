@@ -1,8 +1,8 @@
 import { FileSearch } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import { AuditTableLink } from "@/components/dashboard/AuditTableLink"
-import { StatusBadge } from "@/components/dashboard/StatusBadge"
+import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import {
   DataTable,
   DataTableBody,
@@ -16,20 +16,16 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { Button } from "@/components/ui/button"
 import { AppPageSection } from "@/components/layout/AppPageSection"
 import { Card } from "@/components/surfaces/Card"
-import { ROUTES } from "@/lib/routes"
+import { ROUTES, auditDetailPath } from "@/lib/routes"
 import type { Audit } from "@/types/audit"
-
-const auditStatusVariant = {
-  Completed: "success",
-  Running: "accent",
-  Scheduled: "neutral",
-} as const
 
 type RecentAuditsSectionProps = {
   audits: Audit[]
 }
 
 function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
+  const navigate = useNavigate()
+
   return (
     <AppPageSection
       eyebrow="Activity"
@@ -63,9 +59,27 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
             </DataTableHead>
             <DataTableBody>
               {audits.slice(0, 5).map((audit) => (
-                <DataTableRow key={audit.id} interactive>
+                <DataTableRow
+                  key={audit.id}
+                  interactive
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Open audit report for ${audit.name}`}
+                  onClick={() => navigate(auditDetailPath(audit.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      navigate(auditDetailPath(audit.id))
+                    }
+                  }}
+                >
                   <DataTableCell>
-                    <AuditTableLink auditId={audit.id}>{audit.name}</AuditTableLink>
+                    <AuditTableLink
+                      auditId={audit.id}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {audit.name}
+                    </AuditTableLink>
                   </DataTableCell>
                   <DataTableCell className="font-mono text-xs text-foreground/80">
                     {audit.domain}
@@ -80,10 +94,7 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
                     {audit.conversionScore}
                   </DataTableCell>
                   <DataTableCell>
-                    <StatusBadge
-                      label={audit.status}
-                      variant={auditStatusVariant[audit.status]}
-                    />
+                    <AuditStatusBadge status={audit.status} />
                   </DataTableCell>
                 </DataTableRow>
               ))}

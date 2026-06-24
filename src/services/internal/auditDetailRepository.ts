@@ -1,42 +1,31 @@
 import {
   auditDetailsMap,
   buildAuditDetailFromAudit,
-  enrichAuditDetail,
 } from "@/features/audits/data/auditDetails"
 import type { AuditDetail } from "@/types/audit"
 import { auditDetailStorageKey } from "@/services/storage/keys"
-import { getItem, setItem } from "@/services/storage/localStorageClient"
+import { getItem, removeItem, setItem } from "@/services/storage/localStorageClient"
 
-function getAuditDetail(
-  id: string,
-  fallback?: { name: string; domain: string }
-): AuditDetail | null {
-  if (auditDetailsMap[id]) {
+function getCachedAuditDetail(id: string): AuditDetail | null {
+  const stored = getItem(auditDetailStorageKey(id))
+  if (!stored) return null
+
+  try {
+    return JSON.parse(stored) as AuditDetail
+  } catch {
+    return null
+  }
+}
+
+function getAuditDetail(id: string): AuditDetail | null {
+  if (id in auditDetailsMap) {
     return auditDetailsMap[id]
   }
 
-  const stored = getItem(auditDetailStorageKey(id))
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored) as AuditDetail
-      if (!parsed.scoreBreakdown?.length) {
-        return enrichAuditDetail(parsed)
-      }
-      return parsed
-    } catch {
-      /* use fallback below */
-    }
-  }
-
-  if (fallback) {
-    return buildAuditDetailFromAudit(id, fallback.name, fallback.domain)
-  }
-
-  return null
+  return getCachedAuditDetail(id)
 }
 
 function saveAuditDetail(detail: AuditDetail): void {
-  auditDetailsMap[detail.id] = detail
   setItem(auditDetailStorageKey(detail.id), JSON.stringify(detail))
 }
 
@@ -46,4 +35,15 @@ function createAuditDetail(id: string, name: string, domain: string): AuditDetai
   return detail
 }
 
-export { createAuditDetail, getAuditDetail, saveAuditDetail }
+function removeAuditDetail(id: string): void {
+  delete auditDetailsMap[id]
+  removeItem(auditDetailStorageKey(id))
+}
+
+export {
+  createAuditDetail,
+  getAuditDetail,
+  getCachedAuditDetail,
+  removeAuditDetail,
+  saveAuditDetail,
+}

@@ -39,7 +39,7 @@ function AuditSummarySection({ audit }: AuditSummarySectionProps) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="app-card-metric hover:translate-y-0">
           <Text variant="muted" size="sm" className="max-w-none font-medium">
-            Overall score
+            Growth Score
           </Text>
           <p className="mt-3 text-3xl font-medium tracking-tight tabular-nums text-foreground">
             {audit.overallScore}

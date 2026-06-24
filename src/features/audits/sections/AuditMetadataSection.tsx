@@ -2,13 +2,8 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
+import { getAuditStatusLabel, getAuditStatusVariant } from "@/lib/auditStatus"
 import type { AuditDetail } from "@/types/audit"
-
-const statusVariant = {
-  Completed: "success",
-  Running: "accent",
-  Scheduled: "neutral",
-} as const
 
 type AuditMetadataSectionProps = {
   audit: AuditDetail
@@ -16,11 +11,20 @@ type AuditMetadataSectionProps = {
 
 function AuditMetadataSection({ audit }: AuditMetadataSectionProps) {
   const rows = [
-    { label: "Domain", value: audit.domain },
-    { label: "Date", value: audit.completedAt },
+    { label: "Website URL", value: audit.websiteUrl ?? audit.domain, mono: true },
+    { label: "Domain", value: audit.domain, mono: true },
+    { label: "Created", value: audit.createdAt ?? audit.completedAt },
+    {
+      label: "Completed",
+      value: audit.completedAtDate ?? (audit.status === "completed" || audit.status === "Completed" ? audit.completedAt : "—"),
+    },
     { label: "Pages analyzed", value: String(audit.pagesAnalyzed) },
-    { label: "Status", value: audit.status },
+    { label: "Status", value: getAuditStatusLabel(audit.status), isStatus: true },
   ]
+
+  if (audit.status === "failed" && audit.errorMessage) {
+    rows.push({ label: "Error", value: audit.errorMessage })
+  }
 
   return (
     <AuditReportSection
@@ -45,13 +49,17 @@ function AuditMetadataSection({ audit }: AuditMetadataSectionProps) {
                 </Text>
               </dt>
               <dd className="sm:text-right">
-                {row.label === "Status" ? (
+                {"isStatus" in row && row.isStatus ? (
                   <StatusBadge
-                    label={audit.status}
-                    variant={statusVariant[audit.status]}
+                    label={row.value}
+                    variant={getAuditStatusVariant(audit.status)}
                   />
-                ) : row.label === "Domain" ? (
+                ) : "mono" in row && row.mono ? (
                   <span className="font-mono text-sm text-foreground/90">{row.value}</span>
+                ) : row.label === "Error" ? (
+                  <Text size="sm" className="max-w-none text-[#fca5a5]">
+                    {row.value}
+                  </Text>
                 ) : (
                   <Text size="sm" className="max-w-none text-foreground/85">
                     {row.value}

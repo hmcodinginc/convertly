@@ -23,3 +23,8 @@ export function isSupabaseConfigured(): boolean {
 export function shouldUseLocalAuth(): boolean {
   return env.useLocalAuth || !isSupabaseConfigured()
 }
+
+/** Supabase-backed audit persistence requires Supabase auth + configured project */
+export function shouldUseSupabaseAudits(): boolean {
+  return isSupabaseConfigured() && !shouldUseLocalAuth()
+}

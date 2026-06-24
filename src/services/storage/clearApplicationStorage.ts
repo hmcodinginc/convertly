@@ -7,6 +7,11 @@ export function clearApplicationStorage(): void {
   removeItem(STORAGE_KEYS.users)
   removeItem(STORAGE_KEYS.createdAudits)
   removeItem(STORAGE_KEYS.hasUserAudits)
+  removeItem(STORAGE_KEYS.auditSessions)
+  removeItem(STORAGE_KEYS.auditPages)
+  removeItem(STORAGE_KEYS.auditFindings)
+  removeItem(STORAGE_KEYS.auditScores)
+  removeItem(STORAGE_KEYS.auditHistory)
 
   try {
     const keysToRemove: string[] = []
