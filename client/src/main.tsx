@@ -5,6 +5,7 @@ import {
   enableNetworkTrace,
   installNetworkTraceGlobal,
 } from '@/diagnostics/networkTrace'
+import { resetBodyScrollLock } from '@/lib/bodyScrollLock'
 import './styles/theme.css'
 import './styles/app-layout.css'
 import './styles/marketing-layout.css'
@@ -19,6 +20,8 @@ if (import.meta.env.VITE_NETWORK_TRACE === 'true') {
   enableNetworkTrace(window.location.pathname)
   installNetworkTraceGlobal()
 }
+
+resetBodyScrollLock()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

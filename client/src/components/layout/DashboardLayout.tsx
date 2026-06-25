@@ -9,7 +9,7 @@ function DashboardLayout() {
       <DashboardSidebar />
       <div className="flex min-w-0 flex-1 flex-col lg:min-h-0">
         <DashboardTopBar />
-        <main className="flex-1 lg:min-h-0 lg:overflow-x-clip lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
+        <main className="flex-1 lg:min-h-0 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
           <Outlet />
         </main>
       </div>
