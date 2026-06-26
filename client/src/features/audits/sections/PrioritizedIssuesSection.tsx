@@ -4,6 +4,7 @@ import { useState } from "react"
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import { EmptyState } from "@/components/feedback/EmptyState"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
+import { parseImpactForDisplay } from "@/features/audits/utils/impactDisplay"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { isAuditInProgress } from "@/lib/auditStatus"
@@ -40,7 +41,42 @@ function getEmptyIssuesMessage(status: AuditStatus): string {
     return "No findings were recorded before this audit failed."
   }
 
-  return "No conversion issues were detected in this audit."
+  return "No page-specific conversion issues were detected in this audit."
+}
+
+function FindingImpactBody({ impact, page }: { impact: string; page?: string }) {
+  const parsed = parseImpactForDisplay(impact)
+  const affectedPage = page ?? parsed.pageFromImpact
+
+  return (
+    <div className="audit-finding-item__body">
+      {affectedPage ? (
+        <div className="audit-finding-item__field">
+          <span className="audit-finding-item__field-label">Affected page</span>
+          <code className="audit-finding-item__path">{affectedPage}</code>
+        </div>
+      ) : null}
+
+      {parsed.evidence.length > 0 ? (
+        <div className="audit-finding-item__field">
+          <span className="audit-finding-item__field-label">Evidence</span>
+          <dl className="audit-finding-item__evidence">
+            {parsed.evidence.map((row) => (
+              <div key={`${row.label}-${row.value}`} className="audit-finding-item__evidence-row">
+                <dt className="audit-finding-item__evidence-label">{row.label}</dt>
+                <dd className="audit-finding-item__evidence-value">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : (
+        <div className="audit-finding-item__field">
+          <span className="audit-finding-item__field-label">Details</span>
+          <p className="audit-finding-item__text">{impact}</p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function PrioritizedIssuesSection({ issues, auditStatus }: PrioritizedIssuesSectionProps) {
@@ -58,8 +94,8 @@ function PrioritizedIssuesSection({ issues, auditStatus }: PrioritizedIssuesSect
   return (
     <AuditReportSection
       eyebrow="Findings"
-      title="Issue prioritization"
-      description="Conversion issues grouped by severity. Expand each group to review impact and affected pages."
+      title="Page issues"
+      description="Page-specific conversion issues grouped by severity. Expand each group to review evidence and affected paths."
     >
       {issues.length === 0 ? (
         <EmptyState
@@ -68,18 +104,18 @@ function PrioritizedIssuesSection({ issues, auditStatus }: PrioritizedIssuesSect
           description={getEmptyIssuesMessage(auditStatus)}
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="audit-finding-groups flex flex-col gap-3">
           {grouped.map(
             ({ severity, items }) =>
               items.length > 0 && (
-                <Card key={severity} className="app-card-table hover:translate-y-0">
+                <Card key={severity} className="audit-finding-group app-card-table hover:translate-y-0">
                   <button
                     type="button"
                     onClick={() => toggle(severity)}
-                    className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--surface)_40%,transparent)]"
+                    className="audit-finding-accordion-trigger flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--surface)_40%,transparent)]"
                     aria-expanded={expanded[severity]}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-3">
                       <StatusBadge label={severity} variant={severityVariant[severity]} />
                       <Text size="sm" className="max-w-none text-muted">
                         {items.length} {items.length === 1 ? "issue" : "issues"}
@@ -87,45 +123,18 @@ function PrioritizedIssuesSection({ issues, auditStatus }: PrioritizedIssuesSect
                     </div>
                     <ChevronDown
                       className={cn(
-                        "size-4 shrink-0 text-foreground/50",
+                        "size-4 shrink-0 text-foreground/50 transition-transform duration-[var(--motion-fast)]",
                         expanded[severity] && "rotate-180"
                       )}
                       aria-hidden
                     />
                   </button>
                   {expanded[severity] ? (
-                    <ul className="border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)]">
-                      {items.map((issue, index) => (
-                        <li
-                          key={issue.id}
-                          className={cn(
-                            "px-5 py-3",
-                            index < items.length - 1 &&
-                              "border-b border-[color-mix(in_srgb,var(--border)_45%,transparent)]"
-                          )}
-                        >
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-                            <div className="min-w-0 space-y-1">
-                              <Text size="sm" className="max-w-none leading-6 font-medium">
-                                {issue.issue}
-                              </Text>
-                              {issue.page ? (
-                                <Text
-                                  variant="muted"
-                                  size="sm"
-                                  className="max-w-none font-mono text-xs"
-                                >
-                                  {issue.page}
-                                </Text>
-                              ) : null}
-                            </div>
-                            <Text
-                              size="sm"
-                              className="max-w-none shrink-0 text-foreground/75 sm:text-right"
-                            >
-                              {issue.impact}
-                            </Text>
-                          </div>
+                    <ul className="audit-finding-group__list border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)]">
+                      {items.map((issue) => (
+                        <li key={issue.id} className="audit-finding-item">
+                          <h4 className="audit-finding-item__title">{issue.issue}</h4>
+                          <FindingImpactBody impact={issue.impact} page={issue.page} />
                         </li>
                       ))}
                     </ul>

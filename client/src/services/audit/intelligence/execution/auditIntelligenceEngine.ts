@@ -15,11 +15,6 @@ import type {
 import type { AuditRuleContext } from "@/types/auditEngine"
 import type { ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
 import { verifyPageAnalysisGate } from "@/services/audit/debug/pageSnapshotDiagnostics"
-import {
-  isPageRuleTraceEnabled,
-  printAuditRuleTraceSummary,
-  resetPageRuleTrace,
-} from "@/services/audit/debug/pageRuleEvaluationTrace"
 
 export type IntelligenceEngineOptions = {
   onPageAnalyzed?: (snapshot: PageContentSnapshot, findingCount: number) => void | Promise<void>
@@ -47,14 +42,6 @@ export async function runIntelligenceEngine(
   const pageFindings: IntelligenceFindingDraft[] = []
   const eligibleSnapshots = getSnapshotsEligibleForRules(context.pageSnapshots)
 
-  if (isPageRuleTraceEnabled()) {
-    resetPageRuleTrace()
-    console.log("")
-    console.log("[audit-rule-trace] Page rule evaluation trace enabled")
-    console.log(`[audit-rule-trace] Eligible pages: ${eligibleSnapshots.length}`)
-    console.log("")
-  }
-
   for (const snapshot of eligibleSnapshots) {
     const pageContext: PageRuleContext = {
       session: context.session,
@@ -66,10 +53,6 @@ export async function runIntelligenceEngine(
     const findings = await executePageRules(pageContext)
     pageFindings.push(...findings)
     await options.onPageAnalyzed?.(snapshot, findings.length)
-  }
-
-  if (isPageRuleTraceEnabled()) {
-    printAuditRuleTraceSummary()
   }
 
   const siteContext: SiteRuleContext = {

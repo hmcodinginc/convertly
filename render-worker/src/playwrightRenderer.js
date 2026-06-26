@@ -97,10 +97,6 @@ export async function renderPage(url) {
     const contentHash = hashContent(html)
     const diagnostics = await collectPageDiagnostics(page, settle)
 
-    console.log(
-      `[render-worker] Render complete url=${page.url()} pathname=${diagnostics.pathname} readyState=${diagnostics.readyState} settled=${diagnostics.hydrationSettled} dom=${diagnostics.domLength} text=${diagnostics.visibleTextLength} h1=${diagnostics.firstH1 ?? "(none)"}`
-    )
-
     return {
       ok: true,
       finalUrl: page.url(),

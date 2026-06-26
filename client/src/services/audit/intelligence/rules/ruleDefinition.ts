@@ -1,12 +1,11 @@
-import type { AuditPageType } from "@/types/auditEngine"
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import type { IntelligenceCategory } from "@/services/audit/intelligence/categories"
+import type { RulePackId } from "@/services/audit/intelligence/rules/rulePacks"
 import type {
   BusinessImpactLevel,
   DetectorResult,
   IntelligenceFindingDraft,
   PageRuleContext,
-  RuleAppliesTo,
   SiteRuleContext,
 } from "@/services/audit/intelligence/types"
 
@@ -17,6 +16,7 @@ export type RuleVersion = "v1" | "v2"
 export type RuleDefinition = {
   id: string
   version: RuleVersion
+  packIds: RulePackId[]
   category: IntelligenceCategory
   title: string
   description: string
@@ -25,21 +25,10 @@ export type RuleDefinition = {
   businessImpact: BusinessImpactLevel
   weight: number
   scope: RuleScope
-  appliesTo: RuleAppliesTo
   tags: string[]
   enabled: boolean
   detector: (context: PageRuleContext | SiteRuleContext) => Promise<DetectorResult>
   recommendation: (context: PageRuleContext | SiteRuleContext) => string
-}
-
-export function ruleAppliesToPage(rule: RuleDefinition, pageType: AuditPageType): boolean {
-  if (rule.scope === "site") return false
-  if (rule.appliesTo === "all") return true
-  return rule.appliesTo.includes(pageType)
-}
-
-export function ruleAppliesToSite(rule: RuleDefinition): boolean {
-  return rule.scope === "site"
 }
 
 export const DEFAULT_RULE_WEIGHT = 1

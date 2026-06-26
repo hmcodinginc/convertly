@@ -16,6 +16,7 @@ import { AuditSummarySection } from "@/features/audits/sections/AuditSummarySect
 import { AuditTimelineSection } from "@/features/audits/sections/AuditTimelineSection"
 import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSection"
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
+import { SiteWideFindingsSection } from "@/features/audits/sections/SiteWideFindingsSection"
 import { ScoreBreakdownSection } from "@/features/audits/sections/ScoreBreakdownSection"
 import {
   resetNetworkTrace,
@@ -204,6 +205,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
               auditStatus={audit.status}
             />
             <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
+            <SiteWideFindingsSection findings={audit.siteFindings} auditStatus={audit.status} />
             <PrioritizedIssuesSection issues={audit.issues} auditStatus={audit.status} />
             <AuditRecommendationsSection recommendations={audit.recommendations} />
             <AuditMetadataSection audit={audit} />

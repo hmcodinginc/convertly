@@ -127,6 +127,7 @@ function buildTimeline(completedAt: string): TimelineEvent[] {
 function enrichAuditDetail(partial: Omit<AuditDetail, "scoreBreakdown" | "pageFindings" | "timeline">): AuditDetail {
   return {
     ...partial,
+    siteFindings: partial.siteFindings ?? [],
     scoreBreakdown: buildScoreBreakdown(partial.overallScore),
     pageFindings: buildPageFindings(partial.overallScore),
     timeline: buildTimeline(partial.completedAt.split("·")[0]?.trim() ?? partial.completedAt),

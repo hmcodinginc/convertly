@@ -1,4 +1,4 @@
-import { createLegacyRuleDefinitions } from "@/services/audit/intelligence/rules/legacyRuleAdapter"
+import { buildProductionRuleDefinitions } from "@/services/audit/intelligence/rules/buildProductionRules"
 import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 
 /**
@@ -12,7 +12,7 @@ export function bootstrapIntelligenceEngine(): void {
     return
   }
 
-  registry.registerMany(createLegacyRuleDefinitions())
+  registry.registerMany(buildProductionRuleDefinitions())
 }
 
 export { runIntelligenceEngine } from "@/services/audit/intelligence/execution/auditIntelligenceEngine"
@@ -22,6 +22,8 @@ export { buildRecommendations } from "@/services/audit/intelligence/recommendati
 export { getPageImportanceWeight, resolvePageImportanceTier } from "@/services/audit/intelligence/pageImportance"
 export { BUSINESS_PROFILES, DEFAULT_BUSINESS_PROFILE } from "@/services/audit/intelligence/businessProfiles"
 export { INTELLIGENCE_CATEGORIES } from "@/services/audit/intelligence/categories"
+export { getRuleIdsForPageType, getSiteRuleIds, RULE_PACKS } from "@/services/audit/intelligence/rules/rulePacks"
+export { getRuleMetadata, RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
 
 export type {
   IntelligenceFindingDraft,
@@ -31,3 +33,4 @@ export type {
 } from "@/services/audit/intelligence/types"
 
 export type { RuleDefinition } from "@/services/audit/intelligence/rules/ruleDefinition"
+export type { RulePackId } from "@/services/audit/intelligence/rules/rulePacks"

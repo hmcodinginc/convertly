@@ -1,6 +1,6 @@
 import type { FindingSeverity } from "@/types/auditEngine"
 import type { DetectorResult } from "@/services/audit/intelligence/types"
-import { inferConfidenceFromSeverity } from "@/services/audit/intelligence/rules/productionRuleCatalog"
+import { inferConfidenceFromSeverity } from "@/services/audit/intelligence/rules/ruleMetadata"
 
 const SEVERITY_BASE: Record<FindingSeverity, number> = {
   critical: 96,

@@ -1,8 +1,5 @@
-import type { AuditPageType } from "@/types/auditEngine"
 import type { IntelligenceCategory } from "@/services/audit/intelligence/categories"
-import type { BusinessProfileType } from "@/services/audit/intelligence/businessProfiles"
 import type { RuleDefinition } from "@/services/audit/intelligence/rules/ruleDefinition"
-import { ruleAppliesToPage, ruleAppliesToSite } from "@/services/audit/intelligence/rules/ruleDefinition"
 
 const REGISTRY_GLOBAL_KEY = "__convertlyAuditRuleRegistry__"
 
@@ -11,7 +8,6 @@ type RegistryOptions = {
   enabledOnly?: boolean
   categories?: IntelligenceCategory[]
   tags?: string[]
-  businessProfile?: BusinessProfileType
   version?: RuleDefinition["version"]
 }
 
@@ -55,6 +51,12 @@ export class RuleRegistry {
     return this.rules.get(id)
   }
 
+  getByIds(ids: string[]): RuleDefinition[] {
+    return ids
+      .map((id) => this.rules.get(id))
+      .filter((rule): rule is RuleDefinition => Boolean(rule?.enabled))
+  }
+
   getAll(): RuleDefinition[] {
     return [...this.rules.values()]
   }
@@ -67,14 +69,8 @@ export class RuleRegistry {
     return [...(this.rulesByTag.get(tag) ?? [])]
   }
 
-  getPageRules(pageType: AuditPageType, options: RegistryOptions = {}): RuleDefinition[] {
-    return this.filterRules(options).filter(
-      (rule) => rule.enabled && ruleAppliesToPage(rule, pageType)
-    )
-  }
-
   getSiteRules(options: RegistryOptions = {}): RuleDefinition[] {
-    return this.filterRules(options).filter((rule) => rule.enabled && ruleAppliesToSite(rule))
+    return this.filterRules(options).filter((rule) => rule.enabled && rule.scope === "site")
   }
 
   setEnabled(id: string, enabled: boolean): void {

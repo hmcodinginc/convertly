@@ -1,4 +1,3 @@
-import { productionAuditRules } from "@/services/audit/rules/productionRules"
 import {
   bootstrapIntelligenceEngine,
   runIntelligenceEngine,
@@ -9,22 +8,20 @@ import type { AuditRule, AuditRuleContext, AuditRuleResult } from "@/types/audit
 import type { AuditScore } from "@/types/auditEngine"
 import { SCORE_CATEGORY_DEFINITIONS } from "@/services/audit/constants"
 
-const legacyRulesById = new Map(productionAuditRules.map((rule) => [rule.id, rule]))
+const customRulesById = new Map<string, AuditRule>()
 
 export function registerAuditRule(rule: AuditRule): void {
   bootstrapIntelligenceEngine()
 
-  if (legacyRulesById.has(rule.id) || getRuleRegistry().getById(rule.id)) {
+  if (customRulesById.has(rule.id) || getRuleRegistry().getById(rule.id)) {
     throw new Error(`Rule already registered: ${rule.id}`)
   }
 
-  legacyRulesById.set(rule.id, rule)
+  customRulesById.set(rule.id, rule)
 }
 
 export function getRegisteredAuditRules(): readonly AuditRule[] {
-  return [...productionAuditRules, ...legacyRulesById.values()].filter(
-    (rule, index, rules) => rules.findIndex((item) => item.id === rule.id) === index
-  )
+  return [...customRulesById.values()]
 }
 
 export async function runAuditRules(

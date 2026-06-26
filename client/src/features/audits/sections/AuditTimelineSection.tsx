@@ -14,48 +14,43 @@ function AuditTimelineSection({ events, compact = false }: AuditTimelineSectionP
   if (!compact) return null
 
   return (
-    <Card className="audit-report-timeline app-card-metric h-full hover:translate-y-0">
+    <Card className="audit-timeline audit-report-timeline app-card-metric h-full hover:translate-y-0">
       <Text
         variant="muted"
         size="sm"
-        className="mb-4 max-w-none font-medium tracking-[0.16em] uppercase"
+        className="audit-timeline__heading max-w-none font-medium tracking-[0.14em] uppercase"
       >
         Audit timeline
       </Text>
       {events.length === 0 ? (
-        <div className="rounded-[var(--radius-md)] border border-dashed border-[color-mix(in_srgb,var(--border)_55%,transparent)] bg-[color-mix(in_srgb,var(--surface)_35%,transparent)] px-4 py-5 text-center">
+        <div className="audit-timeline__empty">
           <Clock className="mx-auto size-4 text-muted" aria-hidden />
           <Text variant="muted" size="sm" className="mt-2 max-w-none text-xs leading-5">
             Timeline events will appear as the audit progresses.
           </Text>
         </div>
       ) : (
-        <ol className="space-y-0">
+        <ol className="audit-timeline__list">
           {events.map((event, index) => (
-            <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+            <li key={event.id} className="audit-timeline__item">
               {index < events.length - 1 ? (
-                <span
-                  className="absolute left-[0.6875rem] top-6 bottom-0 w-px bg-[color-mix(in_srgb,var(--border)_70%,transparent)]"
-                  aria-hidden
-                />
+                <span className="audit-timeline__connector" aria-hidden />
               ) : null}
               <span
                 className={cn(
-                  "relative z-[1] flex size-[1.375rem] shrink-0 items-center justify-center rounded-full border",
-                  event.status === "completed"
-                    ? "border-[color-mix(in_srgb,var(--accent)_40%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_14%,var(--surface))]"
-                    : "border-[color-mix(in_srgb,var(--border)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_60%,transparent)]"
+                  "audit-timeline__marker",
+                  event.status === "completed" && "audit-timeline__marker--completed"
                 )}
               >
                 {event.status === "completed" ? (
-                  <Check className="size-3 text-foreground/80" aria-hidden />
+                  <Check className="size-2.5 text-foreground/70" aria-hidden />
                 ) : (
                   <span className="size-1.5 rounded-full bg-muted" />
                 )}
               </span>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <p className="text-sm font-medium text-foreground">{event.label}</p>
-                <Text variant="muted" size="sm" className="mt-0.5 max-w-none text-xs">
+              <div className="audit-timeline__content">
+                <p className="audit-timeline__label">{event.label}</p>
+                <Text variant="muted" size="sm" className="audit-timeline__time max-w-none text-xs">
                   {event.timestamp}
                 </Text>
               </div>

@@ -49,7 +49,7 @@ function PageFindingsSection({ pages, auditStatus }: PageFindingsSectionProps) {
           {pages.map((page) => (
             <Card
               key={page.id}
-              className="app-card-metric flex flex-col gap-4 hover:translate-y-0 sm:flex-row sm:items-center sm:justify-between"
+              className="audit-page-card app-card-metric flex flex-col gap-4 hover:translate-y-0 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">

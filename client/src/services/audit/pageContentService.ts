@@ -3,8 +3,6 @@ import { getCachedAcquire, hybridPageAcquire } from "@/services/audit/fetch/hybr
 import type { AcquiredPageContent, AuditFetchContext, RenderPageDiagnostics } from "@/services/audit/fetch/types"
 import { fetchPageRemote } from "@/services/audit/remotePageFetch"
 import type { AuditPage } from "@/types/auditEngine"
-import { logPageRenderVerification } from "@/services/audit/debug/renderVerificationLog"
-
 export type PageContentSnapshot = {
   page: AuditPage
   html: string | null
@@ -109,8 +107,6 @@ export async function fetchPageContentSnapshots(
       renderDiagnostics: acquired.renderDiagnostics ?? null,
       analyzed: fetchSucceeded && spaAnalyzable,
     })
-
-    logPageRenderVerification(snapshots[snapshots.length - 1]!)
   }
 
   return snapshots

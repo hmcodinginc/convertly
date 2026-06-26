@@ -9,9 +9,11 @@ import type {
   Recommendation,
   RecommendationPriority,
   ScoreBreakdownItem,
+  SiteFinding,
   TimelineEvent,
 } from "@/types/audit"
 import type {
+  AuditFinding,
   AuditPageType,
   AuditScore,
   AuditSessionData,
@@ -103,8 +105,13 @@ function severityRank(severity: FindingSeverity): number {
   return { critical: 0, high: 1, medium: 2, low: 3 }[severity]
 }
 
-function mapFindingsToIssues(data: AuditSessionData): Issue[] {
+function isSiteScopedFinding(finding: AuditFinding): boolean {
+  return !finding.pageId
+}
+
+function mapPageFindingsToIssues(data: AuditSessionData): Issue[] {
   return [...data.findings]
+    .filter((finding) => !isSiteScopedFinding(finding))
     .sort((a, b) => severityRank(a.severity) - severityRank(b.severity))
     .map((finding) => ({
       id: finding.id,
@@ -112,6 +119,18 @@ function mapFindingsToIssues(data: AuditSessionData): Issue[] {
       severity: SEVERITY_TO_ISSUE[finding.severity],
       impact: finding.description,
       page: data.pages.find((page) => page.id === finding.pageId)?.path,
+    }))
+}
+
+function mapSiteFindings(data: AuditSessionData): SiteFinding[] {
+  return [...data.findings]
+    .filter(isSiteScopedFinding)
+    .sort((a, b) => severityRank(a.severity) - severityRank(b.severity))
+    .map((finding) => ({
+      id: finding.id,
+      issue: finding.title,
+      severity: SEVERITY_TO_ISSUE[finding.severity],
+      impact: finding.description,
     }))
 }
 
@@ -253,7 +272,8 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
     scoreDelta: 0,
     status: session.status,
     errorMessage: session.errorMessage,
-    issues: inProgress ? [] : mapFindingsToIssues(data),
+    issues: inProgress ? [] : mapPageFindingsToIssues(data),
+    siteFindings: inProgress ? [] : mapSiteFindings(data),
     recommendations: inProgress ? [] : mapFindingsToRecommendations(data),
     scoreBreakdown: inProgress ? [] : buildScoreBreakdown(data),
     pageFindings: inProgress ? [] : mapPagesToFindings(data),

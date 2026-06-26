@@ -1,99 +1,77 @@
-import { productionAuditRules } from "@/services/audit/rules/productionRules"
-import { getProductionRuleCatalogEntry } from "@/services/audit/intelligence/rules/productionRuleCatalog"
 import {
-  enrichScoredFinding,
-  runLegacyRule,
-} from "@/services/audit/intelligence/rules/legacyRuleAdapter"
+  buildFindingDescription,
+  resolveRuleConfidence,
+} from "@/services/audit/intelligence/rules/buildProductionRules"
+import { getRuleMetadata } from "@/services/audit/intelligence/rules/ruleMetadata"
 import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
-import { ruleAppliesToPage } from "@/services/audit/intelligence/rules/ruleDefinition"
+import {
+  getRuleIdsForPageType,
+  getSiteRuleIds,
+} from "@/services/audit/intelligence/rules/rulePacks"
+import { resolveRulePageType } from "@/services/audit/intelligence/rules/rulePageType"
+import type { AuditPage } from "@/types/auditEngine"
 import type { PageRuleContext, SiteRuleContext } from "@/services/audit/intelligence/types"
 import type { IntelligenceFindingDraft } from "@/services/audit/intelligence/types"
-import type { AuditRuleContext } from "@/types/auditEngine"
 import type { ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
-import {
-  beginPageRuleTrace,
-  endPageRuleTrace,
-  isPageRuleTraceEnabled,
-  logPageRuleEvaluation,
-  logPageRuleNotApplicable,
-} from "@/services/audit/debug/pageRuleEvaluationTrace"
+import type { RuleDefinition } from "@/services/audit/intelligence/rules/ruleDefinition"
 
-const legacyRuleById = new Map(productionAuditRules.map((rule) => [rule.id, rule]))
-
-function toAuditContext(
+function draftFromRule(
+  rule: RuleDefinition,
   context: PageRuleContext | SiteRuleContext,
-  currentSnapshot?: PageRuleContext["currentSnapshot"]
-): AuditRuleContext {
+  pageId?: string
+): IntelligenceFindingDraft {
   return {
-    session: context.session,
-    pages: context.pages,
-    pageSnapshots: context.pageSnapshots,
-    currentPageSnapshot: currentSnapshot,
+    ruleId: rule.id,
+    pageId,
+    category: rule.category,
+    legacyCategory: getRuleMetadata(rule.id)?.category ?? "ux",
+    severity: rule.severity,
+    scoreCategory: rule.scoreCategory,
+    title: rule.title,
+    description: rule.description,
+    recommendation: rule.recommendation(context),
+    confidence: resolveRuleConfidence(rule.id),
+    businessImpact: rule.businessImpact,
+    weight: rule.weight,
+    scope: rule.scope,
+    evidence: [],
+    tags: rule.tags,
   }
 }
 
-async function runPageRule(
-  context: PageRuleContext,
-  ruleId: string
+async function evaluateRule(
+  rule: RuleDefinition,
+  context: PageRuleContext | SiteRuleContext,
+  pageId?: string
 ): Promise<IntelligenceFindingDraft[]> {
-  const legacyRule = legacyRuleById.get(ruleId)
-  if (!legacyRule) return []
+  const result = await rule.detector(context)
+  if (!result.triggered) return []
 
-  const scored = await runLegacyRule(legacyRule, toAuditContext(context, context.currentSnapshot))
-  const findings: IntelligenceFindingDraft[] = []
+  const meta = getRuleMetadata(rule.id)
+  const finding = draftFromRule(rule, context, pageId)
+  finding.description = buildFindingDescription(rule.id, context, result.evidence ?? [])
+  finding.recommendation = rule.recommendation(context)
+  finding.confidence = resolveRuleConfidence(rule.id, result.confidence)
+  finding.evidence = result.evidence ?? []
+  finding.severity = meta?.severity ?? rule.severity
 
-  for (const finding of scored) {
-    if (!finding.pageId) {
-      finding.pageId = context.currentSnapshot.page.id
-    }
-    findings.push(enrichScoredFinding(finding, "page"))
-  }
-
-  return findings
+  return [finding]
 }
 
 export async function executePageRules(
   context: PageRuleContext
 ): Promise<IntelligenceFindingDraft[]> {
   const registry = getRuleRegistry()
-  const pageType = context.currentSnapshot.page.pageType
+  const rulePageType = resolveRulePageType(context.currentSnapshot.page)
+  const ruleIds = getRuleIdsForPageType(rulePageType)
+  const rules = registry.getByIds(ruleIds).filter((rule) => rule.scope === "page")
   const findings: IntelligenceFindingDraft[] = []
 
-  if (!isPageRuleTraceEnabled()) {
-    const rules = registry.getPageRules(pageType)
-
-    for (const ruleDef of rules) {
-      const ruleFindings = await runPageRule(context, ruleDef.id)
-      findings.push(...ruleFindings)
-    }
-
-    return findings
-  }
-
-  const pageStats = beginPageRuleTrace(context.currentSnapshot.page.path)
-  const allPageRules = registry
-    .getAll()
-    .filter((rule) => rule.scope === "page" && rule.enabled)
-    .sort((a, b) => a.id.localeCompare(b.id))
-
-  for (const ruleDef of allPageRules) {
-    if (!ruleAppliesToPage(ruleDef, pageType)) {
-      logPageRuleNotApplicable(ruleDef.id, pageStats)
-      continue
-    }
-
-    const legacyRule = legacyRuleById.get(ruleDef.id)
-    if (!legacyRule) {
-      logPageRuleNotApplicable(ruleDef.id, pageStats)
-      continue
-    }
-
-    const ruleFindings = await runPageRule(context, ruleDef.id)
+  for (const rule of rules) {
+    const ruleFindings = await evaluateRule(rule, context, context.currentSnapshot.page.id)
     findings.push(...ruleFindings)
-    logPageRuleEvaluation(ruleDef.id, ruleFindings.length, pageStats)
   }
 
-  endPageRuleTrace(pageStats)
   return findings
 }
 
@@ -101,27 +79,16 @@ export async function executeSiteRules(
   context: SiteRuleContext
 ): Promise<IntelligenceFindingDraft[]> {
   const registry = getRuleRegistry()
-  const rules = registry.getSiteRules()
+  const ruleIds = getSiteRuleIds()
+  const rules = registry.getByIds(ruleIds).filter((rule) => rule.scope === "site")
   const findings: IntelligenceFindingDraft[] = []
 
-  for (const ruleDef of rules) {
-    const legacyRule = legacyRuleById.get(ruleDef.id)
-    if (!legacyRule) continue
-
-    const scored = await runLegacyRule(legacyRule, toAuditContext(context))
-    for (const finding of scored) {
-      findings.push(enrichScoredFinding(finding, "site"))
-    }
+  for (const rule of rules) {
+    const ruleFindings = await evaluateRule(rule, context)
+    findings.push(...ruleFindings)
   }
 
   return findings
-}
-
-export function getApplicableLegacyRuleIds(pageType: string): string[] {
-  const registry = getRuleRegistry()
-  return registry
-    .getPageRules(pageType as PageRuleContext["currentSnapshot"]["page"]["pageType"])
-    .map((rule) => rule.id)
 }
 
 export function toScoredFindingInputs(
@@ -155,10 +122,10 @@ export function dedupeFindings(
   return deduped
 }
 
-export function countRulesForPage(pageType: PageRuleContext["currentSnapshot"]["page"]["pageType"]): number {
-  return getRuleRegistry().getPageRules(pageType).length
+export function countRulesForPage(page: AuditPage): number {
+  return getRuleIdsForPageType(resolveRulePageType(page)).length
 }
 
 export function getCatalogEntry(ruleId: string) {
-  return getProductionRuleCatalogEntry(ruleId)
+  return getRuleMetadata(ruleId)
 }

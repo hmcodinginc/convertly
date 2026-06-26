@@ -1,11 +1,9 @@
-import type { AuditPage, AuditPageType, AuditSession, FindingSeverity } from "@/types/auditEngine"
 import type { PageContentSnapshot } from "@/services/audit/pageContentService"
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import type { IntelligenceCategory } from "@/services/audit/intelligence/categories"
 import type { BusinessProfileType } from "@/services/audit/intelligence/businessProfiles"
 import type { RuleScope } from "@/services/audit/intelligence/rules/ruleDefinition"
-
-export type RuleAppliesTo = AuditPageType[] | "all"
+import type { AuditPage, AuditSession, FindingSeverity } from "@/types/auditEngine"
 
 export type RuleDifficulty = "low" | "medium" | "high"
 

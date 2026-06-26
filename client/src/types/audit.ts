@@ -30,6 +30,9 @@ export type Issue = {
   page?: string
 }
 
+/** Site-wide finding with no page association */
+export type SiteFinding = Omit<Issue, "page">
+
 export type RecommendationPriority = "Critical" | "High" | "Medium"
 
 export type Recommendation = {
@@ -104,6 +107,7 @@ export type AuditDetail = {
   status: AuditStatus
   errorMessage?: string
   issues: Issue[]
+  siteFindings: SiteFinding[]
   recommendations: Recommendation[]
   scoreBreakdown: ScoreBreakdownItem[]
   pageFindings: PageFinding[]
