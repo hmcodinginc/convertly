@@ -37,3 +37,21 @@ export async function getPageById(id: string): Promise<AuditPage | null> {
   if (error) throw new Error(error.message)
   return data ? mapPageRowToAuditPage(data) : null
 }
+
+export async function updatePage(
+  id: string,
+  patch: Partial<Pick<AuditPage, "title">>
+): Promise<AuditPage | null> {
+  if (!patch.title) return getPageById(id)
+
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from("audit_pages")
+    .update({ title: patch.title })
+    .eq("id", id)
+    .select()
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data ? mapPageRowToAuditPage(data) : null
+}

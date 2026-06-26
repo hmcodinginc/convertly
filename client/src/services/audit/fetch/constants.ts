@@ -1,4 +1,4 @@
-export const MAX_RENDERED_PAGES = 10
+export const MAX_RENDERED_PAGES = 20
 
 export const QUALITY_RENDER_THRESHOLD = 0.55
 

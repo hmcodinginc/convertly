@@ -1,13 +1,14 @@
 import { COMMON_PAGE_DEFINITIONS } from "@/services/audit/constants"
 import { discoverPages } from "@/services/audit/pageDiscovery"
 import { fetchPageContentSnapshots } from "@/services/audit/pageContentService"
+import { resolvePageDisplayTitle } from "@/services/audit/pageTitleResolver"
 import { createAuditFetchContext } from "@/services/audit/fetch/types"
 import { createScorePlaceholders, runAuditRules } from "@/services/audit/auditRules"
 import { attachScreenshotsToPages } from "@/services/audit/screenshotService"
 import {
-  calculateAuditScore,
   toPersistedFinding,
 } from "@/services/audit/scoring/calculateAuditScore"
+import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import { delay } from "@/services/internal/delay"
 import * as auditListRepository from "@/services/internal/auditListRepository"
 import {
@@ -16,6 +17,7 @@ import {
   createPages,
   createScores,
   getSessionById,
+  updatePage,
   updateSessionStatus,
   upsertScores,
 } from "@/services/repositories/audit/provider"
@@ -89,7 +91,7 @@ async function recordPhase(
 
 function buildComputedScores(
   auditId: string,
-  categoryScores: ReturnType<typeof calculateAuditScore>["categories"],
+  categoryScores: Record<ScoreCategory, number>,
   growthScore: number
 ): AuditScore[] {
   const now = new Date().toISOString()
@@ -149,15 +151,49 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await delay(PHASE_DELAYS_MS.analyzing)
 
     const pageSnapshots = await fetchPageContentSnapshots(savedPages, fetchContext)
-    await createScores(createScorePlaceholders(auditId))
 
-    const { findings: scoredFindings } = await runAuditRules({
-      session: analyzingSession,
-      pages: savedPages,
-      pageSnapshots,
+    const pagesForAnalysis = await Promise.all(
+      savedPages.map(async (page) => {
+        const snapshot = pageSnapshots.find((item) => item.page.id === page.id)
+        if (!snapshot) return page
+
+        const title = resolvePageDisplayTitle(page.path, snapshot.html, {
+          contentSource: snapshot.contentSource,
+          renderDiagnostics: snapshot.renderDiagnostics,
+        })
+
+        if (title === page.title) {
+          return { ...page, title }
+        }
+
+        const updated = await updatePage(page.id, { title })
+        return updated ?? { ...page, title }
+      })
+    )
+
+    const analysisSnapshots = pageSnapshots.map((snapshot) => {
+      const page = pagesForAnalysis.find((item) => item.id === snapshot.page.id)
+      return page ? { ...snapshot, page } : snapshot
     })
 
-    const { categories, growthScore } = calculateAuditScore(scoredFindings)
+    await createScores(createScorePlaceholders(auditId))
+
+    const { findings: scoredFindings, categories, growthScore } = await runAuditRules(
+      {
+        session: analyzingSession,
+        pages: pagesForAnalysis,
+        pageSnapshots: analysisSnapshots,
+      },
+      {
+        onPageAnalyzed: async (snapshot, findingCount) => {
+          await createHistoryEvent(
+            auditId,
+            "analyzing",
+            `Analyzed ${snapshot.page.path} — ${findingCount} finding${findingCount === 1 ? "" : "s"}`
+          )
+        },
+      }
+    )
 
     if (scoredFindings.length > 0) {
       const now = new Date().toISOString()

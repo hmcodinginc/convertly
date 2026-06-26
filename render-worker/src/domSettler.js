@@ -3,6 +3,11 @@ const STABLE_SAMPLES_REQUIRED = 2
 
 export async function waitForDomStabilization(page, maxMs) {
   const started = Date.now()
+
+  await page
+    .waitForFunction(() => document.readyState === "complete", { timeout: maxMs })
+    .catch(() => {})
+
   let previous = await readDomMetrics(page)
   let stableSamples = 0
 
@@ -16,7 +21,10 @@ export async function waitForDomStabilization(page, maxMs) {
     if (textStable && elementsStable) {
       stableSamples += 1
       if (stableSamples >= STABLE_SAMPLES_REQUIRED) {
-        return Date.now() - started
+        return {
+          domSettleMs: Date.now() - started,
+          hydrationSettled: true,
+        }
       }
     } else {
       stableSamples = 0
@@ -25,7 +33,10 @@ export async function waitForDomStabilization(page, maxMs) {
     previous = current
   }
 
-  return Date.now() - started
+  return {
+    domSettleMs: Date.now() - started,
+    hydrationSettled: false,
+  }
 }
 
 async function readDomMetrics(page) {

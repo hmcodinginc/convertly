@@ -1,7 +1,11 @@
 import { parseHtmlDocument } from "@/services/audit/pageContentService"
 import { logDiscovery } from "@/services/audit/fetch/auditPipelineLogger"
 
-export const MAX_DISCOVERED_PAGES = 12
+export const MAX_DISCOVERED_PAGES = 24
+
+export const MAX_CRAWL_DEPTH = 4
+
+export const MAX_LINKS_PER_PAGE = 40
 
 const SKIP_PROTOCOLS = ["mailto:", "tel:", "javascript:", "data:"]
 
@@ -114,6 +118,18 @@ function countJsNavCandidates(document: Document): number {
   ].join(", ")
 
   return document.querySelectorAll(buttonSelectors).length
+}
+
+export function extractDiscoveryLinksForCrawl(
+  baseUrl: string,
+  html: string,
+  maxLinks = MAX_LINKS_PER_PAGE
+): ExtractedLink[] {
+  const document = parseHtmlDocument(html)
+  const rejected: LinkRejection[] = []
+  const allAnchors = Array.from(document.querySelectorAll("a[href]")) as HTMLAnchorElement[]
+  const links = collectLinksFromAnchors(baseUrl, allAnchors, rejected)
+  return links.slice(0, maxLinks)
 }
 
 export function extractDiscoveryLinksDetailed(

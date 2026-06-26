@@ -31,7 +31,7 @@ import {
   hasSuccessfulAnalysis,
   homepagePath,
   homepageUrl,
-  requireHomepage,
+  requireAnalyzablePage,
 } from "@/services/audit/rules/ruleHelpers"
 import type { AuditRule } from "@/types/auditEngine"
 import type { ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
@@ -49,7 +49,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Missing primary CTA",
     category: "conversion",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasPrimaryCta(snapshot.document)) return { findings: [] }
 
       const domain = auditDomain(context)
@@ -73,7 +73,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Multiple competing CTAs",
     category: "ux",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document) return { findings: [] }
 
       const ctaCount = countHeroCtas(snapshot.document)
@@ -100,7 +100,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Hero CTA below fold",
     category: "conversion",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasCtaBelowFold(snapshot.document)) return { findings: [] }
 
       return {
@@ -123,7 +123,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Generic headline",
     category: "copy",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document) return { findings: [] }
 
       const headline = getPrimaryHeadline(snapshot.document)
@@ -150,7 +150,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "No value proposition",
     category: "copy",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document) return { findings: [] }
 
       const valueText = getHeroValueText(snapshot.document)
@@ -256,7 +256,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "No testimonials detected",
     category: "trust",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasTestimonials(snapshot.document)) return { findings: [] }
 
       return {
@@ -279,7 +279,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "No social proof detected",
     category: "trust",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasSocialProof(snapshot.document)) return { findings: [] }
 
       return {
@@ -302,7 +302,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "No lead capture form",
     category: "conversion",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasLeadCaptureForm(snapshot.document)) return { findings: [] }
 
       return {
@@ -353,7 +353,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Weak CTA language",
     category: "copy",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasWeakCtaLanguage(snapshot.document)) return { findings: [] }
 
       const weakCtas = getWeakCtaTexts(snapshot.document)
@@ -379,7 +379,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Too many navigation links",
     category: "ux",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document) return { findings: [] }
 
       const linkCount = countNavigationLinks(snapshot.document)
@@ -405,7 +405,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "No urgency indicators",
     category: "conversion",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasUrgencyIndicators(snapshot.document)) return { findings: [] }
 
       return {
@@ -428,7 +428,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Missing viewport meta",
     category: "technical",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || hasViewportMeta(snapshot.document)) return { findings: [] }
 
       return {
@@ -451,7 +451,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Touch targets too small",
     category: "accessibility",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasSmallTouchTargets(snapshot.document)) return { findings: [] }
 
       return {
@@ -474,7 +474,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Horizontal overflow detected",
     category: "technical",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasHorizontalOverflowRisk(snapshot.document)) return { findings: [] }
 
       return {
@@ -497,7 +497,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Font sizes too small",
     category: "accessibility",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasSmallFontSizes(snapshot.document)) return { findings: [] }
 
       return {
@@ -520,7 +520,7 @@ export const productionAuditRules: AuditRule[] = [
     name: "Images larger than viewport",
     category: "performance",
     run: async (context) => {
-      const snapshot = requireHomepage(context)
+      const snapshot = requireAnalyzablePage(context)
       if (!snapshot?.document || !hasOversizedImages(snapshot.document)) return { findings: [] }
 
       return {

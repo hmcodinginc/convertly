@@ -72,6 +72,16 @@ export async function getPagesByAuditId(auditId: string): Promise<AuditPage[]> {
   return localPage.getPagesByAuditId(auditId)
 }
 
+export async function updatePage(
+  id: string,
+  patch: Partial<Pick<AuditPage, "title">>
+): Promise<AuditPage | null> {
+  if (shouldUseSupabaseAudits()) {
+    return supabasePage.updatePage(id, patch)
+  }
+  return localPage.updatePage(id, patch)
+}
+
 export async function createFindings(findings: AuditFinding[]): Promise<AuditFinding[]> {
   if (shouldUseSupabaseAudits()) {
     return supabaseFinding.createFindings(findings)

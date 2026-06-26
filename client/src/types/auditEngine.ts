@@ -133,6 +133,8 @@ export type AuditRuleContext = {
   session: AuditSession
   pages: AuditPage[]
   pageSnapshots: PageContentSnapshot[]
+  /** Set by Intelligence Engine V2 during per-page execution */
+  currentPageSnapshot?: PageContentSnapshot
 }
 
 export type AuditRuleResult = {

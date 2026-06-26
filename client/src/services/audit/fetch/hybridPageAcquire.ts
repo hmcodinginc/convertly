@@ -63,12 +63,14 @@ async function renderToAcquired(url: string): Promise<AcquiredPageContent> {
     html: rendered.html,
     contentHash,
     contentSource: "rendered",
+    renderDiagnostics: rendered.diagnostics ?? null,
   }
 }
 
 type AcquireOptions = {
   forceRender?: boolean
   isHomepage?: boolean
+  skipCache?: boolean
 }
 
 export async function hybridPageAcquire(
@@ -77,9 +79,11 @@ export async function hybridPageAcquire(
   options: AcquireOptions = {}
 ): Promise<AcquiredPageContent> {
   const key = cacheKey(url)
-  const cached = context.cache.get(key)
-  if (cached) {
-    return cached
+  if (!options.skipCache) {
+    const cached = context.cache.get(key)
+    if (cached) {
+      return cached
+    }
   }
 
   const staticResult = await fetchPageRemote(url)

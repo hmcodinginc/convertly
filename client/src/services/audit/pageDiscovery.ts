@@ -4,10 +4,12 @@ import { logDiscovery } from "@/services/audit/fetch/auditPipelineLogger"
 import { createAuditFetchContext, type AuditFetchContext } from "@/services/audit/fetch/types"
 import { hybridPageAcquire } from "@/services/audit/fetch/hybridPageAcquire"
 import {
-  extractDiscoveryLinksDetailed,
+  extractDiscoveryLinksForCrawl,
   extractPageTitle,
   logLinkExtractionDiagnostics,
+  MAX_CRAWL_DEPTH,
   MAX_DISCOVERED_PAGES,
+  type ExtractedLink,
 } from "@/services/audit/linkExtractor"
 import type { DiscoveredPageCandidate } from "@/types/auditEngine"
 
@@ -26,6 +28,12 @@ function buildPageUrl(baseUrl: string, path: string): string {
 function normalizeBaseUrl(baseUrl: string): string {
   const parsed = new URL(baseUrl)
   return parsed.origin
+}
+
+function normalizePath(pathname: string): string {
+  if (!pathname || pathname === "") return "/"
+  const trimmed = pathname.replace(/\/+$/, "") || "/"
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`
 }
 
 function shouldSkipAsDuplicate(
@@ -59,6 +67,91 @@ function duplicateSkipReason(
   return "duplicate-static-content-hash"
 }
 
+type CrawlQueueItem = {
+  path: string
+  url: string
+  depth: number
+}
+
+function enqueueLinks(
+  queue: CrawlQueueItem[],
+  visited: Set<string>,
+  queued: Set<string>,
+  links: ExtractedLink[],
+  depth: number
+): void {
+  for (const link of links) {
+    const path = normalizePath(link.path)
+    if (visited.has(path) || queued.has(path)) continue
+    queued.add(path)
+    queue.push({ path, url: link.url, depth })
+  }
+}
+
+async function verifyCandidate(
+  candidate: CrawlQueueItem,
+  context: AuditFetchContext,
+  normalizedHomepagePath: string
+): Promise<{
+  accepted: boolean
+  candidate?: DiscoveredPageCandidate
+  links: ExtractedLink[]
+  reason?: string
+}> {
+  const forceRender = context.spaMode && context.renderedPageCount < MAX_RENDERED_PAGES
+
+  logDiscovery("Verifying candidate", {
+    path: candidate.path,
+    url: candidate.url,
+    depth: candidate.depth,
+    forceRender,
+  })
+
+  const pageFetch = await hybridPageAcquire(candidate.url, context, { forceRender })
+
+  if (!pageFetch.ok || pageFetch.status !== 200 || !pageFetch.html || !pageFetch.contentHash) {
+    return {
+      accepted: false,
+      links: [],
+      reason: "fetch-failed",
+    }
+  }
+
+  if (
+    shouldSkipAsDuplicate(
+      candidate.path,
+      normalizedHomepagePath,
+      pageFetch.contentHash,
+      context.homepageContentHash,
+      context.spaMode,
+      pageFetch.contentSource
+    )
+  ) {
+    return {
+      accepted: false,
+      links: [],
+      reason: duplicateSkipReason(context.spaMode, pageFetch.contentSource),
+    }
+  }
+
+  const links =
+    candidate.depth < MAX_CRAWL_DEPTH
+      ? extractDiscoveryLinksForCrawl(pageFetch.finalUrl, pageFetch.html)
+      : []
+
+  return {
+    accepted: true,
+    candidate: {
+      pageType: inferPageTypeFromPath(candidate.path),
+      path: candidate.path,
+      url: pageFetch.finalUrl,
+      discoveryStatus: "reachable",
+      title: extractPageTitle(pageFetch.html, "Page"),
+    },
+    links,
+  }
+}
+
 export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
   async discover(
     baseUrl: string,
@@ -66,10 +159,11 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
   ): Promise<DiscoveredPageCandidate[]> {
     const origin = normalizeBaseUrl(baseUrl)
 
-    logDiscovery("Starting page discovery", {
+    logDiscovery("Starting BFS page discovery", {
       baseUrl,
       origin,
       maxPages: MAX_DISCOVERED_PAGES,
+      maxDepth: MAX_CRAWL_DEPTH,
       robots: "not-checked",
     })
 
@@ -86,115 +180,68 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
       return []
     }
 
-    logDiscovery("Homepage verified", {
-      url: homepageFetch.finalUrl,
-      path: new URL(homepageFetch.finalUrl).pathname || "/",
-      contentSource: homepageFetch.contentSource,
-      contentHash: homepageFetch.contentHash?.slice(0, 12),
-      spaMode: context.spaMode,
-    })
-
-    const homepagePath = new URL(homepageFetch.finalUrl).pathname || "/"
-    const normalizedHomepagePath = homepagePath === "" ? "/" : homepagePath
+    const homepagePath = normalizePath(new URL(homepageFetch.finalUrl).pathname)
     const verified: DiscoveredPageCandidate[] = [
       {
         pageType: "homepage",
-        path: normalizedHomepagePath,
+        path: homepagePath,
         url: homepageFetch.finalUrl,
         discoveryStatus: "reachable",
         title: extractPageTitle(homepageFetch.html, "Homepage"),
       },
     ]
 
-    const linkResult = extractDiscoveryLinksDetailed(homepageFetch.finalUrl, homepageFetch.html)
-    logLinkExtractionDiagnostics(homepageFetch.finalUrl, linkResult)
+    const visited = new Set<string>([homepagePath])
+    const queued = new Set<string>()
+    const queue: CrawlQueueItem[] = []
 
-    for (const link of linkResult.extracted) {
-      if (verified.length >= MAX_DISCOVERED_PAGES) {
+    const homepageLinks = extractDiscoveryLinksForCrawl(homepageFetch.finalUrl, homepageFetch.html)
+    logLinkExtractionDiagnostics(homepageFetch.finalUrl, {
+      source: "all-anchors",
+      selector: "a[href]",
+      anchorCount: homepageLinks.length,
+      buttonNavCount: 0,
+      extracted: homepageLinks,
+      rejected: [],
+      capped: homepageLinks.length >= MAX_DISCOVERED_PAGES,
+    })
+
+    enqueueLinks(queue, visited, queued, homepageLinks, 1)
+
+    while (queue.length > 0 && verified.length < MAX_DISCOVERED_PAGES) {
+      const candidate = queue.shift()!
+      if (visited.has(candidate.path)) continue
+
+      visited.add(candidate.path)
+
+      const result = await verifyCandidate(candidate, context, homepagePath)
+
+      if (!result.accepted || !result.candidate) {
         logDiscovery("Candidate rejected", {
-          path: link.path,
-          url: link.url,
-          reason: `max-pages-reached:${MAX_DISCOVERED_PAGES}`,
-        })
-        break
-      }
-
-      const normalizedPath = link.path === "" ? "/" : link.path
-      if (verified.some((page) => page.path === normalizedPath)) {
-        logDiscovery("Candidate rejected", {
-          path: normalizedPath,
-          url: link.url,
-          reason: "duplicate-path-already-verified",
-        })
-        continue
-      }
-
-      const forceRender =
-        context.spaMode && context.renderedPageCount < MAX_RENDERED_PAGES
-
-      logDiscovery("Verifying candidate", {
-        path: normalizedPath,
-        url: link.url,
-        forceRender,
-      })
-
-      const pageFetch = await hybridPageAcquire(link.url, context, { forceRender })
-
-      if (!pageFetch.ok || pageFetch.status !== 200 || !pageFetch.html || !pageFetch.contentHash) {
-        logDiscovery("Candidate rejected", {
-          path: normalizedPath,
-          url: link.url,
-          reason: "fetch-failed",
-          ok: pageFetch.ok,
-          status: pageFetch.status,
-          contentSource: pageFetch.contentSource,
-          error: pageFetch.error,
+          path: candidate.path,
+          url: candidate.url,
+          depth: candidate.depth,
+          reason: result.reason ?? "unknown",
         })
         continue
       }
 
-      if (
-        shouldSkipAsDuplicate(
-          normalizedPath,
-          normalizedHomepagePath,
-          pageFetch.contentHash,
-          context.homepageContentHash,
-          context.spaMode,
-          pageFetch.contentSource
-        )
-      ) {
-        logDiscovery("Candidate rejected", {
-          path: normalizedPath,
-          url: pageFetch.finalUrl,
-          reason: duplicateSkipReason(context.spaMode, pageFetch.contentSource),
-          pageHash: pageFetch.contentHash?.slice(0, 12),
-          homepageHash: context.homepageContentHash?.slice(0, 12),
-          contentSource: pageFetch.contentSource,
-        })
-        continue
-      }
-
-      verified.push({
-        pageType: inferPageTypeFromPath(normalizedPath),
-        path: normalizedPath,
-        url: pageFetch.finalUrl,
-        discoveryStatus: "reachable",
-        title: extractPageTitle(pageFetch.html, "Page"),
-      })
+      verified.push(result.candidate)
 
       logDiscovery("URL verified", {
-        path: normalizedPath,
-        url: pageFetch.finalUrl,
-        pageType: inferPageTypeFromPath(normalizedPath),
-        contentSource: pageFetch.contentSource,
-        contentHash: pageFetch.contentHash?.slice(0, 12),
+        path: result.candidate.path,
+        url: result.candidate.url,
+        pageType: result.candidate.pageType,
+        depth: candidate.depth,
       })
+
+      if (candidate.depth < MAX_CRAWL_DEPTH) {
+        enqueueLinks(queue, visited, queued, result.links, candidate.depth + 1)
+      }
     }
 
     logDiscovery("Discovery complete", {
       baseUrl,
-      homepageContentSource: homepageFetch.contentSource,
-      candidatesExtracted: linkResult.extracted.length,
       verifiedPageCount: verified.length,
       paths: verified.map((page) => page.path).join(","),
     })

@@ -40,6 +40,33 @@ async function launchBrowser() {
   return chromium.launch({ headless: true })
 }
 
+async function collectPageDiagnostics(page, settle) {
+  return page.evaluate(() => {
+    const visibleText = (document.body?.innerText ?? "").replace(/\s+/g, " ").trim()
+
+    return {
+      pathname: window.location.pathname,
+      readyState: document.readyState,
+      domLength: document.documentElement.outerHTML.length,
+      visibleTextLength: visibleText.length,
+      headingCount: document.querySelectorAll("h1, h2, h3, h4, h5, h6").length,
+      formCount: document.querySelectorAll("form").length,
+      buttonCount: document.querySelectorAll("button, [role='button']").length,
+      linkCount: document.querySelectorAll("a[href]").length,
+      firstH1:
+        document.querySelector("h1")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+      documentTitle: document.title,
+      openGraphTitle:
+        document.querySelector('meta[property="og:title"]')?.getAttribute("content")?.trim() ??
+        null,
+    }
+  }).then((browserMetrics) => ({
+    ...browserMetrics,
+    domSettleMs: settle.domSettleMs,
+    hydrationSettled: settle.hydrationSettled,
+  }))
+}
+
 export async function renderPage(url) {
   const safeUrl = assertSafeUrl(url)
   const targetUrl = safeUrl.toString()
@@ -62,12 +89,17 @@ export async function renderPage(url) {
       timeout: NAVIGATION_TIMEOUT_MS,
     })
 
-    await waitForDomStabilization(page, RENDER_SETTLE_MAX_MS)
+    const settle = await waitForDomStabilization(page, RENDER_SETTLE_MAX_MS)
 
     const html = await page.content()
     const title = await page.title()
     const extracted = await extractFromPage(page, page.url())
     const contentHash = hashContent(html)
+    const diagnostics = await collectPageDiagnostics(page, settle)
+
+    console.log(
+      `[render-worker] Render complete url=${page.url()} pathname=${diagnostics.pathname} readyState=${diagnostics.readyState} settled=${diagnostics.hydrationSettled} dom=${diagnostics.domLength} text=${diagnostics.visibleTextLength} h1=${diagnostics.firstH1 ?? "(none)"}`
+    )
 
     return {
       ok: true,
@@ -78,6 +110,7 @@ export async function renderPage(url) {
       links: extracted.links,
       headings: extracted.headings,
       contentHash,
+      diagnostics,
       rendered: true,
     }
   } catch (error) {

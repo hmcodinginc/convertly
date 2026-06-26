@@ -1,4 +1,5 @@
 import { isAuditInProgress } from "@/lib/auditStatus"
+import { calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 import { parseDomainFromUrl } from "@/lib/auditUrlValidation"
 import type {
   AuditDetail,
@@ -114,9 +115,32 @@ function mapFindingsToIssues(data: AuditSessionData): Issue[] {
     }))
 }
 
+function getAnalyzedPathsFromHistory(
+  history: AuditSessionData["history"]
+): Set<string> {
+  const paths = new Set<string>()
+
+  for (const event of history) {
+    const match = event.message.match(/^Analyzed (\S+) —/)
+    if (match?.[1]) {
+      paths.add(match[1])
+    }
+  }
+
+  return paths
+}
+
 function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
+  const analyzedPaths = getAnalyzedPathsFromHistory(data.history)
+  const legacyAudit = analyzedPaths.size === 0 && data.session.status === "completed"
+
   return data.pages.map((page) => {
     const issuesCount = data.findings.filter((finding) => finding.pageId === page.id).length
+    const normalizedPath = page.path.replace(/\/$/, "") || "/"
+    const analyzed =
+      legacyAudit ||
+      analyzedPaths.has(page.path) ||
+      analyzedPaths.has(normalizedPath)
 
     return {
       id: page.id,
@@ -125,9 +149,9 @@ function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
       url: page.url,
       pageType: PAGE_TYPE_LABELS[page.pageType],
       discoveryStatus: DISCOVERY_STATUS_LABELS[page.discoveryStatus],
-      score: Math.max(35, 94 - issuesCount * 8),
+      score: calculatePageScoreFromAuditFindings(page, data.findings, { analyzed }),
       issuesCount,
-      status: pageStatus(issuesCount),
+      status: analyzed ? pageStatus(issuesCount) : "At risk",
     }
   })
 }

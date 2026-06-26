@@ -12,6 +12,13 @@ export function requireHomepage(context: AuditRuleContext): PageContentSnapshot 
   return snapshot
 }
 
+/** Returns the page under analysis (V2 per-page pipeline) or homepage fallback */
+export function requireAnalyzablePage(context: AuditRuleContext): PageContentSnapshot | null {
+  const snapshot = context.currentPageSnapshot ?? getHomepageSnapshot(context.pageSnapshots)
+  if (!snapshot?.fetchSucceeded || !snapshot.document) return null
+  return snapshot
+}
+
 export function hasSuccessfulAnalysis(context: AuditRuleContext): boolean {
   return context.pageSnapshots.some((snapshot) => snapshot.fetchSucceeded && snapshot.html)
 }

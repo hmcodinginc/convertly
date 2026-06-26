@@ -8,6 +8,22 @@ export type HtmlQualityAssessment = {
   reasons: string[]
 }
 
+export type RenderPageDiagnostics = {
+  pathname: string
+  readyState: string
+  domSettleMs: number
+  hydrationSettled: boolean
+  domLength: number
+  visibleTextLength: number
+  headingCount: number
+  formCount: number
+  buttonCount: number
+  linkCount: number
+  firstH1: string | null
+  documentTitle: string
+  openGraphTitle: string | null
+}
+
 export type AcquiredPageContent = {
   ok: boolean
   status: number
@@ -15,6 +31,7 @@ export type AcquiredPageContent = {
   html: string | null
   contentHash: string | null
   contentSource: ContentSource
+  renderDiagnostics?: RenderPageDiagnostics | null
   error?: string
 }
 
@@ -28,6 +45,7 @@ export type RenderPageResult = {
   headings: { h1: string[]; h2: string[] }
   contentHash: string | null
   rendered: true
+  diagnostics?: RenderPageDiagnostics | null
   error?: string
 }
 
