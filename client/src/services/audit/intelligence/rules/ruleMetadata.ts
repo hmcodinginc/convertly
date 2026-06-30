@@ -4,6 +4,11 @@ import type { BusinessImpactLevel } from "@/services/audit/intelligence/types"
 import type { RulePackId } from "@/services/audit/intelligence/rules/rulePacks"
 import type { RuleScope } from "@/services/audit/intelligence/rules/ruleDefinition"
 
+/**
+ * Core rule catalog metadata (v1 shape).
+ * Scoring extensions (rule family, blockers, impact level) live in
+ * ruleScoringMetadata.ts — resolved via resolveRuleScoringProfile().
+ */
 export type RuleMetadata = {
   id: string
   scope: RuleScope

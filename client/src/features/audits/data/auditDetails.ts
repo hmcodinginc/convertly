@@ -156,7 +156,7 @@ function buildMockRunMetadata(
     siteFindingsCount,
     pageFindingsCount,
     ruleCount: RULE_METADATA.length,
-    auditEngineVersion: "Intelligence v2",
+    auditEngineVersion: "Intelligence v3",
   }
 }
 

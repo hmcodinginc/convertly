@@ -4,8 +4,11 @@ import {
   executePageRules,
   executeSiteRules,
   toScoredFindingInputs,
+  countApplicableRuleEvaluations,
+  countExecutedRuleEvaluations,
 } from "@/services/audit/intelligence/execution/ruleExecutor"
-import { calculateAuditScoreV2 } from "@/services/audit/intelligence/scoring/scoringEngineV2"
+import { calculateAuditScoreV3 } from "@/services/audit/intelligence/scoring/scoringEngineV3"
+import type { ScoringEngineV3Result } from "@/services/audit/intelligence/scoring/scoringEngineV3"
 import type {
   IntelligenceExecutionResult,
   IntelligenceFindingDraft,
@@ -35,9 +38,10 @@ export async function runIntelligenceEngine(
   intelligenceFindings: IntelligenceFindingDraft[]
   scoredFindings: ScoredFindingInput[]
   execution: IntelligenceExecutionResult
-  categories: ReturnType<typeof calculateAuditScoreV2>["categories"]
+  categories: ScoringEngineV3Result["categories"]
   growthScore: number
   pageScores: Record<string, number>
+  scoring: ScoringEngineV3Result
 }> {
   const pageFindings: IntelligenceFindingDraft[] = []
   const eligibleSnapshots = getSnapshotsEligibleForRules(context.pageSnapshots)
@@ -66,11 +70,16 @@ export async function runIntelligenceEngine(
   const scoredFindings = toScoredFindingInputs(intelligenceFindings)
 
   const analyzedPageIds = new Set(eligibleSnapshots.map((snapshot) => snapshot.page.id))
-  const { categories, growthScore, pageScores } = calculateAuditScoreV2(
-    intelligenceFindings,
-    context.pages,
-    analyzedPageIds
-  )
+  const analyzedPages = context.pages.filter((page) => analyzedPageIds.has(page.id))
+
+  const scoring = calculateAuditScoreV3(intelligenceFindings, context.pages, {
+    analyzedPageIds,
+    pageSnapshots: context.pageSnapshots,
+    applicableRuleCount: countApplicableRuleEvaluations(context.pages),
+    executedRuleCount: countExecutedRuleEvaluations(analyzedPages),
+  })
+
+  const { categories, growthScore, pageScores } = scoring
 
   const execution: IntelligenceExecutionResult = {
     findings: intelligenceFindings,
@@ -87,5 +96,6 @@ export async function runIntelligenceEngine(
     categories,
     growthScore,
     pageScores,
+    scoring,
   }
 }

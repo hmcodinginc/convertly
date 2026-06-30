@@ -49,6 +49,10 @@ export const SCORE_CATEGORY_DEFINITIONS = [
   { category: "mobile" as const, label: "Mobile", maxScore: 100 },
   { category: "ux" as const, label: "UX", maxScore: 100 },
   { category: "growth" as const, label: "Growth Score", maxScore: 100 },
+  /** V3 auxiliary metrics — stored using legacy enum values for backward-compatible persistence */
+  { category: "clarity" as const, label: "Audit Confidence", maxScore: 100 },
+  { category: "overall" as const, label: "Growth Potential", maxScore: 100 },
+  { category: "friction" as const, label: "Score Ceiling", maxScore: 100 },
 ]
 
 export const DESKTOP_VIEWPORT = { width: 1440, height: 900 } as const

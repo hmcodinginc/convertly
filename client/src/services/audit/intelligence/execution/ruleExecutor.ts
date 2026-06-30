@@ -126,6 +126,26 @@ export function countRulesForPage(page: AuditPage): number {
   return getRuleIdsForPageType(resolveRulePageType(page)).length
 }
 
+/** Total rule evaluations scheduled across all discovered pages plus site rules */
+export function countApplicableRuleEvaluations(pages: AuditPage[]): number {
+  const siteCount = getSiteRuleIds().length
+  const pageCount = pages.reduce(
+    (sum, page) => sum + getRuleIdsForPageType(resolveRulePageType(page)).length,
+    0
+  )
+  return siteCount + pageCount
+}
+
+/** Rule evaluations for analyzed pages only (eligible snapshots) */
+export function countExecutedRuleEvaluations(analyzedPages: AuditPage[]): number {
+  const siteCount = getSiteRuleIds().length
+  const pageCount = analyzedPages.reduce(
+    (sum, page) => sum + getRuleIdsForPageType(resolveRulePageType(page)).length,
+    0
+  )
+  return siteCount + pageCount
+}
+
 export function getCatalogEntry(ruleId: string) {
   return getRuleMetadata(ruleId)
 }

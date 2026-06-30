@@ -4,6 +4,7 @@ import {
 } from "@/services/audit/intelligence"
 import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 import type { ScoreCategory, ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
+import type { ScoringEngineV3Result } from "@/services/audit/intelligence/scoring/scoringEngineV3"
 import type { AuditRule, AuditRuleContext, AuditRuleResult } from "@/types/auditEngine"
 import type { AuditScore } from "@/types/auditEngine"
 import { SCORE_CATEGORY_DEFINITIONS } from "@/services/audit/constants"
@@ -34,6 +35,7 @@ export async function runAuditRules(
   categories: Record<ScoreCategory, number>
   growthScore: number
   pageScores: Record<string, number>
+  scoring: ScoringEngineV3Result
 }> {
   bootstrapIntelligenceEngine()
 
@@ -46,6 +48,7 @@ export async function runAuditRules(
     categories: result.categories,
     growthScore: result.growthScore,
     pageScores: result.pageScores,
+    scoring: result.scoring,
   }
 }
 

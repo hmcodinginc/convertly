@@ -42,6 +42,27 @@ function AuditMetadataSection({ audit }: AuditMetadataSectionProps) {
     { label: "Status", value: getAuditStatusLabel(audit.status), isStatus: true },
   ]
 
+  if (meta.auditConfidence != null) {
+    rows.push({
+      label: "Audit confidence",
+      value: `${meta.auditConfidence}%${meta.auditConfidenceLabel ? ` · ${meta.auditConfidenceLabel}` : ""}`,
+    })
+  }
+
+  if (meta.growthPotential != null) {
+    rows.push({
+      label: "Growth potential",
+      value:
+        meta.recoverablePoints != null && meta.recoverablePoints > 0
+          ? `${meta.growthPotential} (+${meta.recoverablePoints} recoverable)`
+          : String(meta.growthPotential),
+    })
+  }
+
+  if (meta.scoreCeiling != null && meta.scoreCeiling < 94) {
+    rows.push({ label: "Score ceiling", value: String(meta.scoreCeiling) })
+  }
+
   if (audit.status === "failed" && audit.errorMessage) {
     rows.push({ label: "Error", value: audit.errorMessage, error: true })
   }

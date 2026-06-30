@@ -92,9 +92,22 @@ async function recordPhase(
 function buildComputedScores(
   auditId: string,
   categoryScores: Record<ScoreCategory, number>,
-  growthScore: number
+  growthScore: number,
+  v3Metrics?: {
+    auditConfidence: number
+    growthPotential: number
+    scoreCeiling: number
+  }
 ): AuditScore[] {
   const now = new Date().toISOString()
+
+  const auxiliaryScores: Partial<Record<string, number>> = v3Metrics
+    ? {
+        clarity: v3Metrics.auditConfidence,
+        overall: v3Metrics.growthPotential,
+        friction: v3Metrics.scoreCeiling,
+      }
+    : {}
 
   const scores: AuditScore[] = SCORE_CATEGORY_DEFINITIONS.map((definition) => {
     let score: number | null = null
@@ -103,6 +116,8 @@ function buildComputedScores(
       score = growthScore
     } else if (definition.category in categoryScores) {
       score = categoryScores[definition.category as keyof typeof categoryScores]
+    } else if (definition.category in auxiliaryScores) {
+      score = auxiliaryScores[definition.category] ?? null
     }
 
     return {
@@ -178,7 +193,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
 
     await createScores(createScorePlaceholders(auditId))
 
-    const { findings: scoredFindings, categories, growthScore } = await runAuditRules(
+    const { findings: scoredFindings, categories, growthScore, scoring } = await runAuditRules(
       {
         session: analyzingSession,
         pages: pagesForAnalysis,
@@ -206,14 +221,25 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       await createFindings(findings)
     }
 
-    await upsertScores(buildComputedScores(auditId, categories, growthScore))
+    await upsertScores(
+      buildComputedScores(auditId, categories, growthScore, {
+        auditConfidence: scoring.auditConfidence.score,
+        growthPotential: scoring.growthPotential.growthPotential,
+        scoreCeiling: scoring.scoreCeiling,
+      })
+    )
+
+    const ceilingNote =
+      scoring.appliedBlockers.length > 0
+        ? ` (ceiling ${scoring.scoreCeiling} — ${scoring.appliedBlockers.length} blocker${scoring.appliedBlockers.length === 1 ? "" : "s"})`
+        : ""
 
     await delay(PHASE_DELAYS_MS.finalizing)
 
     await createHistoryEvent(
       auditId,
       "completed",
-      `Audit completed with Growth Score ${growthScore} across ${scoredFindings.length} findings`
+      `Audit completed with Growth Score ${growthScore}${ceilingNote} across ${scoredFindings.length} findings`
     )
     await updateSessionStatus(auditId, "completed")
     await auditListRepository.syncAuditFromSession(auditId)
