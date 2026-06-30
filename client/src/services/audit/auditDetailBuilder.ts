@@ -1,6 +1,7 @@
 import { isAuditInProgress } from "@/lib/auditStatus"
 import { calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 import { RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
+import { SCORING_ENGINE_VERSION } from "@/services/audit/intelligence/scoring/scoringPolicy"
 import { parseDomainFromUrl } from "@/lib/auditUrlValidation"
 import type {
   AuditDetail,
@@ -245,6 +246,15 @@ function buildRunStats(data: AuditSessionData): AuditRunStats {
   }
 }
 
+function resolveAuxiliaryScore(
+  scores: AuditSessionData["scores"],
+  category: "clarity" | "overall" | "friction"
+): number | undefined {
+  const record = scores.find((score) => score.category === category)
+  if (record?.score == null) return undefined
+  return Math.round(record.score)
+}
+
 function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
   const analyzedPaths = getAnalyzedPathsFromHistory(data.history)
   const pagesAnalyzed =
@@ -253,6 +263,10 @@ function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
       : data.session.status === "completed"
         ? data.pages.length
         : 0
+
+  const auditConfidence = resolveAuxiliaryScore(data.scores, "clarity")
+  const growthPotential = resolveAuxiliaryScore(data.scores, "overall")
+  const scoreCeiling = resolveAuxiliaryScore(data.scores, "friction")
 
   return {
     pagesDiscovered: data.pages.length,
@@ -263,8 +277,25 @@ function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
     siteFindingsCount: data.findings.filter((finding) => !finding.pageId).length,
     pageFindingsCount: data.findings.filter((finding) => finding.pageId).length,
     ruleCount: RULE_METADATA.length,
-    auditEngineVersion: "Intelligence v2",
+    auditEngineVersion: SCORING_ENGINE_VERSION,
+    auditConfidence,
+    auditConfidenceLabel: auditConfidence != null ? confidenceLabelFromScore(auditConfidence) : undefined,
+    growthPotential,
+    recoverablePoints:
+      growthPotential != null
+        ? Math.max(0, growthPotential - resolveGrowthScore(data))
+        : undefined,
+    scoreCeiling,
+    blockerCount:
+      scoreCeiling != null && scoreCeiling < 94 ? 1 : undefined,
   }
+}
+
+function confidenceLabelFromScore(score: number): string {
+  if (score >= 88) return "High confidence"
+  if (score >= 72) return "Moderate confidence"
+  if (score >= 55) return "Limited confidence"
+  return "Low confidence"
 }
 
 function classifyTimelineMessage(message: string): TimelineEvent["kind"] {
@@ -457,7 +488,7 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
           siteFindingsCount: 0,
           pageFindingsCount: 0,
           ruleCount: RULE_METADATA.length,
-          auditEngineVersion: "Intelligence v2",
+          auditEngineVersion: SCORING_ENGINE_VERSION,
         }
       : runMetadata,
   }

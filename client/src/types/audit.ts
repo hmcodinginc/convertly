@@ -127,6 +127,15 @@ export type AuditRunMetadata = {
   pageFindingsCount: number
   ruleCount: number
   auditEngineVersion: string
+  /** V3 — composite confidence in audit completeness (0–100) */
+  auditConfidence?: number
+  auditConfidenceLabel?: string
+  /** V3 — estimated score after resolving detected issues */
+  growthPotential?: number
+  recoverablePoints?: number
+  /** V3 — maximum achievable Growth Score while blockers are active */
+  scoreCeiling?: number
+  blockerCount?: number
 }
 
 export type RecommendationPlaybook = {

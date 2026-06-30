@@ -17,13 +17,29 @@ export function bootstrapIntelligenceEngine(): void {
 
 export { runIntelligenceEngine } from "@/services/audit/intelligence/execution/auditIntelligenceEngine"
 export { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
-export { calculateAuditScoreV2, calculatePageScore, calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
+export {
+  calculateAuditScoreV2,
+  calculateAuditScoreV3,
+  calculatePageScore,
+  calculatePageScoreFromAuditFindings,
+  resolveBlockerCeiling,
+  calculateAuditConfidence,
+  calculateGrowthPotential,
+  SCORING_ENGINE_VERSION,
+} from "@/services/audit/intelligence/scoring/scoringEngineV2"
 export { buildRecommendations } from "@/services/audit/intelligence/recommendations/recommendationEngine"
 export { getPageImportanceWeight, resolvePageImportanceTier } from "@/services/audit/intelligence/pageImportance"
 export { BUSINESS_PROFILES, DEFAULT_BUSINESS_PROFILE } from "@/services/audit/intelligence/businessProfiles"
 export { INTELLIGENCE_CATEGORIES } from "@/services/audit/intelligence/categories"
 export { getRuleIdsForPageType, getSiteRuleIds, RULE_PACKS } from "@/services/audit/intelligence/rules/rulePacks"
 export { getRuleMetadata, RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
+export {
+  enrichRuleMetadata,
+  resolveRuleScoringProfile,
+  BLOCKER_RULE_OVERRIDES,
+} from "@/services/audit/intelligence/rules/ruleScoringMetadata"
+export type { RuleMetadataV2, RuleScoringProfile } from "@/services/audit/intelligence/rules/ruleScoringMetadata"
+export type { ScoringEngineV3Result, AppliedBlocker } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 
 export type {
   IntelligenceFindingDraft,

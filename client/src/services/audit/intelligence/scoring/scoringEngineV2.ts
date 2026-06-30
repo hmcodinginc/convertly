@@ -4,45 +4,89 @@ import type { IntelligenceFindingDraft } from "@/services/audit/intelligence/typ
 import { getPageImportanceWeight } from "@/services/audit/intelligence/pageImportance"
 import type { AuditPage, AuditPageType } from "@/types/auditEngine"
 import { INTELLIGENCE_CATEGORY_WEIGHTS } from "@/services/audit/intelligence/categories"
+import {
+  calculateAuditScoreV3,
+  calculatePageScoreFromAuditFindingsV3,
+  calculatePageScoreV3,
+} from "@/services/audit/intelligence/scoring/scoringEngineV3"
+import type { ScoringEngineV3Options, ScoringEngineV3Result } from "@/services/audit/intelligence/scoring/scoringEngineV3"
+import { LEGACY_SEVERITY_PENALTY } from "@/services/audit/intelligence/scoring/scoringPolicy"
 
-const SEVERITY_PENALTY: Record<FindingSeverity, number> = {
-  critical: 18,
-  high: 12,
-  medium: 7,
-  low: 4,
+/**
+ * Scoring Engine V2 — compatibility bridge to V3 Calibrated Hybrid model.
+ *
+ * V2 exports are preserved for existing consumers. All scoring math delegates
+ * to scoringEngineV3.ts. Legacy flat severity penalties remain exported for
+ * calculateAuditScore.ts (V1 bridge).
+ */
+
+/** @deprecated Use calculateAuditScoreV3 — retained for explicit V2-shaped calls */
+export function calculateCategoryScoresV2(
+  findings: IntelligenceFindingDraft[],
+  pages: AuditPage[]
+): Record<ScoreCategory, number> {
+  return calculateAuditScoreV3(findings, pages).categories
 }
 
-const CATEGORY_BASE: Record<ScoreCategory, number> = {
-  conversion: 90,
-  trust: 88,
-  mobile: 86,
-  ux: 88,
+/** @deprecated Use calculateAuditScoreV3 — computes weighted growth from category scores */
+export function calculateGrowthScoreV2(
+  categoryScores: Record<ScoreCategory, number>
+): number {
+  const weighted =
+    categoryScores.conversion * 0.38 +
+    categoryScores.trust * 0.28 +
+    categoryScores.mobile * 0.18 +
+    categoryScores.ux * 0.16
+
+  return Math.round(Math.min(94, Math.max(38, weighted)))
 }
 
-const CATEGORY_WEIGHTS: Record<ScoreCategory, number> = {
-  conversion: 0.35,
-  trust: 0.25,
-  mobile: 0.2,
-  ux: 0.2,
+export function calculatePageScore(
+  page: AuditPage,
+  findings: IntelligenceFindingDraft[],
+  options?: { analyzed?: boolean }
+): number {
+  return calculatePageScoreV3(page, findings, options)
 }
 
-const MIN_CATEGORY_SCORE = 38
-const MAX_CATEGORY_SCORE = 93
-const MAX_GROWTH_SCORE = 94
-const MIN_PAGE_SCORE = 0
-const MAX_PAGE_SCORE = 100
-const PAGE_SCORE_BASE = 100
-
-function clampPageScore(value: number): number {
-  return Math.round(Math.min(MAX_PAGE_SCORE, Math.max(MIN_PAGE_SCORE, value)))
+export function calculatePageScoreFromAuditFindings(
+  page: AuditPage,
+  findings: Array<{ pageId?: string; severity: FindingSeverity }>,
+  options?: { analyzed?: boolean }
+): number {
+  return calculatePageScoreFromAuditFindingsV3(page, findings, options)
 }
 
-function clampScore(value: number, min = MIN_CATEGORY_SCORE, max = MAX_CATEGORY_SCORE): number {
-  return Math.round(Math.min(max, Math.max(min, value)))
+export function calculateAllPageScores(
+  pages: AuditPage[],
+  findings: IntelligenceFindingDraft[],
+  analyzedPageIds?: Set<string>
+): Record<string, number> {
+  return calculateAuditScoreV3(findings, pages, { analyzedPageIds }).pageScores
 }
 
-function weightedPenalty(finding: IntelligenceFindingDraft, pages: AuditPage[]): number {
-  const basePenalty = SEVERITY_PENALTY[finding.severity] * finding.weight
+export function calculateAuditScoreV2(
+  findings: IntelligenceFindingDraft[],
+  pages: AuditPage[],
+  analyzedPageIds?: Set<string>,
+  options?: Omit<ScoringEngineV3Options, "analyzedPageIds">
+): ScoringEngineV3Result & {
+  categories: Record<ScoreCategory, number>
+  growthScore: number
+  pageScores: Record<string, number>
+} {
+  return calculateAuditScoreV3(findings, pages, {
+    ...options,
+    analyzedPageIds,
+  })
+}
+
+/** Legacy weighted penalty — preserved for tests and external references */
+export function legacyWeightedPenalty(
+  finding: IntelligenceFindingDraft,
+  pages: AuditPage[]
+): number {
+  const basePenalty = LEGACY_SEVERITY_PENALTY[finding.severity] * finding.weight
   const categoryMultiplier = INTELLIGENCE_CATEGORY_WEIGHTS[finding.category] ?? 0.7
   const confidenceMultiplier = 0.75 + finding.confidence / 400
 
@@ -56,104 +100,6 @@ function weightedPenalty(finding: IntelligenceFindingDraft, pages: AuditPage[]):
     : getPageImportanceWeight("custom" as AuditPageType, "/")
 
   return basePenalty * categoryMultiplier * confidenceMultiplier * pageWeight
-}
-
-export function calculateCategoryScoresV2(
-  findings: IntelligenceFindingDraft[],
-  pages: AuditPage[]
-): Record<ScoreCategory, number> {
-  const categories: ScoreCategory[] = ["conversion", "trust", "mobile", "ux"]
-  const scores = {} as Record<ScoreCategory, number>
-
-  for (const category of categories) {
-    const categoryFindings = findings.filter((finding) => finding.scoreCategory === category)
-    const penalty = categoryFindings.reduce(
-      (total, finding) => total + weightedPenalty(finding, pages),
-      0
-    )
-    scores[category] = clampScore(CATEGORY_BASE[category] - penalty)
-  }
-
-  return scores
-}
-
-export function calculateGrowthScoreV2(
-  categoryScores: Record<ScoreCategory, number>
-): number {
-  const weighted =
-    categoryScores.conversion * CATEGORY_WEIGHTS.conversion +
-    categoryScores.trust * CATEGORY_WEIGHTS.trust +
-    categoryScores.mobile * CATEGORY_WEIGHTS.mobile +
-    categoryScores.ux * CATEGORY_WEIGHTS.ux
-
-  return clampScore(weighted, MIN_CATEGORY_SCORE, MAX_GROWTH_SCORE)
-}
-
-export function calculatePageScore(
-  page: AuditPage,
-  findings: IntelligenceFindingDraft[],
-  options?: { analyzed?: boolean }
-): number {
-  if (options?.analyzed === false) {
-    return 0
-  }
-
-  const pageFindings = findings.filter((finding) => finding.pageId === page.id)
-  const penalty = pageFindings.reduce(
-    (total, finding) => total + SEVERITY_PENALTY[finding.severity] * finding.weight,
-    0
-  )
-
-  return clampPageScore(PAGE_SCORE_BASE - penalty)
-}
-
-export function calculatePageScoreFromAuditFindings(
-  page: AuditPage,
-  findings: Array<{ pageId?: string; severity: FindingSeverity }>,
-  options?: { analyzed?: boolean }
-): number {
-  if (options?.analyzed === false) {
-    return 0
-  }
-
-  const pageFindings = findings.filter((finding) => finding.pageId === page.id)
-  const penalty = pageFindings.reduce(
-    (total, finding) => total + SEVERITY_PENALTY[finding.severity],
-    0
-  )
-
-  return clampPageScore(PAGE_SCORE_BASE - penalty)
-}
-
-export function calculateAllPageScores(
-  pages: AuditPage[],
-  findings: IntelligenceFindingDraft[],
-  analyzedPageIds?: Set<string>
-): Record<string, number> {
-  const scores: Record<string, number> = {}
-
-  for (const page of pages) {
-    const analyzed = analyzedPageIds ? analyzedPageIds.has(page.id) : true
-    scores[page.id] = calculatePageScore(page, findings, { analyzed })
-  }
-
-  return scores
-}
-
-export function calculateAuditScoreV2(
-  findings: IntelligenceFindingDraft[],
-  pages: AuditPage[],
-  analyzedPageIds?: Set<string>
-): {
-  categories: Record<ScoreCategory, number>
-  growthScore: number
-  pageScores: Record<string, number>
-} {
-  const categories = calculateCategoryScoresV2(findings, pages)
-  const growthScore = calculateGrowthScoreV2(categories)
-  const pageScores = calculateAllPageScores(pages, findings, analyzedPageIds)
-
-  return { categories, growthScore, pageScores }
 }
 
 /** Backward-compatible bridge for legacy ScoredFindingInput consumers */
@@ -182,3 +128,24 @@ export function intelligenceFindingToScoredInput(
     pageId: finding.pageId,
   }
 }
+
+export {
+  calculateAuditScoreV3,
+  calculatePageScoreV3,
+  calculateCategoryScoresV3,
+  calculateUncappedGrowthScoreV3,
+} from "@/services/audit/intelligence/scoring/scoringEngineV3"
+
+export type { ScoringEngineV3Result, ScoringEngineV3Options } from "@/services/audit/intelligence/scoring/scoringEngineV3"
+
+export { resolveBlockerCeiling } from "@/services/audit/intelligence/scoring/blockerCeilingResolver"
+export type { AppliedBlocker, BlockerCeilingResult } from "@/services/audit/intelligence/scoring/blockerCeilingResolver"
+export { calculateAuditConfidence } from "@/services/audit/intelligence/scoring/auditConfidence"
+export type { AuditConfidenceResult } from "@/services/audit/intelligence/scoring/auditConfidence"
+export { calculateGrowthPotential } from "@/services/audit/intelligence/scoring/growthPotential"
+export type { GrowthPotentialResult } from "@/services/audit/intelligence/scoring/growthPotential"
+export {
+  SCORING_ENGINE_VERSION,
+  CATEGORY_SCORING_POLICY,
+  GROWTH_SCORE_POLICY,
+} from "@/services/audit/intelligence/scoring/scoringPolicy"
