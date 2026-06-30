@@ -31,12 +31,37 @@ function getEmptyPagesMessage(status: AuditStatus): string {
   return "No pages were discovered for this audit."
 }
 
+function SeverityChips({
+  breakdown,
+}: {
+  breakdown: NonNullable<PageFinding["severityBreakdown"]>
+}) {
+  const items = [
+    { key: "critical", label: "Critical", count: breakdown.critical },
+    { key: "high", label: "High", count: breakdown.high },
+    { key: "medium", label: "Medium", count: breakdown.medium },
+    { key: "low", label: "Low", count: breakdown.low },
+  ].filter((item) => item.count > 0)
+
+  if (items.length === 0) return null
+
+  return (
+    <div className="audit-page-card__severity">
+      {items.map((item) => (
+        <span key={item.key} className="audit-page-card__severity-chip">
+          {item.label} {item.count}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function PageFindingsSection({ pages, auditStatus }: PageFindingsSectionProps) {
   return (
     <AuditReportSection
       eyebrow="Coverage"
-      title="Page findings"
-      description="Per-page conversion scores and issue density across your core funnel."
+      title="Page analysis"
+      description="Per-page conversion scores, reachability, and finding density across your core funnel."
     >
       {pages.length === 0 ? (
         <EmptyState
@@ -45,46 +70,50 @@ function PageFindingsSection({ pages, auditStatus }: PageFindingsSectionProps) {
           description={getEmptyPagesMessage(auditStatus)}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="audit-page-grid grid gap-4 sm:grid-cols-2">
           {pages.map((page) => (
             <Card
               key={page.id}
-              className="audit-page-card app-card-metric flex flex-col gap-4 hover:translate-y-0 sm:flex-row sm:items-center sm:justify-between"
+              className="audit-page-card app-card-metric hover:translate-y-0"
             >
-              <div className="min-w-0 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold tracking-tight text-foreground">
-                    {page.label}
-                  </h3>
+              <div className="audit-page-card__main min-w-0">
+                <div className="audit-page-card__header">
+                  <h3 className="audit-page-card__title">{page.label}</h3>
                   <StatusBadge label={page.status} variant={pageStatusVariant[page.status]} />
                 </div>
                 {page.url ? (
-                  <Text variant="muted" size="sm" className="max-w-none break-all font-mono text-xs">
-                    {page.url}
-                  </Text>
+                  <p className="audit-page-card__url">{page.url}</p>
                 ) : null}
-                <Text variant="muted" size="sm" className="max-w-none font-mono text-xs">
-                  {page.path}
-                </Text>
-                {page.pageType || page.discoveryStatus ? (
-                  <Text variant="muted" size="sm" className="max-w-none text-xs">
-                    {[page.pageType, page.discoveryStatus].filter(Boolean).join(" · ")}
-                  </Text>
+                <p className="audit-page-card__path">{page.path}</p>
+                <div className="audit-page-card__meta-row">
+                  {page.pageType ? (
+                    <span className="audit-page-card__meta-chip">{page.pageType}</span>
+                  ) : null}
+                  {page.discoveryStatus ? (
+                    <span className="audit-page-card__meta-chip">{page.discoveryStatus}</span>
+                  ) : null}
+                </div>
+                {page.severityBreakdown ? (
+                  <SeverityChips breakdown={page.severityBreakdown} />
+                ) : null}
+                {page.categoryBreakdown && page.categoryBreakdown.length > 0 ? (
+                  <p className="audit-page-card__categories">
+                    {page.categoryBreakdown
+                      .slice(0, 3)
+                      .map((item) => `${item.category} ${item.count}`)
+                      .join(" · ")}
+                  </p>
                 ) : null}
               </div>
-              <div className="flex shrink-0 items-center gap-6 sm:gap-8">
-                <div className="text-right">
-                  <p className="text-2xl font-medium tabular-nums tracking-tight text-foreground">
-                    {page.score}
-                  </p>
+              <div className="audit-page-card__stats">
+                <div className="audit-page-card__stat">
+                  <p className="audit-page-card__stat-value">{page.score}</p>
                   <Text variant="muted" size="sm" className="mt-0.5 max-w-none text-xs">
                     Score
                   </Text>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-medium tabular-nums tracking-tight text-foreground">
-                    {page.issuesCount}
-                  </p>
+                <div className="audit-page-card__stat">
+                  <p className="audit-page-card__stat-value">{page.issuesCount}</p>
                   <Text variant="muted" size="sm" className="mt-0.5 max-w-none text-xs">
                     Issues
                   </Text>

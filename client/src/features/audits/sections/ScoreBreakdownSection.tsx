@@ -15,6 +15,13 @@ const statusVariant = {
   Critical: "danger",
 } as const
 
+const severityVariant = {
+  Critical: "danger",
+  High: "warning",
+  Medium: "neutral",
+  Low: "neutral",
+} as const
+
 const trendIcon = {
   up: ArrowUpRight,
   down: ArrowDownRight,
@@ -44,12 +51,37 @@ function getEmptyScoreMessage(status: AuditStatus): string {
   return "No category scores are available for this audit."
 }
 
+function ScoreImpacts({ category }: { category: ScoreBreakdownItem }) {
+  if (!category.topImpacts?.length) return null
+
+  return (
+    <div className="audit-score-card__impacts">
+      <p className="audit-score-card__impacts-label">Largest impacts</p>
+      <ul className="audit-score-card__impacts-list">
+        {category.topImpacts.map((impact) => (
+          <li key={impact.title} className="audit-score-card__impact-item">
+            <span className="audit-score-card__impact-title">{impact.title}</span>
+            <span className="audit-score-card__impact-meta">
+              {impact.count > 1 ? `${impact.count} pages` : null}
+              <StatusBadge
+                label={impact.severity}
+                variant={severityVariant[impact.severity]}
+                className="audit-score-card__impact-badge"
+              />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function ScoreBreakdownSection({ categories, auditStatus }: ScoreBreakdownSectionProps) {
   return (
     <AuditReportSection
       eyebrow="Dimensions"
       title="Score breakdown"
-      description="Category-level conversion health across growth, conversion, trust, mobile, and UX."
+      description="Category-level conversion health with the findings contributing most to each score."
     >
       {categories.length === 0 ? (
         <EmptyState
@@ -85,6 +117,7 @@ function ScoreBreakdownSection({ categories, auditStatus }: ScoreBreakdownSectio
                     </span>
                   ) : null}
                 </div>
+                <ScoreImpacts category={category} />
               </Card>
             )
           })}

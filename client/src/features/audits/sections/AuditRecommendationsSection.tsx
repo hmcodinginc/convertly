@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import { Drawer } from "@/components/feedback/Drawer"
@@ -7,8 +7,9 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
+import { groupRecommendations } from "@/features/audits/utils/groupAuditPresentation"
 import * as auditService from "@/services/auditService"
-import type { Recommendation, RecommendationPlaybook } from "@/types/audit"
+import type { PageFinding, Recommendation, RecommendationPlaybook } from "@/types/audit"
 
 const priorityVariant = {
   Critical: "danger",
@@ -18,6 +19,7 @@ const priorityVariant = {
 
 type AuditRecommendationsSectionProps = {
   recommendations: Recommendation[]
+  pages: PageFinding[]
 }
 
 function PlaybookDrawerContent({ playbook }: { playbook: RecommendationPlaybook }) {
@@ -92,17 +94,22 @@ function PlaybookDrawerContent({ playbook }: { playbook: RecommendationPlaybook 
 
 function AuditRecommendationsSection({
   recommendations,
+  pages,
 }: AuditRecommendationsSectionProps) {
+  const grouped = useMemo(
+    () => groupRecommendations(recommendations, pages),
+    [recommendations, pages]
+  )
   const [activePlaybook, setActivePlaybook] = useState<{
     rec: Recommendation
     playbook: RecommendationPlaybook
   } | null>(null)
   const [loadingPlaybookId, setLoadingPlaybookId] = useState<string | null>(null)
 
-  const openPlaybook = async (rec: Recommendation) => {
-    setLoadingPlaybookId(rec.id)
+  const openPlaybook = async (recId: string, rec: Recommendation) => {
+    setLoadingPlaybookId(recId)
     try {
-      const playbook = await auditService.getRecommendationPlaybook(rec.id)
+      const playbook = await auditService.getRecommendationPlaybook(recId)
       setActivePlaybook({ rec, playbook })
     } finally {
       setLoadingPlaybookId(null)
@@ -114,7 +121,7 @@ function AuditRecommendationsSection({
       <AuditReportSection
         eyebrow="AI insights"
         title="AI recommendations"
-        description="Prioritized experiments based on this audit's findings. Open a playbook for implementation guidance."
+        description="Consolidated recommendations across affected pages. Open a playbook for implementation guidance."
       >
         {recommendations.length === 0 ? (
           <EmptyState
@@ -124,46 +131,81 @@ function AuditRecommendationsSection({
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            {recommendations.map((rec) => (
-              <Card key={rec.id} className="app-card-metric flex h-full flex-col hover:translate-y-0">
-                <div className="flex flex-1 flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-foreground/70 uppercase">
-                      <Sparkles
-                        className="size-3.5 text-[color-mix(in_srgb,var(--accent)_80%,white)]"
-                        aria-hidden
+            {grouped.map((rec) => {
+              const playbookId = rec.recommendationIds[0]!
+              const pageCount = rec.affectedCount
+              const summary =
+                pageCount > 1
+                  ? `${pageCount} pages share this issue. ${rec.summary}`
+                  : rec.summary
+
+              return (
+                <Card key={rec.key} className="audit-recommendation-card app-card-metric flex h-full flex-col hover:translate-y-0">
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-foreground/70 uppercase">
+                        <Sparkles
+                          className="size-3.5 text-[color-mix(in_srgb,var(--accent)_80%,white)]"
+                          aria-hidden
+                        />
+                        {rec.category}
+                      </span>
+                      <StatusBadge
+                        label={rec.priority}
+                        variant={priorityVariant[rec.priority]}
                       />
-                      {rec.category}
-                    </span>
-                    <StatusBadge
-                      label={rec.priority}
-                      variant={priorityVariant[rec.priority]}
-                    />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-base font-semibold tracking-tight text-foreground">
+                        {rec.title}
+                      </h3>
+                      <Text variant="muted" size="sm" className="max-w-none leading-relaxed break-words">
+                        {summary}
+                      </Text>
+                    </div>
+                    {rec.pageLabels.length > 0 ? (
+                      <div className="audit-recommendation-card__pages">
+                        <p className="audit-finding-item__field-label">Affected pages</p>
+                        <ul className="audit-finding-item__page-list">
+                          {rec.pageLabels.map((label, index) => (
+                            <li key={`${label}-${rec.affectedPages[index] ?? index}`}>
+                              <span className="audit-finding-item__page-label">{label}</span>
+                              {rec.affectedPages[index] ? (
+                                <code className="audit-finding-item__path">
+                                  {rec.affectedPages[index]}
+                                </code>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)] pt-4">
+                      <Text size="sm" className="max-w-none font-medium text-[#86efac]">
+                        {rec.estimatedLift}
+                      </Text>
+                      <button
+                        type="button"
+                        disabled={loadingPlaybookId === playbookId}
+                        onClick={() =>
+                          void openPlaybook(playbookId, {
+                            id: playbookId,
+                            title: rec.title,
+                            summary: rec.summary,
+                            priority: rec.priority,
+                            estimatedLift: rec.estimatedLift,
+                            category: rec.category,
+                          })
+                        }
+                        className="audit-recommendation-link rounded-sm text-sm font-medium text-foreground/70 transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--accent)_45%,transparent)] disabled:opacity-50"
+                      >
+                        {loadingPlaybookId === playbookId ? "Loading…" : "View playbook →"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-base font-semibold tracking-tight text-foreground">
-                      {rec.title}
-                    </h3>
-                    <Text variant="muted" size="sm" className="max-w-none leading-6">
-                      {rec.summary}
-                    </Text>
-                  </div>
-                  <div className="mt-auto flex items-center justify-between gap-3 border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)] pt-4">
-                    <Text size="sm" className="max-w-none font-medium text-[#86efac]">
-                      {rec.estimatedLift}
-                    </Text>
-                    <button
-                      type="button"
-                      disabled={loadingPlaybookId === rec.id}
-                      onClick={() => void openPlaybook(rec)}
-                      className="text-sm font-medium text-foreground/70 transition-colors hover:text-foreground disabled:opacity-50"
-                    >
-                      {loadingPlaybookId === rec.id ? "Loading…" : "View playbook →"}
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              )
+            })}
           </div>
         )}
       </AuditReportSection>

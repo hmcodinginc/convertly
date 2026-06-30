@@ -206,8 +206,15 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
             />
             <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
             <SiteWideFindingsSection findings={audit.siteFindings} auditStatus={audit.status} />
-            <PrioritizedIssuesSection issues={audit.issues} auditStatus={audit.status} />
-            <AuditRecommendationsSection recommendations={audit.recommendations} />
+            <PrioritizedIssuesSection
+              issues={audit.issues}
+              pages={audit.pageFindings}
+              auditStatus={audit.status}
+            />
+            <AuditRecommendationsSection
+              recommendations={audit.recommendations}
+              pages={audit.pageFindings}
+            />
             <AuditMetadataSection audit={audit} />
           </div>
 

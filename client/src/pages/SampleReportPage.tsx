@@ -113,8 +113,15 @@ function SampleReportContent({ audit }: { audit: AuditDetail }) {
       <ScoreBreakdownSection categories={audit.scoreBreakdown} auditStatus={audit.status} />
       <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
       <SiteWideFindingsSection findings={audit.siteFindings} auditStatus={audit.status} />
-      <PrioritizedIssuesSection issues={audit.issues} auditStatus={audit.status} />
-      <AuditRecommendationsSection recommendations={audit.recommendations} />
+      <PrioritizedIssuesSection
+        issues={audit.issues}
+        pages={audit.pageFindings}
+        auditStatus={audit.status}
+      />
+      <AuditRecommendationsSection
+        recommendations={audit.recommendations}
+        pages={audit.pageFindings}
+      />
       <AuditMetadataSection audit={audit} />
 
       <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] p-6 text-center sm:p-8">
