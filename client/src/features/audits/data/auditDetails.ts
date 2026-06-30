@@ -1,10 +1,13 @@
 import type {
   AuditDetail,
+  AuditRunMetadata,
+  AuditRunStats,
   PageFinding,
   Recommendation,
   ScoreBreakdownItem,
   TimelineEvent,
 } from "@/types/audit"
+import { RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
 
 export type {
   AuditDetail,
@@ -124,13 +127,48 @@ function buildTimeline(completedAt: string): TimelineEvent[] {
   ]
 }
 
-function enrichAuditDetail(partial: Omit<AuditDetail, "scoreBreakdown" | "pageFindings" | "timeline">): AuditDetail {
+function buildMockStats(
+  partial: Pick<AuditDetail, "issues" | "siteFindings" | "recommendations">
+): AuditRunStats {
+  const pageFindingsCount = partial.issues.length
+  const siteFindingsCount = partial.siteFindings?.length ?? 0
+
+  return {
+    totalFindings: pageFindingsCount + siteFindingsCount,
+    pageFindingsCount,
+    siteFindingsCount,
+    totalRecommendations: partial.recommendations.length,
+  }
+}
+
+function buildMockRunMetadata(
+  partial: Pick<AuditDetail, "pagesAnalyzed" | "issues" | "siteFindings">
+): AuditRunMetadata {
+  const pageFindingsCount = partial.issues.length
+  const siteFindingsCount = partial.siteFindings?.length ?? 0
+
+  return {
+    pagesDiscovered: partial.pagesAnalyzed,
+    pagesReachable: partial.pagesAnalyzed,
+    pagesUnreachable: 0,
+    pagesAnalyzed: partial.pagesAnalyzed,
+    findingsCount: pageFindingsCount + siteFindingsCount,
+    siteFindingsCount,
+    pageFindingsCount,
+    ruleCount: RULE_METADATA.length,
+    auditEngineVersion: "Intelligence v2",
+  }
+}
+
+function enrichAuditDetail(partial: Omit<AuditDetail, "scoreBreakdown" | "pageFindings" | "timeline" | "stats" | "runMetadata">): AuditDetail {
   return {
     ...partial,
     siteFindings: partial.siteFindings ?? [],
     scoreBreakdown: buildScoreBreakdown(partial.overallScore),
     pageFindings: buildPageFindings(partial.overallScore),
     timeline: buildTimeline(partial.completedAt.split("·")[0]?.trim() ?? partial.completedAt),
+    stats: buildMockStats(partial),
+    runMetadata: buildMockRunMetadata(partial),
   }
 }
 

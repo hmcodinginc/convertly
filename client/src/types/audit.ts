@@ -27,6 +27,8 @@ export type Issue = {
   issue: string
   severity: IssueSeverity
   impact: string
+  recommendation?: string
+  category?: string
   page?: string
 }
 
@@ -42,9 +44,23 @@ export type Recommendation = {
   priority: RecommendationPriority
   estimatedLift: string
   category: string
+  affectedPages?: string[]
+  affectedCount?: number
 }
 
 export type PageFindingStatus = "Healthy" | "At risk" | "Critical"
+
+export type PageSeverityBreakdown = {
+  critical: number
+  high: number
+  medium: number
+  low: number
+}
+
+export type PageCategoryCount = {
+  category: string
+  count: number
+}
 
 export type PageFinding = {
   id: string
@@ -56,6 +72,14 @@ export type PageFinding = {
   score: number
   issuesCount: number
   status: PageFindingStatus
+  severityBreakdown?: PageSeverityBreakdown
+  categoryBreakdown?: PageCategoryCount[]
+}
+
+export type ScoreImpactItem = {
+  title: string
+  count: number
+  severity: IssueSeverity
 }
 
 export type ScoreBreakdownItem = {
@@ -74,6 +98,7 @@ export type ScoreBreakdownItem = {
   trend: "up" | "down" | "neutral"
   trendValue: string
   status: "Strong" | "Needs work" | "Critical"
+  topImpacts?: ScoreImpactItem[]
 }
 
 export type TimelineEvent = {
@@ -81,6 +106,27 @@ export type TimelineEvent = {
   label: string
   timestamp: string
   status: "completed" | "in_progress" | "pending"
+  kind?: "discovery" | "page-analysis" | "completion" | "phase" | "error"
+  detail?: string
+}
+
+export type AuditRunStats = {
+  totalFindings: number
+  pageFindingsCount: number
+  siteFindingsCount: number
+  totalRecommendations: number
+}
+
+export type AuditRunMetadata = {
+  pagesDiscovered: number
+  pagesReachable: number
+  pagesUnreachable: number
+  pagesAnalyzed: number
+  findingsCount: number
+  siteFindingsCount: number
+  pageFindingsCount: number
+  ruleCount: number
+  auditEngineVersion: string
 }
 
 export type RecommendationPlaybook = {
@@ -112,6 +158,8 @@ export type AuditDetail = {
   scoreBreakdown: ScoreBreakdownItem[]
   pageFindings: PageFinding[]
   timeline: TimelineEvent[]
+  stats: AuditRunStats
+  runMetadata: AuditRunMetadata
 }
 
 export type CreateAuditInput = {

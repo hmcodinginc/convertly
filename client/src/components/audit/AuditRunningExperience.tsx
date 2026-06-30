@@ -1,6 +1,7 @@
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useEffect, useState } from "react"
 
+import { ConvertlyMark } from "@/components/brand/ConvertlyMark"
 import { ConvertlyMarkAnimated } from "@/components/brand/ConvertlyMarkAnimated"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
@@ -22,9 +23,13 @@ const STATUS_TO_PHASE_INDEX: Partial<Record<AuditSessionStatus, number>> = {
 }
 
 function AuditRunningExperience({ status = "pending", className }: AuditRunningExperienceProps) {
+  const shouldReduceMotion = useReducedMotion()
   const statusFloor = STATUS_TO_PHASE_INDEX[status] ?? 0
   const [tickIndex, setTickIndex] = useState(0)
   const phaseIndex = Math.max(tickIndex, statusFloor)
+  const isLongWaitPhase = phaseIndex < 2
+  const shouldSpinLogo =
+    isLongWaitPhase && !shouldReduceMotion && status !== "completed" && status !== "failed"
 
   useEffect(() => {
     if (status === "completed" || status === "failed") return
@@ -50,7 +55,35 @@ function AuditRunningExperience({ status = "pending", className }: AuditRunningE
       )}
     >
       <div className="flex flex-col items-center gap-4">
-        <ConvertlyMarkAnimated size={36} variant="loading" />
+        <div className="audit-running-logo" aria-hidden>
+          <AnimatePresence mode="wait">
+            {shouldSpinLogo ? (
+              <motion.div
+                key="audit-logo-spinning"
+                className="audit-running-logo__rotor"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.33, 1, 0.32, 1] }}
+              >
+                <ConvertlyMark size={36} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="audit-logo-animated"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <ConvertlyMarkAnimated
+                  size={36}
+                  variant={shouldReduceMotion && isLongWaitPhase ? "static" : "loading"}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <div className="space-y-2 text-center">
           <p className="text-lg font-medium tracking-tight text-foreground">
             {activePhase}

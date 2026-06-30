@@ -1,14 +1,20 @@
 import { isAuditInProgress } from "@/lib/auditStatus"
 import { calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
+import { RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
 import { parseDomainFromUrl } from "@/lib/auditUrlValidation"
 import type {
   AuditDetail,
+  AuditRunMetadata,
+  AuditRunStats,
   Issue,
+  PageCategoryCount,
   PageFinding,
   PageFindingStatus,
+  PageSeverityBreakdown,
   Recommendation,
   RecommendationPriority,
   ScoreBreakdownItem,
+  ScoreImpactItem,
   SiteFinding,
   TimelineEvent,
 } from "@/types/audit"
@@ -18,6 +24,7 @@ import type {
   AuditScore,
   AuditSessionData,
   AuditScoreCategory,
+  FindingCategory,
   FindingSeverity,
   PageDiscoveryStatus,
 } from "@/types/auditEngine"
@@ -54,6 +61,26 @@ const DISCOVERY_STATUS_LABELS: Record<PageDiscoveryStatus, string> = {
   reachable: "Reachable",
   unreachable: "Unreachable",
   unknown: "Unknown",
+}
+
+const CATEGORY_LABELS: Record<FindingCategory, string> = {
+  ux: "UX",
+  conversion: "Conversion",
+  trust: "Trust",
+  performance: "Performance",
+  copy: "Copy",
+  accessibility: "Accessibility",
+  technical: "Technical",
+}
+
+const SCORE_CATEGORY_FINDING_CATEGORIES: Record<
+  Exclude<AuditScoreCategory, "growth" | "overall" | "clarity" | "friction" | "performance" | "cta_strength">,
+  FindingCategory[]
+> = {
+  conversion: ["conversion", "copy"],
+  trust: ["trust"],
+  mobile: ["technical", "accessibility"],
+  ux: ["ux", "performance"],
 }
 
 const REPORT_SCORE_CATEGORIES: AuditScoreCategory[] = [
@@ -118,6 +145,8 @@ function mapPageFindingsToIssues(data: AuditSessionData): Issue[] {
       issue: finding.title,
       severity: SEVERITY_TO_ISSUE[finding.severity],
       impact: finding.description,
+      recommendation: finding.recommendation,
+      category: CATEGORY_LABELS[finding.category],
       page: data.pages.find((page) => page.id === finding.pageId)?.path,
     }))
 }
@@ -131,7 +160,119 @@ function mapSiteFindings(data: AuditSessionData): SiteFinding[] {
       issue: finding.title,
       severity: SEVERITY_TO_ISSUE[finding.severity],
       impact: finding.description,
+      recommendation: finding.recommendation,
+      category: CATEGORY_LABELS[finding.category],
     }))
+}
+
+function buildSeverityBreakdown(findings: AuditFinding[]): PageSeverityBreakdown {
+  return findings.reduce<PageSeverityBreakdown>(
+    (counts, finding) => {
+      counts[finding.severity] += 1
+      return counts
+    },
+    { critical: 0, high: 0, medium: 0, low: 0 }
+  )
+}
+
+function buildCategoryBreakdown(findings: AuditFinding[]): PageCategoryCount[] {
+  const counts = new Map<string, number>()
+
+  for (const finding of findings) {
+    const label = CATEGORY_LABELS[finding.category]
+    counts.set(label, (counts.get(label) ?? 0) + 1)
+  }
+
+  return [...counts.entries()]
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count)
+}
+
+function buildTopImpacts(findings: AuditFinding[], limit = 4): ScoreImpactItem[] {
+  const grouped = new Map<string, { title: string; severity: FindingSeverity; count: number }>()
+
+  for (const finding of findings) {
+    const existing = grouped.get(finding.title)
+    if (existing) {
+      existing.count += 1
+      if (severityRank(finding.severity) < severityRank(existing.severity)) {
+        existing.severity = finding.severity
+      }
+      continue
+    }
+
+    grouped.set(finding.title, {
+      title: finding.title,
+      severity: finding.severity,
+      count: 1,
+    })
+  }
+
+  return [...grouped.values()]
+    .sort(
+      (a, b) =>
+        severityRank(a.severity) - severityRank(b.severity) || b.count - a.count
+    )
+    .slice(0, limit)
+    .map((item) => ({
+      title: item.title,
+      count: item.count,
+      severity: SEVERITY_TO_ISSUE[item.severity],
+    }))
+}
+
+function findingsForScoreCategory(
+  findings: AuditFinding[],
+  category: AuditScoreCategory
+): AuditFinding[] {
+  if (category === "growth") return findings
+
+  const categories = SCORE_CATEGORY_FINDING_CATEGORIES[category as keyof typeof SCORE_CATEGORY_FINDING_CATEGORIES]
+  if (!categories) return findings
+
+  return findings.filter((finding) => categories.includes(finding.category))
+}
+
+function buildRunStats(data: AuditSessionData): AuditRunStats {
+  const pageFindingsCount = data.findings.filter((finding) => finding.pageId).length
+  const siteFindingsCount = data.findings.filter((finding) => !finding.pageId).length
+
+  return {
+    totalFindings: data.findings.length,
+    pageFindingsCount,
+    siteFindingsCount,
+    totalRecommendations: Math.min(data.findings.length, 8),
+  }
+}
+
+function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
+  const analyzedPaths = getAnalyzedPathsFromHistory(data.history)
+  const pagesAnalyzed =
+    analyzedPaths.size > 0
+      ? analyzedPaths.size
+      : data.session.status === "completed"
+        ? data.pages.length
+        : 0
+
+  return {
+    pagesDiscovered: data.pages.length,
+    pagesReachable: data.pages.filter((page) => page.discoveryStatus === "reachable").length,
+    pagesUnreachable: data.pages.filter((page) => page.discoveryStatus === "unreachable").length,
+    pagesAnalyzed,
+    findingsCount: data.findings.length,
+    siteFindingsCount: data.findings.filter((finding) => !finding.pageId).length,
+    pageFindingsCount: data.findings.filter((finding) => finding.pageId).length,
+    ruleCount: RULE_METADATA.length,
+    auditEngineVersion: "Intelligence v2",
+  }
+}
+
+function classifyTimelineMessage(message: string): TimelineEvent["kind"] {
+  if (message.startsWith("Analyzed ")) return "page-analysis"
+  if (message.startsWith("Discovered ")) return "discovery"
+  if (message.startsWith("Audit completed")) return "completion"
+  if (message === "Discovering public pages") return "phase"
+  return "phase"
 }
 
 function getAnalyzedPathsFromHistory(
@@ -171,6 +312,12 @@ function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
       score: calculatePageScoreFromAuditFindings(page, data.findings, { analyzed }),
       issuesCount,
       status: analyzed ? pageStatus(issuesCount) : "At risk",
+      severityBreakdown: buildSeverityBreakdown(
+        data.findings.filter((finding) => finding.pageId === page.id)
+      ),
+      categoryBreakdown: buildCategoryBreakdown(
+        data.findings.filter((finding) => finding.pageId === page.id)
+      ),
     }
   })
 }
@@ -185,7 +332,13 @@ function mapFindingsToRecommendations(data: AuditSessionData): Recommendation[] 
       summary: finding.recommendation,
       priority: priorityFromSeverity(finding.severity, index),
       estimatedLift: liftLabelForSeverity(finding.severity),
-      category: finding.category,
+      category: CATEGORY_LABELS[finding.category],
+      affectedPages: finding.pageId
+        ? [data.pages.find((page) => page.id === finding.pageId)?.path].filter(
+            (path): path is string => Boolean(path)
+          )
+        : [],
+      affectedCount: 1,
     }))
 }
 
@@ -206,6 +359,11 @@ function mapHistoryToTimeline(data: AuditSessionData): TimelineEvent[] {
         : event.status === "failed"
           ? "pending"
           : "completed",
+    kind: classifyTimelineMessage(event.message),
+    detail:
+      event.message.startsWith("Analyzed ")
+        ? event.message.replace(/^Analyzed /, "")
+        : undefined,
   }))
 }
 
@@ -243,6 +401,7 @@ function buildScoreBreakdown(data: AuditSessionData): ScoreBreakdownItem[] {
       trend: "neutral" as const,
       trendValue: "0",
       status: scoreStatus(score),
+      topImpacts: buildTopImpacts(findingsForScoreCategory(data.findings, category)),
     }
   })
 }
@@ -257,6 +416,8 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
       : undefined
   const growthScore = resolveGrowthScore(data)
   const inProgress = isAuditInProgress(session.status)
+  const stats = buildRunStats(data)
+  const runMetadata = buildRunMetadata(data)
 
   return {
     id: session.id,
@@ -278,6 +439,27 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
     scoreBreakdown: inProgress ? [] : buildScoreBreakdown(data),
     pageFindings: inProgress ? [] : mapPagesToFindings(data),
     timeline: data.history.length > 0 ? mapHistoryToTimeline(data) : [],
+    stats: inProgress
+      ? {
+          totalFindings: 0,
+          pageFindingsCount: 0,
+          siteFindingsCount: 0,
+          totalRecommendations: 0,
+        }
+      : stats,
+    runMetadata: inProgress
+      ? {
+          pagesDiscovered: data.pages.length,
+          pagesReachable: 0,
+          pagesUnreachable: 0,
+          pagesAnalyzed: 0,
+          findingsCount: 0,
+          siteFindingsCount: 0,
+          pageFindingsCount: 0,
+          ruleCount: RULE_METADATA.length,
+          auditEngineVersion: "Intelligence v2",
+        }
+      : runMetadata,
   }
 }
 
