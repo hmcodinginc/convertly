@@ -12,6 +12,10 @@ export const ROUTES = {
   workspace: "/workspace",
   billing: "/billing",
   settings: "/settings",
+  settingsPreferences: "/settings/preferences",
+  settingsNotifications: "/settings/notifications",
+  settingsSecurity: "/settings/security",
+  settingsDangerZone: "/settings/danger-zone",
   profile: "/profile",
 } as const
 

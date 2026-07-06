@@ -35,6 +35,13 @@ import { getCachedAuthSession } from "@/lib/authSessionCache"
 import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
 import { shouldUseSupabaseAudits } from "@/lib/env"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
+import { AuditLimitError } from "@/types/billing"
+import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
+import {
+  assertCanRunAudit,
+  consumeAuditEntitlement,
+} from "@/services/entitlementService"
+import { recordAuditForDomain } from "@/services/workspaceService"
 import type {
   Audit,
   AuditDetail,
@@ -130,7 +137,19 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
     throw new Error(validation.errors[0] ?? "Invalid audit URL")
   }
 
-  const auditSession = await createSession(userId, validation.sanitizedUrl)
+  let workspaceId: string | undefined
+
+  if (shouldUseSupabaseAudits()) {
+    await assertCanRunAudit(userId)
+    workspaceId = await ensureBusinessFoundation(userId)
+    await consumeAuditEntitlement(userId)
+  }
+
+  const auditSession = await createSession(userId, validation.sanitizedUrl, workspaceId)
+
+  if (shouldUseSupabaseAudits()) {
+    void recordAuditForDomain(userId, validation.sanitizedUrl)
+  }
 
   await createHistoryEvent(auditSession.id, "pending", "Audit session created")
 
@@ -290,6 +309,8 @@ export async function getDashboardRecommendations(): Promise<Recommendation[]> {
   const userId = await resolveUserId()
   return buildDashboardRecommendations(userId)
 }
+
+export { AuditLimitError } from "@/types/billing"
 
 export async function getRecommendationPlaybook(
   recommendationId: string

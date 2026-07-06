@@ -1,4 +1,6 @@
-import { shouldUseLocalAuth } from "@/lib/env"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { planDisplayName } from "@/lib/billingPlans"
+import { getPlanIdForUser } from "@/services/entitlementService"
 import { resetPasswordRecoveryState } from "@/lib/passwordRecoveryPersistence"
 import { clearAllProfileDrawerState } from "@/lib/profileDrawerPersistence"
 import { validateChangePasswordFields } from "@/lib/authValidation"
@@ -8,7 +10,8 @@ import * as supabaseAuth from "@/services/auth/supabaseAuthProvider"
 import * as authRepository from "@/services/repositories/authRepository"
 import * as authService from "@/services/authService"
 import { clearApplicationStorage } from "@/services/storage/clearApplicationStorage"
-import type { ChangePasswordInput, UpdateProfileInput } from "@/types/account"
+import { shouldUseLocalAuth } from "@/lib/env"
+import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
 
 async function updateProfileLocal(input: UpdateProfileInput): Promise<void> {
   const session = await authRepository.getStoredSession()
@@ -97,6 +100,22 @@ export async function changePassword(email: string, input: ChangePasswordInput):
 
 export async function requestAccountPasswordReset(email: string): Promise<void> {
   await authService.requestPasswordReset({ email })
+}
+
+export async function getEnrichedAccount(): Promise<AccountInfo | null> {
+  const account = await authService.getAccount()
+  if (!account) return null
+
+  if (!isBusinessFoundationEnabled()) {
+    return account
+  }
+
+  try {
+    const planId = await getPlanIdForUser(account.userId)
+    return { ...account, plan: planDisplayName(planId) }
+  } catch {
+    return account
+  }
 }
 
 export async function deleteAccount(): Promise<void> {

@@ -1,39 +1,38 @@
+import type { SubscriptionPlanId } from "@/lib/billingPlans"
+
 export type WorkspaceDomain = {
   id: string
+  workspaceId: string
   hostname: string
   isPrimary: boolean
-  lastAudited: string
+  lastAuditedAt: string | null
+  createdAt: string
 }
 
-export type TeamMemberRole = "Owner" | "Admin" | "Member"
-export type TeamMemberStatus = "Active" | "Invited"
-
-export type TeamMember = {
-  id: string
-  name: string
-  email: string
-  role: TeamMemberRole
-  status: TeamMemberStatus
-}
-
-export type WorkspaceCompany = {
-  name: string
-  industry: string
-  teamSize: string
-  timezone: string
-}
-
-export type WorkspaceAuditLimits = {
-  plan: string
+export type WorkspaceUsage = {
+  planId: SubscriptionPlanId
+  planName: string
   auditsUsed: number
   auditsIncluded: number
-  pagesPerAudit: number
-  retentionDays: number
+  auditsRemaining: number
+  period: "lifetime" | "month"
+  periodEnd: string | null
 }
 
 export type WorkspaceSnapshot = {
-  company: WorkspaceCompany
+  id: string
+  name: string
+  type: "personal" | "organization"
   domains: WorkspaceDomain[]
-  team: TeamMember[]
-  auditLimits: WorkspaceAuditLimits
+  usage: WorkspaceUsage
+}
+
+export type CreateDomainInput = {
+  hostname: string
+  isPrimary?: boolean
+}
+
+export type UpdateDomainInput = {
+  hostname?: string
+  isPrimary?: boolean
 }

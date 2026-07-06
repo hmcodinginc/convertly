@@ -31,7 +31,7 @@ export async function getAuditSessionDataById(
   if (error) throw new Error(error.message)
   if (!data) return null
 
-  const row = data as AuditWithRelations
+  const row = data as unknown as AuditWithRelations
 
   return {
     session: mapAuditRowToSession(row),

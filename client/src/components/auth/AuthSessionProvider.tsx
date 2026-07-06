@@ -5,7 +5,10 @@ import { AuthSessionContext } from "@/components/auth/authSessionContext"
 import { clearAuthSnapshot, setAuthSnapshot } from "@/lib/authSessionCache"
 import { shouldUseLocalAuth } from "@/lib/env"
 import { bootstrapPasswordRecoveryFromUrl } from "@/lib/passwordRecoveryPersistence"
+import * as accountService from "@/services/accountService"
 import * as authService from "@/services/authService"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import * as supabaseAuth from "@/services/auth/supabaseAuthProvider"
 import type { AuthSession } from "@/types/auth"
 import type { AccountInfo } from "@/types/account"
@@ -40,7 +43,16 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
 
     const task = (async () => {
       const next = await authService.loadAuthState({ validate: true })
-      applyAuthState(setSession, setAccount, next)
+      let account = next.account
+      if (account && isBusinessFoundationEnabled()) {
+        try {
+          await ensureBusinessFoundation(account.userId)
+          account = (await accountService.getEnrichedAccount()) ?? account
+        } catch {
+          /* keep base account */
+        }
+      }
+      applyAuthState(setSession, setAccount, { session: next.session, account })
     })()
 
     refreshInFlight.current = task
@@ -72,7 +84,16 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
       try {
         const next = await authService.loadAuthState({ validate: true })
         if (!cancelled) {
-          applyAuthState(setSession, setAccount, next)
+          let account = next.account
+          if (account && isBusinessFoundationEnabled()) {
+            try {
+              await ensureBusinessFoundation(account.userId)
+              account = (await accountService.getEnrichedAccount()) ?? account
+            } catch {
+              /* bootstrap may fail offline — keep base account */
+            }
+          }
+          applyAuthState(setSession, setAccount, { session: next.session, account })
         }
       } finally {
         if (!cancelled) {

@@ -6,7 +6,7 @@ export type AccountInfo = {
   fullName: string
   initials: string
   createdAt: string
-  plan: "Free"
+  plan: string
   authProvider: string
 }
 

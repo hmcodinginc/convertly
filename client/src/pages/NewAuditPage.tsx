@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
@@ -11,8 +11,13 @@ import { SectionHeader } from "@/components/layout/SectionHeader"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import type { NewAuditLocationState } from "@/lib/auditNavigation"
-import { auditDetailPath } from "@/lib/routes"
+import { auditDetailPath, ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
+import { AuditLimitError } from "@/types/billing"
+import { getAuditEntitlement } from "@/services/entitlementService"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { useAuthSession } from "@/hooks/useAuthSession"
+import { useAsyncData } from "@/hooks/useAsyncData"
 import type { AuditSessionStatus } from "@/types/auditEngine"
 import { cn } from "@/lib/utils"
 
@@ -43,6 +48,7 @@ const auditTypes = [
 function NewAuditPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { session } = useAuthSession()
   const autoStartConsumed = useRef(false)
   const [url, setUrl] = useState("")
   const [selectedType, setSelectedType] = useState<string>(auditTypes[0].id)
@@ -50,6 +56,14 @@ function NewAuditPage() {
   const [urlWarning, setUrlWarning] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [sessionStatus, setSessionStatus] = useState<AuditSessionStatus>("pending")
+
+  const { data: entitlement } = useAsyncData(
+    () => getAuditEntitlement(session!.userId),
+    [session?.userId],
+    { enabled: Boolean(session?.userId) && isBusinessFoundationEnabled() }
+  )
+
+  const auditBlocked = entitlement != null && !entitlement.allowed
 
   const executeAudit = useCallback(
     async (urlToRun: string) => {
@@ -83,6 +97,10 @@ function NewAuditPage() {
 
         navigate(auditDetailPath(audit.id))
       } catch (error) {
+        if (error instanceof AuditLimitError) {
+          navigate(ROUTES.billing)
+          return
+        }
         const message =
           error instanceof Error ? error.message : "Unable to start audit. Please try again."
         setUrlError(
@@ -97,6 +115,10 @@ function NewAuditPage() {
   )
 
   const handleStartAudit = () => {
+    if (auditBlocked) {
+      navigate(ROUTES.billing)
+      return
+    }
     void executeAudit(url)
   }
 
@@ -148,6 +170,16 @@ function NewAuditPage() {
         />
       }
     >
+      {auditBlocked ? (
+        <AuthFormMessage>
+          You&apos;ve used all {entitlement?.auditsIncluded ?? 2} audits on your{" "}
+          {entitlement?.planId ?? "free"} plan.{" "}
+          <Link to={ROUTES.billing} className="font-medium text-foreground underline-offset-4 hover:underline">
+            Upgrade to continue
+          </Link>
+        </AuthFormMessage>
+      ) : null}
+
       <Card className="app-card-body audit-target-card hover:translate-y-0">
         <SectionHeader
           variant="app"
@@ -246,10 +278,10 @@ function NewAuditPage() {
             type="button"
             size="sm"
             className="w-full sm:w-auto"
-            disabled={isRunning}
+            disabled={isRunning || auditBlocked}
             onClick={handleStartAudit}
           >
-            Start audit
+            {auditBlocked ? "Upgrade to run audits" : "Start audit"}
           </Button>
           <Button
             variant="outline"

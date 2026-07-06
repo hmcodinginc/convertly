@@ -4,12 +4,18 @@ import type { AuditSession, AuditSessionStatus } from "@/types/auditEngine"
 
 export async function createSession(
   userId: string,
-  websiteUrl: string
+  websiteUrl: string,
+  workspaceId?: string
 ): Promise<AuditSession> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from("audits")
-    .insert({ user_id: userId, website_url: websiteUrl, status: "pending" })
+    .insert({
+      user_id: userId,
+      website_url: websiteUrl,
+      status: "pending",
+      workspace_id: workspaceId ?? null,
+    })
     .select()
     .single()
 

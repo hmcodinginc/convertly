@@ -25,10 +25,11 @@ import type {
 
 export async function createSession(
   userId: string,
-  websiteUrl: string
+  websiteUrl: string,
+  workspaceId?: string
 ): Promise<AuditSession> {
   if (shouldUseSupabaseAudits()) {
-    return supabaseSession.createSession(userId, websiteUrl)
+    return supabaseSession.createSession(userId, websiteUrl, workspaceId)
   }
   return localSession.createSession(userId, websiteUrl)
 }
