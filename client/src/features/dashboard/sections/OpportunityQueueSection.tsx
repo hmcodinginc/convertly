@@ -1,4 +1,5 @@
 import { ListFilter } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import {
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { AppPageSection } from "@/components/layout/AppPageSection"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
-import { ROUTES } from "@/lib/routes"
+import { ROUTES, auditDetailPath } from "@/lib/routes"
 import type { OpportunityItem } from "@/types/dashboard"
 
 const impactVariant = {
@@ -32,27 +33,54 @@ const statusVariant = {
 
 type OpportunityQueueSectionProps = {
   items: OpportunityItem[]
+  auditDomain?: string
+  auditId?: string | null
 }
 
-function OpportunityQueueSection({ items }: OpportunityQueueSectionProps) {
+function OpportunityQueueSection({
+  items,
+  auditDomain,
+  auditId,
+}: OpportunityQueueSectionProps) {
   return (
     <AppPageSection
+      className="dashboard-opportunity-queue"
       eyebrow="Pipeline"
       title="Opportunity queue"
-      description="Prioritized fixes ranked by modeled revenue impact."
+      description={
+        auditDomain
+          ? `Showing prioritized fixes for ${auditDomain}`
+          : "Prioritized fixes ranked by modeled revenue impact."
+      }
       actions={
         items.length > 0 ? (
-          <Button variant="outline" size="sm">
-            Export queue
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+            {auditId ? (
+              <Button variant="default" size="sm" asChild>
+                <Link to={auditDetailPath(auditId)}>View full report</Link>
+              </Button>
+            ) : null}
+            <Button variant="outline" size="sm">
+              Export queue
+            </Button>
+          </div>
         ) : null
       }
     >
+      {auditDomain && items.length > 0 ? (
+        <div className="dashboard-opportunity-queue__badge">
+          <StatusBadge label={auditDomain} variant="accent" />
+        </div>
+      ) : null}
       {items.length === 0 ? (
         <EmptyState
           icon={ListFilter}
           title="No opportunities in queue"
-          description="Completed audits will surface prioritized conversion fixes here."
+          description={
+            auditDomain
+              ? `No prioritized fixes found for ${auditDomain}. Select another audit or run a new one.`
+              : "Completed audits will surface prioritized conversion fixes here."
+          }
           action={{ label: "Run audit", to: ROUTES.auditNew }}
         />
       ) : (

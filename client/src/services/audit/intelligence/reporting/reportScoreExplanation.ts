@@ -2,6 +2,7 @@ import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore
 import type { ScoreExplanation } from "@/services/audit/intelligence/scoring/scoreExplanation"
 import type { ScoringEngineV3Result } from "@/services/audit/intelligence/scoring/scoringEngineV3"
 import type { PositiveScoringResult } from "@/services/audit/intelligence/scoring/positiveScoring"
+import { VIEWPORT_BEST_PRACTICE_EXPLANATION } from "@/services/audit/intelligence/scoring/viewportBlockerEligibility"
 
 export type ScoreExplanationFactor = {
   label: string
@@ -84,6 +85,15 @@ export function buildReportScoreExplanation(input: {
 
   if (positiveFactors.length === 0 && (scoreExplanation.positiveBonus ?? 0) > 0) {
     positiveFactors.push({ label: "Quality implementation bonus" })
+  }
+
+  if (
+    scoreExplanation.deductionTree.some((line) => line === VIEWPORT_BEST_PRACTICE_EXPLANATION)
+  ) {
+    positiveFactors.push({
+      label: "Technical best practice",
+      detail: VIEWPORT_BEST_PRACTICE_EXPLANATION,
+    })
   }
 
   const categorySummary = categories.map((category) => ({

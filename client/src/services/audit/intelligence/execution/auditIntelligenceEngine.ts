@@ -24,6 +24,7 @@ import {
   buildReliabilityReport,
   computeRenderSensitiveVerificationStats,
 } from "@/services/audit/intelligence/rendering/renderReliability"
+import { annotateViewportBestPracticeFindings } from "@/services/audit/intelligence/scoring/viewportBlockerEligibility"
 import {
   buildAllPageScoreBreakdowns,
 } from "@/services/audit/intelligence/scoring/pageScoreDiagnostics"
@@ -31,6 +32,11 @@ import {
   buildPageDiagnosticReport,
   logAuditDiagnostics,
 } from "@/services/audit/intelligence/diagnostics/auditDiagnostics"
+import {
+  buildEngineDiagnostics,
+  logEngineDiagnostics,
+} from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
+import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 import { SCORING_ENGINE_VERSION } from "@/services/audit/intelligence/scoring/scoringPolicy"
 import { detectWebsiteIntent } from "@/services/audit/intelligence/websiteIntentDetection"
 import { detectPageIntent } from "@/services/audit/intelligence/pageIntentDetection"
@@ -82,6 +88,13 @@ export async function runIntelligenceEngine(
 
   const renderConfidence = assessSiteRenderConfidence(context.pageSnapshots, analyzedPageIds)
 
+  // Website intent must be known before any rule executes (Intelligence V5).
+  const websiteIntent = detectWebsiteIntent({
+    session: context.session,
+    pages: context.pages,
+    pageSnapshots: context.pageSnapshots,
+  })
+
   for (const snapshot of context.pageSnapshots) {
     const detected = detectPageIntent({ page: snapshot.page, snapshot })
     pageIntents[snapshot.page.id] = detected
@@ -106,6 +119,7 @@ export async function runIntelligenceEngine(
     }
 
     const { findings } = await executePageRules(pageContext, tracker, {
+      websiteIntent: websiteIntent.websiteIntent,
       trustworthyForUxRules:
         renderConfidence.pageConfidence[snapshot.page.id]?.trustworthyForUxRules ??
         renderConfidence.trustworthyForUxRules,
@@ -120,14 +134,10 @@ export async function runIntelligenceEngine(
     pageSnapshots: context.pageSnapshots,
   }
 
-  const siteFindings = await executeSiteRules(siteContext, tracker)
-  const rawFindings = dedupeFindings([...pageFindings, ...siteFindings])
-
-  const websiteIntent = detectWebsiteIntent({
-    session: context.session,
-    pages: context.pages,
-    pageSnapshots: context.pageSnapshots,
+  const siteFindings = await executeSiteRules(siteContext, tracker, {
+    websiteIntent: websiteIntent.websiteIntent,
   })
+  const rawFindings = dedupeFindings([...pageFindings, ...siteFindings])
 
   const reliabilityContext = buildRenderReliabilityContext({
     websiteUrl: context.session.websiteUrl,
@@ -158,6 +168,7 @@ export async function runIntelligenceEngine(
           (record) =>
             record.reason === "excluded_page_type" ||
             record.reason === "not_applicable_page_type" ||
+            record.reason === "not_applicable_website_intent" ||
             record.reason === "pack_not_allowed_for_intent" ||
             record.reason === "pack_ignored_for_intent" ||
             record.reason === "site_rule_not_applicable"
@@ -176,8 +187,16 @@ export async function runIntelligenceEngine(
   const scoring = calculateAuditScoreV3(intelligenceFindings, context.pages, {
     analyzedPageIds,
     pageSnapshots: context.pageSnapshots,
-    applicableRuleCount: countApplicableRuleEvaluations(context.pages, snapshotsByPageId),
-    executedRuleCount: countExecutedRuleEvaluations(analyzedPages, snapshotsByPageId),
+    applicableRuleCount: countApplicableRuleEvaluations(
+      context.pages,
+      snapshotsByPageId,
+      websiteIntent.websiteIntent
+    ),
+    executedRuleCount: countExecutedRuleEvaluations(
+      analyzedPages,
+      snapshotsByPageId,
+      websiteIntent.websiteIntent
+    ),
     skippedPageCount,
     websiteIntent,
     ruleExecution,
@@ -188,22 +207,27 @@ export async function runIntelligenceEngine(
     highRiskPlatform: reliabilityContext.highRiskPlatform,
   })
 
+  const annotatedFindings = annotateViewportBestPracticeFindings(
+    intelligenceFindings,
+    scoring.appliedBlockers
+  )
+
   const { categories, growthScore, pageScores } = scoring
   const scoreExplanation = buildScoreExplanation({
     scoring,
     growthPotential: scoring.growthPotential,
-    findings: intelligenceFindings,
+    findings: annotatedFindings,
     pages: context.pages,
     ruleExecution,
   })
 
   const pagePathById = new Map(context.pages.map((page) => [page.id, page.path]))
   const consultantRecommendations = consolidateConsultantRecommendations(
-    intelligenceFindings,
+    annotatedFindings,
     pagePathById,
     websiteIntent.websiteIntent
   )
-  const groupedFindings = groupIntelligenceFindings(intelligenceFindings, pagePathById)
+  const groupedFindings = groupIntelligenceFindings(annotatedFindings, pagePathById)
   const strengths = scoring.positiveScoring
     ? buildAuditStrengths(scoring.positiveScoring)
     : []
@@ -215,7 +239,7 @@ export async function runIntelligenceEngine(
 
   const pageDiagnostics = buildAllPageScoreBreakdowns(
     context.pages,
-    intelligenceFindings,
+    annotatedFindings,
     analyzedPageIds
   ).map((breakdown) =>
     buildPageDiagnosticReport({
@@ -225,6 +249,29 @@ export async function runIntelligenceEngine(
       scoreBreakdown: breakdown,
     })
   )
+
+  const pageIntentMap = Object.fromEntries(
+    Object.entries(pageIntents).map(([pageId, detected]) => [pageId, detected.pageIntent])
+  )
+
+  const engineDiagnostics = buildEngineDiagnostics({
+    websiteIntent,
+    pageIntents: pageIntentMap,
+    rulesRegistered: getRuleRegistry().getAll().length,
+    rulesSelected: countApplicableRuleEvaluations(
+      context.pages,
+      snapshotsByPageId,
+      websiteIntent.websiteIntent
+    ),
+    ruleExecution,
+    findings: annotatedFindings,
+    consultantRecommendations,
+    appliedBlockers: scoring.appliedBlockers,
+    blockerCeiling: scoring.scoreCeiling,
+    scoring,
+  })
+
+  logEngineDiagnostics(engineDiagnostics)
 
   logAuditDiagnostics({
     engineVersion: SCORING_ENGINE_VERSION,
@@ -246,7 +293,7 @@ export async function runIntelligenceEngine(
   })
 
   const execution: IntelligenceExecutionResult = {
-    findings: intelligenceFindings,
+    findings: annotatedFindings,
     pageScores,
     siteFindingsCount: siteFindings.length,
     pageFindingsCount: pageFindings.length,
@@ -261,10 +308,11 @@ export async function runIntelligenceEngine(
     websiteIntent,
     renderConfidence,
     reliabilityReport,
+    engineDiagnostics,
   }
 
   return {
-    intelligenceFindings,
+    intelligenceFindings: annotatedFindings,
     scoredFindings,
     execution,
     categories,

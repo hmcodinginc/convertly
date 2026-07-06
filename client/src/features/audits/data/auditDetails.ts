@@ -128,7 +128,9 @@ function buildTimeline(completedAt: string): TimelineEvent[] {
 }
 
 function buildMockStats(
-  partial: Pick<AuditDetail, "issues" | "siteFindings" | "recommendations">
+  partial: Pick<AuditDetail, "issues" | "recommendations"> & {
+    siteFindings?: AuditDetail["siteFindings"]
+  }
 ): AuditRunStats {
   const pageFindingsCount = partial.issues.length
   const siteFindingsCount = partial.siteFindings?.length ?? 0
@@ -142,7 +144,9 @@ function buildMockStats(
 }
 
 function buildMockRunMetadata(
-  partial: Pick<AuditDetail, "pagesAnalyzed" | "issues" | "siteFindings">
+  partial: Pick<AuditDetail, "pagesAnalyzed" | "issues"> & {
+    siteFindings?: AuditDetail["siteFindings"]
+  }
 ): AuditRunMetadata {
   const pageFindingsCount = partial.issues.length
   const siteFindingsCount = partial.siteFindings?.length ?? 0
@@ -160,7 +164,12 @@ function buildMockRunMetadata(
   }
 }
 
-function enrichAuditDetail(partial: Omit<AuditDetail, "scoreBreakdown" | "pageFindings" | "timeline" | "stats" | "runMetadata">): AuditDetail {
+function enrichAuditDetail(
+  partial: Omit<
+    AuditDetail,
+    "scoreBreakdown" | "pageFindings" | "timeline" | "stats" | "runMetadata" | "siteFindings"
+  > & { siteFindings?: AuditDetail["siteFindings"] }
+): AuditDetail {
   return {
     ...partial,
     siteFindings: partial.siteFindings ?? [],

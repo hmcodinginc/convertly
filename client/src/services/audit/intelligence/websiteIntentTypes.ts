@@ -52,6 +52,19 @@ export const PLATFORM_WEBSITE_INTENTS: WebsiteIntent[] = [
   "dashboard",
 ]
 
+/**
+ * Canonical non-CRO website intents — marketplace is distinct from ecommerce.
+ * Ecommerce = merchant storefront. Marketplace = multi-vendor platform (Amazon, Etsy).
+ */
+export const NON_CRO_WEBSITE_INTENTS: WebsiteIntent[] = [
+  ...PLATFORM_WEBSITE_INTENTS,
+  "marketplace",
+]
+
+export function isNonCroWebsiteIntent(intent: WebsiteIntent): boolean {
+  return NON_CRO_WEBSITE_INTENTS.includes(intent)
+}
+
 export const COMMERCIAL_WEBSITE_INTENTS: WebsiteIntent[] = [
   "saas",
   "agency",

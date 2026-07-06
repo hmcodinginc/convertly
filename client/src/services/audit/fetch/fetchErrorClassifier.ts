@@ -14,6 +14,8 @@ export type FetchFailureKind =
   | "not_html"
   | "blocked"
   | "unreachable"
+  | "response_too_large"
+  | "redirect_loop"
   | "unknown"
 
 export type ClassifiedFetchFailure = {
@@ -66,6 +68,32 @@ export function classifyFetchFailure(input: {
       kind: "blocked",
       userMessage:
         "This URL cannot be audited for security reasons. Use a public HTTPS website.",
+    }
+  }
+
+  if (
+    error.includes("Response too large") ||
+    combined.includes("response too large") ||
+    combined.includes("body exceeded") ||
+    combined.includes("max_html_bytes")
+  ) {
+    return {
+      kind: "response_too_large",
+      userMessage:
+        "The homepage HTML response was too large for static fetch. We will attempt browser rendering instead.",
+    }
+  }
+
+  if (
+    error.includes("ERR_TOO_MANY_REDIRECTS") ||
+    combined.includes("too many redirects") ||
+    combined.includes("redirect loop") ||
+    combined.includes("maximum redirect")
+  ) {
+    return {
+      kind: "redirect_loop",
+      userMessage:
+        "The website redirected too many times. Check for redirect loops or geo-based routing that blocks automated access.",
     }
   }
 
@@ -123,6 +151,8 @@ export function classifyFetchFailure(input: {
 
   if (
     error.includes("render failed") ||
+    error.includes("JavaScript rendering did not complete") ||
+    error.includes("active network activity") ||
     error.includes("JavaScript") ||
     error.includes("hydration") ||
     error.includes("page.evaluate")

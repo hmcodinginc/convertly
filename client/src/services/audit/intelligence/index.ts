@@ -51,6 +51,11 @@ export {
   logAuditDiagnostics,
 } from "@/services/audit/intelligence/diagnostics/auditDiagnostics"
 export {
+  buildEngineDiagnostics,
+  logEngineDiagnostics,
+} from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
+export type { EngineDiagnostics } from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
+export {
   serializeIntelligenceSnapshot,
   parseIntelligenceSnapshotFromHistory,
 } from "@/services/audit/intelligence/diagnostics/intelligenceSnapshot"
@@ -65,7 +70,8 @@ export {
   resolveRuleScoringProfile,
   BLOCKER_RULE_OVERRIDES,
 } from "@/services/audit/intelligence/rules/ruleScoringMetadata"
-export type { RuleMetadataV2, RuleScoringProfile } from "@/services/audit/intelligence/rules/ruleScoringMetadata"
+export type { RuleMetadataV2 } from "@/services/audit/intelligence/rules/ruleScoringMetadata"
+export type { RuleScoringProfile } from "@/services/audit/intelligence/scoring/scoringPolicy"
 export type { ScoringEngineV3Result, AppliedBlocker } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 
 export type {
@@ -85,9 +91,23 @@ export {
 export { detectWebsiteIntent } from "@/services/audit/intelligence/websiteIntentDetection"
 export type { WebsiteIntent, DetectedWebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
 export {
+  PLATFORM_WEBSITE_INTENTS,
+  NON_CRO_WEBSITE_INTENTS,
+  isNonCroWebsiteIntent,
+} from "@/services/audit/intelligence/websiteIntentTypes"
+export {
   isRuleApplicableToWebsiteIntent,
   resolveWebsiteRuleApplicabilitySpec,
 } from "@/services/audit/intelligence/websiteRuleApplicability"
+export {
+  evaluateRuleExecutionApplicability,
+  filterApplicableRuleIds,
+} from "@/services/audit/intelligence/applicability/applicabilityEngine"
+export type {
+  RuleApplicabilityContext,
+  RuleExecutionApplicability,
+  ApplicabilityLayer,
+} from "@/services/audit/intelligence/applicability/applicabilityTypes"
 export {
   buildPageScoreBreakdown,
   buildAllPageScoreBreakdowns,

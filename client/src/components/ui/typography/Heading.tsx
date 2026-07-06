@@ -25,15 +25,13 @@ function Heading({
 }: HeadingProps) {
   const Comp = `h${level}` as keyof React.JSX.IntrinsicElements
 
-  return (
-    <Comp
-      data-slot="heading"
-      data-level={level}
-      data-size={size}
-      className={cn("text-foreground", sizeClasses[size], className)}
-      {...props}
-    />
-  )
+  return React.createElement(Comp, {
+    "data-slot": "heading",
+    "data-level": level,
+    "data-size": size,
+    className: cn("text-foreground", sizeClasses[size], className),
+    ...props,
+  })
 }
 
 export { Heading }

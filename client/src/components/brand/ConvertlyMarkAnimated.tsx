@@ -1,5 +1,5 @@
 import * as React from "react"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion, type Variants } from "framer-motion"
 
 import {
   CONVERTLY_MARK_BRACKETS,
@@ -9,7 +9,7 @@ import {
 } from "@/components/brand/convertlyMarkPaths"
 import { cn } from "@/lib/utils"
 
-type ConvertlyMarkAnimatedProps = React.SVGAttributes<SVGSVGElement> & {
+type ConvertlyMarkAnimatedProps = React.ComponentProps<typeof motion.svg> & {
   size?: number
   /** Draw-in sequence for loading states */
   variant?: "idle" | "loading" | "static"
@@ -21,18 +21,18 @@ const bracketVariants = {
     pathLength: 1,
     opacity: 0.9,
     transition: {
-      pathLength: { delay: index * 0.14, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-      opacity: { delay: index * 0.14, duration: 0.35, ease: "easeOut" },
+      pathLength: { delay: index * 0.14, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+      opacity: { delay: index * 0.14, duration: 0.35, ease: "easeOut" as const },
     },
   }),
-}
+} satisfies Variants
 
 const ringVariants = {
   hidden: { opacity: 0, scale: 0.92 },
   visible: {
     opacity: CONVERTLY_MARK_RING.opacity,
     scale: 1,
-    transition: { delay: 0.42, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: 0.42, duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
   },
   idle: {
     opacity: [
@@ -41,22 +41,22 @@ const ringVariants = {
       CONVERTLY_MARK_RING.opacity * 0.85,
     ],
     scale: [1, 1.05, 1],
-    transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: 3, repeat: Infinity, ease: "easeInOut" as const },
   },
-}
+} satisfies Variants
 
 const dotVariants = {
   hidden: { scale: 0, opacity: 0 },
   visible: {
     scale: 1,
     opacity: 1,
-    transition: { delay: 0.55, type: "spring", stiffness: 380, damping: 22 },
+    transition: { delay: 0.55, type: "spring" as const, stiffness: 380, damping: 22 },
   },
   idle: {
     scale: [1, 1.1, 1],
-    transition: { duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.25 },
+    transition: { duration: 2.4, repeat: Infinity, ease: "easeInOut" as const, delay: 0.25 },
   },
-}
+} satisfies Variants
 
 function ConvertlyMarkAnimated({
   size = 24,

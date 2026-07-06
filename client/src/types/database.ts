@@ -130,6 +130,7 @@ export type Database = {
           id: string
           audit_id: string
           page_id: string | null
+          rule_id: string | null
           category: FindingCategory
           severity: FindingSeverity
           title: string
@@ -141,6 +142,7 @@ export type Database = {
           id?: string
           audit_id: string
           page_id?: string | null
+          rule_id?: string | null
           category: FindingCategory
           severity: FindingSeverity
           title: string
@@ -152,6 +154,7 @@ export type Database = {
           id?: string
           audit_id?: string
           page_id?: string | null
+          rule_id?: string | null
           category?: FindingCategory
           severity?: FindingSeverity
           title?: string

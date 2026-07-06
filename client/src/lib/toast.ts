@@ -1,3 +1,7 @@
+import { createLogger } from "@/lib/logger"
+
+const toastLogger = createLogger("toast")
+
 export type ToastVariant = "error" | "success" | "info"
 
 export type ToastMessage = {
@@ -54,7 +58,9 @@ export function showToast(input: {
 }
 
 export function showErrorToast(title: string, error: unknown): void {
-  console.error(`[Convertly] ${title}`, error)
+  toastLogger.error(title, {
+    error: error instanceof Error ? error.message : String(error),
+  })
   showToast({
     variant: "error",
     title,

@@ -73,11 +73,11 @@ export async function getAuditById(id: string): Promise<Audit | null> {
   await delay()
 
   if (!shouldUseSupabaseAudits() && id.startsWith("audit-") && id !== SAMPLE_AUDIT_ID) {
-    return auditListRepository.getAuditById(id) ?? null
+    return (await auditListRepository.getAuditById(id)) ?? null
   }
 
   if (id === SAMPLE_AUDIT_ID || auditDetailsMap[id]) {
-    return auditListRepository.getAuditById(id) ?? null
+    return (await auditListRepository.getAuditById(id)) ?? null
   }
 
   const sessionData = await getAuditSessionData(id)
@@ -85,7 +85,7 @@ export async function getAuditById(id: string): Promise<Audit | null> {
     return buildAuditListEntryFromSession(sessionData)
   }
 
-  return auditListRepository.getAuditById(id) ?? null
+  return (await auditListRepository.getAuditById(id)) ?? null
 }
 
 export function invalidateCompletedAuditDetail(id: string): void {
@@ -154,13 +154,18 @@ export async function runAuditWorkflow(
   options?: {
     onStatus?: (status: AuditSessionStatus) => void
   }
-): Promise<{ audit: Audit; finalStatus: AuditSessionStatus }> {
+): Promise<{ audit: Audit; finalStatus: AuditSessionStatus; errorMessage?: string }> {
   const audit = await createAudit({ url: sanitizedUrl })
   const finalStatus = await waitForAuditCompletion(audit.id, {
     onStatus: options?.onStatus,
   })
 
-  return { audit, finalStatus }
+  const session = await getSessionById(audit.id)
+  return {
+    audit,
+    finalStatus,
+    errorMessage: session?.errorMessage ?? undefined,
+  }
 }
 
 export async function getAuditSession(id: string): Promise<AuditSession | null> {

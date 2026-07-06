@@ -9,6 +9,10 @@ import { CATEGORY_SCORING_POLICY_V4 } from "@/services/audit/intelligence/scorin
 import { isRuleApplicableToWebsiteIntent } from "@/services/audit/intelligence/websiteRuleApplicability"
 import type { AuditPage } from "@/types/auditEngine"
 import { getRuleMetadata } from "@/services/audit/intelligence/rules/ruleMetadata"
+import {
+  VIEWPORT_BEST_PRACTICE_EXPLANATION,
+  shouldExplainViewportAsBestPractice,
+} from "@/services/audit/intelligence/scoring/viewportBlockerEligibility"
 
 export type PenaltyLineItem = {
   ruleId: string
@@ -142,6 +146,10 @@ export function buildScoreExplanation(input: {
 
   if (scoring.positiveScoring && scoring.positiveScoring.totalBonus > 0) {
     deductionTree.push(`Quality bonus: +${scoring.positiveScoring.totalBonus}`)
+  }
+
+  if (shouldExplainViewportAsBestPractice(findings, scoring.appliedBlockers)) {
+    deductionTree.push(VIEWPORT_BEST_PRACTICE_EXPLANATION)
   }
 
   const equation = [

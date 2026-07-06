@@ -12,8 +12,18 @@ type IntentSignal = {
   signal: string
 }
 
-const DOMAIN_INTENT_HINTS: Array<{ pattern: RegExp; intent: WebsiteIntent; signal: string }> = [
-  { pattern: /(^|\.)google\.(com|co\.\w+)$/i, intent: "search_engine", signal: "domain:google" },
+type DomainIntentHint = {
+  pattern: RegExp
+  intent: WebsiteIntent
+  signal: string
+}
+
+/**
+ * Domain hints take precedence over content heuristics.
+ * Marketplace (Amazon) must never be overridden by cart/checkout content signals → ecommerce.
+ */
+const DOMAIN_INTENT_HINTS: DomainIntentHint[] = [
+  { pattern: /(^|\.)google\.[a-z.]+$/i, intent: "search_engine", signal: "domain:google" },
   { pattern: /(^|\.)bing\.com$/i, intent: "search_engine", signal: "domain:bing" },
   { pattern: /(^|\.)duckduckgo\.com$/i, intent: "search_engine", signal: "domain:ddg" },
   { pattern: /(^|\.)github\.com$/i, intent: "open_source", signal: "domain:github" },
@@ -23,7 +33,7 @@ const DOMAIN_INTENT_HINTS: Array<{ pattern: RegExp; intent: WebsiteIntent; signa
   { pattern: /(^|\.)netlify\.com$/i, intent: "developer_platform", signal: "domain:netlify" },
   { pattern: /(^|\.)stripe\.com$/i, intent: "developer_platform", signal: "domain:stripe" },
   { pattern: /(^|\.)shopify\.com$/i, intent: "ecommerce", signal: "domain:shopify" },
-  { pattern: /(^|\.)amazon\.(com|co\.\w+)$/i, intent: "marketplace", signal: "domain:amazon" },
+  { pattern: /(^|\.)amazon\.[a-z.]+$/i, intent: "marketplace", signal: "domain:amazon" },
   { pattern: /(^|\.)etsy\.com$/i, intent: "marketplace", signal: "domain:etsy" },
   { pattern: /(^|\.)medium\.com$/i, intent: "blog", signal: "domain:medium" },
   { pattern: /(^|\.)substack\.com$/i, intent: "blog", signal: "domain:substack" },
@@ -31,12 +41,27 @@ const DOMAIN_INTENT_HINTS: Array<{ pattern: RegExp; intent: WebsiteIntent; signa
   { pattern: /convertly/i, intent: "saas", signal: "domain:convertly" },
 ]
 
+const DOMAIN_LOCK_CONFIDENCE = 94
+
 function extractHostname(url: string): string {
   try {
     return new URL(url.startsWith("http") ? url : `https://${url}`).hostname.toLowerCase()
   } catch {
     return url.toLowerCase()
   }
+}
+
+function resolveDomainLockedIntent(hostname: string): DetectedWebsiteIntent | null {
+  for (const hint of DOMAIN_INTENT_HINTS) {
+    if (hint.pattern.test(hostname)) {
+      return {
+        websiteIntent: hint.intent,
+        confidence: DOMAIN_LOCK_CONFIDENCE,
+        signals: [hint.signal, "domain-lock:active"],
+      }
+    }
+  }
+  return null
 }
 
 function homepageSnapshot(
@@ -52,20 +77,12 @@ function homepageSnapshot(
   return snapshots.find((snapshot) => snapshot.page.id === homepage.id)
 }
 
-function collectSiteSignals(input: {
+function collectContentSignals(input: {
   session: AuditSession
   pages: AuditPage[]
   pageSnapshots: PageContentSnapshot[]
 }): IntentSignal[] {
   const signals: IntentSignal[] = []
-  const hostname = extractHostname(input.session.websiteUrl)
-
-  for (const hint of DOMAIN_INTENT_HINTS) {
-    if (hint.pattern.test(hostname)) {
-      signals.push({ intent: hint.intent, weight: 55, signal: hint.signal })
-    }
-  }
-
   const homepage = homepageSnapshot(input.pages, input.pageSnapshots)
   const html = (homepage?.html ?? "").slice(0, 24_000).toLowerCase()
   const document = homepage?.document
@@ -86,13 +103,13 @@ function collectSiteSignals(input: {
   const hasCart = /cart|checkout|basket|add to cart/i.test(navText + html)
   const hasPricing = /pricing|plans|subscribe/i.test(navText + pagePaths)
   const hasDocs = /docs|documentation|developers|api reference|getting started/i.test(navText + pagePaths)
-  const hasBlog = input.pages.some((page) => page.pageType === "blog" || /\/blog/i.test(page.path))
+  const hasBlog = input.pages.some((page) => /\/(blog|news|articles)(\/|$)/i.test(page.path))
   const hasServices = input.pages.some((page) => page.pageType === "services")
-  const hasPortfolio = input.pages.some((page) => page.pageType === "projects")
+  const hasPortfolio = input.pages.some((page) => /\/(projects|portfolio|work)(\/|$)/i.test(page.path))
   const hasSignup = input.pages.some((page) => page.pageType === "signup")
   const hasLogin = input.pages.some((page) => page.pageType === "login")
 
-  if (hasSearchInput && metrics && metrics.formCount <= 2 && metrics.ctaCount <= 3) {
+  if (hasSearchInput && metrics && metrics.formCount <= 2 && metrics.buttonCount <= 3) {
     signals.push({ intent: "search_engine", weight: 28, signal: "homepage:search-dominant" })
   }
 
@@ -105,8 +122,8 @@ function collectSiteSignals(input: {
     signals.push({ intent: "developer_platform", weight: 20, signal: "content:developer-language" })
   }
 
-  if (hasCart || /ecommerce|shop now|buy now|product catalog/i.test(html)) {
-    signals.push({ intent: "ecommerce", weight: 24, signal: "site:commerce-signals" })
+  if (hasCart && !/marketplace|sellers|vendors|third.party sellers/i.test(html + navText)) {
+    signals.push({ intent: "ecommerce", weight: 24, signal: "site:merchant-commerce" })
   }
 
   if (hasPricing && (hasSignup || /free trial|get started|start building/i.test(html))) {
@@ -125,7 +142,7 @@ function collectSiteSignals(input: {
     signals.push({ intent: "community", weight: 20, signal: "site:community-signals" })
   }
 
-  if (/marketplace|vendors|sellers|listings/i.test(html + navText)) {
+  if (/marketplace|vendors|sellers|listings|third.party seller/i.test(html + navText)) {
     signals.push({ intent: "marketplace", weight: 22, signal: "site:marketplace-signals" })
   }
 
@@ -149,7 +166,7 @@ function collectSiteSignals(input: {
     signals.push({ intent: "marketing", weight: 18, signal: "site:marketing-funnel" })
   }
 
-  if (hasCart || hasPricing && /shop|store|buy/i.test(html)) {
+  if (hasCart || (hasPricing && /shop|store|buy/i.test(html))) {
     signals.push({ intent: "commerce", weight: 20, signal: "site:commerce" })
   }
 
@@ -197,14 +214,21 @@ function resolveTopIntent(signals: IntentSignal[]): {
 }
 
 /**
- * Deterministic site-level intent detection from URL, navigation, and homepage signals.
+ * Deterministic site-level intent detection.
+ * Known domains lock intent before content heuristics run.
  */
 export function detectWebsiteIntent(input: {
   session: AuditSession
   pages: AuditPage[]
   pageSnapshots: PageContentSnapshot[]
 }): DetectedWebsiteIntent {
-  const signals = collectSiteSignals(input)
+  const hostname = extractHostname(input.session.websiteUrl)
+  const domainLocked = resolveDomainLockedIntent(hostname)
+  if (domainLocked) {
+    return domainLocked
+  }
+
+  const signals = collectContentSignals(input)
   const resolved = resolveTopIntent(signals)
 
   return {
@@ -216,4 +240,8 @@ export function detectWebsiteIntent(input: {
 
 export function getHostnameFromSession(session: AuditSession): string {
   return extractHostname(session.websiteUrl)
+}
+
+export function peekDomainLockedIntent(hostname: string): WebsiteIntent | null {
+  return resolveDomainLockedIntent(hostname.toLowerCase())?.websiteIntent ?? null
 }

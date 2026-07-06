@@ -7,9 +7,6 @@ import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistr
 import { detectPageIntent } from "@/services/audit/intelligence/pageIntentDetection"
 import type { DetectedPageIntent } from "@/services/audit/intelligence/pageIntentTypes"
 import { getRuleIdsForIntent } from "@/services/audit/intelligence/pageIntentDetection"
-import {
-  evaluateRuleApplicability,
-} from "@/services/audit/intelligence/rules/ruleApplicability"
 import { getSiteRuleIds, getPackRuleIds } from "@/services/audit/intelligence/rules/rulePacks"
 import type { RuleExecutionTracker } from "@/services/audit/intelligence/execution/ruleExecutionTracker"
 import type { PageContentSnapshot } from "@/services/audit/pageContentService"
@@ -19,6 +16,16 @@ import type { IntelligenceFindingDraft } from "@/services/audit/intelligence/typ
 import type { ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
 import type { RuleDefinition } from "@/services/audit/intelligence/rules/ruleDefinition"
 import { isRenderSensitiveRule } from "@/services/audit/intelligence/rendering/renderSensitiveRules"
+import type { WebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
+import {
+  evaluateRuleExecutionApplicability,
+  filterApplicableRuleIds,
+} from "@/services/audit/intelligence/applicability/applicabilityEngine"
+
+export type RuleExecutionOptions = {
+  websiteIntent: WebsiteIntent
+  trustworthyForUxRules?: boolean
+}
 
 function draftFromRule(
   rule: RuleDefinition,
@@ -97,35 +104,42 @@ function getPageRuleUniverse(): RuleDefinition[] {
   return registry.getByIds([...ids]).filter((rule) => rule.scope === "page")
 }
 
+/**
+ * Page rules: Applicability Engine gates every rule before detectors run.
+ */
 export async function executePageRules(
   context: PageRuleContext,
   tracker?: RuleExecutionTracker,
-  options?: { trustworthyForUxRules?: boolean }
+  options?: RuleExecutionOptions
 ): Promise<{ findings: IntelligenceFindingDraft[]; detected: DetectedPageIntent }> {
+  const websiteIntent = options?.websiteIntent ?? "unknown"
   const registry = getRuleRegistry()
   const detected = detectPageIntent({
     page: context.currentSnapshot.page,
     snapshot: context.currentSnapshot,
   })
-  const intent = detected.pageIntent
-  const applicableIds = new Set(getRuleIdsForIntent(intent))
+  const pageIntent = detected.pageIntent
+  const applicabilityContext = { websiteIntent, pageIntent }
+
+  const candidateIds = getRuleIdsForIntent(pageIntent)
+  const applicableIds = filterApplicableRuleIds(candidateIds, applicabilityContext)
 
   for (const rule of getPageRuleUniverse()) {
-    const applicability = evaluateRuleApplicability(rule.id, intent)
-    if (!applicability.applicable) {
+    const decision = evaluateRuleExecutionApplicability(rule.id, applicabilityContext)
+    if (!decision.applicable) {
       tracker?.recordSkipped({
         ruleId: rule.id,
         pageId: context.currentSnapshot.page.id,
         pagePath: context.currentSnapshot.page.path,
-        pageIntent: intent,
-        reason: applicability.reason ?? "not_applicable_page_type",
-        message: applicability.message,
+        pageIntent,
+        reason: decision.reason ?? "not_applicable_page_type",
+        message: decision.message,
       })
     }
   }
 
   const rules = registry
-    .getByIds([...applicableIds])
+    .getByIds(applicableIds)
     .filter((rule) => rule.scope === "page")
 
   const findings: IntelligenceFindingDraft[] = []
@@ -136,7 +150,7 @@ export async function executePageRules(
         ruleId: rule.id,
         pageId: context.currentSnapshot.page.id,
         pagePath: context.currentSnapshot.page.path,
-        pageIntent: intent,
+        pageIntent,
         reason: "low_render_confidence",
         message: "Render confidence too low — UX/CRO rule skipped",
       })
@@ -150,7 +164,7 @@ export async function executePageRules(
       ruleId: rule.id,
       pageId: context.currentSnapshot.page.id,
       pagePath: context.currentSnapshot.page.path,
-      pageIntent: intent,
+      pageIntent,
       passed: ruleFindings.length === 0,
       findingCount: ruleFindings.length,
     })
@@ -159,14 +173,32 @@ export async function executePageRules(
   return { findings, detected }
 }
 
+/**
+ * Site rules: website-intent gate only (no page intent).
+ */
 export async function executeSiteRules(
   context: SiteRuleContext,
-  tracker?: RuleExecutionTracker
+  tracker?: RuleExecutionTracker,
+  options?: RuleExecutionOptions
 ): Promise<IntelligenceFindingDraft[]> {
+  const websiteIntent = options?.websiteIntent ?? "unknown"
   const registry = getRuleRegistry()
   const ruleIds = getSiteRuleIds()
-  const rules = registry.getByIds(ruleIds).filter((rule) => rule.scope === "site")
+  const applicabilityContext = { websiteIntent }
+  const applicableIds = filterApplicableRuleIds(ruleIds, applicabilityContext)
+  const rules = registry.getByIds(applicableIds).filter((rule) => rule.scope === "site")
   const findings: IntelligenceFindingDraft[] = []
+
+  for (const ruleId of ruleIds) {
+    const decision = evaluateRuleExecutionApplicability(ruleId, applicabilityContext)
+    if (!decision.applicable) {
+      tracker?.recordSkipped({
+        ruleId,
+        reason: decision.reason ?? "site_rule_not_applicable",
+        message: decision.message,
+      })
+    }
+  }
 
   for (const rule of rules) {
     const ruleFindings = await evaluateRule(rule, context)
@@ -213,31 +245,40 @@ export function dedupeFindings(
   return deduped
 }
 
-export function countRulesForPage(page: AuditPage, snapshot?: PageContentSnapshot): number {
+export function countRulesForPage(
+  page: AuditPage,
+  snapshot?: PageContentSnapshot,
+  websiteIntent: WebsiteIntent = "unknown"
+): number {
   const detected = detectPageIntent({ page, snapshot })
-  return getRuleIdsForIntent(detected.pageIntent).length
+  return filterApplicableRuleIds(getRuleIdsForIntent(detected.pageIntent), {
+    websiteIntent,
+    pageIntent: detected.pageIntent,
+  }).length
 }
 
 export function countApplicableRuleEvaluations(
   pages: AuditPage[],
-  snapshotsByPageId?: Map<string, PageContentSnapshot>
+  snapshotsByPageId?: Map<string, PageContentSnapshot>,
+  websiteIntent: WebsiteIntent = "unknown"
 ): number {
-  const siteCount = getSiteRuleIds().length
+  const siteCount = filterApplicableRuleIds(getSiteRuleIds(), { websiteIntent }).length
   const pageCount = pages.reduce((sum, page) => {
     const snapshot = snapshotsByPageId?.get(page.id)
-    return sum + countRulesForPage(page, snapshot)
+    return sum + countRulesForPage(page, snapshot, websiteIntent)
   }, 0)
   return siteCount + pageCount
 }
 
 export function countExecutedRuleEvaluations(
   analyzedPages: AuditPage[],
-  snapshotsByPageId?: Map<string, PageContentSnapshot>
+  snapshotsByPageId?: Map<string, PageContentSnapshot>,
+  websiteIntent: WebsiteIntent = "unknown"
 ): number {
-  const siteCount = getSiteRuleIds().length
+  const siteCount = filterApplicableRuleIds(getSiteRuleIds(), { websiteIntent }).length
   const pageCount = analyzedPages.reduce((sum, page) => {
     const snapshot = snapshotsByPageId?.get(page.id)
-    return sum + countRulesForPage(page, snapshot)
+    return sum + countRulesForPage(page, snapshot, websiteIntent)
   }, 0)
   return siteCount + pageCount
 }

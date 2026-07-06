@@ -24,6 +24,26 @@ export type RenderPageDiagnostics = {
   openGraphTitle: string | null
 }
 
+export type PageAcquisitionDiagnostics = {
+  url: string
+  crawlStage: import("@/services/audit/intelligence/diagnostics/crawlDiagnostics").CrawlStage
+  crawlError?: string
+  httpStatus?: number
+  redirectCount: number
+  renderTimeMs?: number
+  browserError?: string
+  playwrightError?: string
+  retryAttempts: number
+  blockedByCloudflare: boolean
+  blockedByBotProtection: boolean
+  timedOut: boolean
+  javascriptExecuted: boolean
+  pageAcquired: boolean
+  renderCompleted: boolean
+  contentSource?: ContentSource
+  navigationStrategy?: string
+}
+
 export type AcquiredPageContent = {
   ok: boolean
   status: number
@@ -32,6 +52,7 @@ export type AcquiredPageContent = {
   contentHash: string | null
   contentSource: ContentSource
   renderDiagnostics?: RenderPageDiagnostics | null
+  acquisitionDiagnostics?: PageAcquisitionDiagnostics
   error?: string
 }
 
@@ -47,6 +68,7 @@ export type RenderPageResult = {
   rendered: true
   diagnostics?: RenderPageDiagnostics | null
   error?: string
+  acquisitionDiagnostics?: PageAcquisitionDiagnostics
 }
 
 export type AuditFetchContext = {

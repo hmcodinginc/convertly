@@ -1,3 +1,4 @@
+import { createLogger, isAuditDebugEnabled } from "@/lib/logger"
 import type { DetectedPageIntent } from "@/services/audit/intelligence/pageIntentTypes"
 import type { DetectedWebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
 import type { RuleExecutionSummary } from "@/services/audit/intelligence/execution/ruleExecutionTracker"
@@ -6,6 +7,8 @@ import type { ScoreExplanation } from "@/services/audit/intelligence/scoring/sco
 import type { AuditConfidenceResult } from "@/services/audit/intelligence/scoring/auditConfidence"
 import type { PageScoreBreakdown } from "@/services/audit/intelligence/scoring/pageScoreDiagnostics"
 import { PAGE_SCORE_EQUATION } from "@/services/audit/intelligence/recommendations/consultantRecommendation"
+
+const diagnosticsLogger = createLogger("diagnostics")
 
 export type PageDiagnosticReport = {
   pageId: string
@@ -28,33 +31,32 @@ export type AuditDiagnosticsBundle = {
 }
 
 export function isAuditDiagnosticsEnabled(): boolean {
-  return import.meta.env.DEV || import.meta.env.VITE_AUDIT_DIAGNOSTICS === "true"
+  return isAuditDebugEnabled()
 }
 
 export function logAuditDiagnostics(bundle: AuditDiagnosticsBundle): void {
   if (!isAuditDiagnosticsEnabled()) return
 
-  console.groupCollapsed(
-    `[Convertly Audit Diagnostics] ${bundle.pageDiagnostics.length} pages · Growth ${bundle.scoreExplanation.growthScore}${bundle.websiteIntent ? ` · ${bundle.websiteIntent.websiteIntent}` : ""}`
-  )
-  console.info("Score equation:", bundle.pageDiagnostics[0]?.finalEquation ?? PAGE_SCORE_EQUATION)
-  console.info("Growth explanation:", bundle.scoreExplanation)
-  console.info("Confidence:", {
-    score: bundle.auditConfidence.score,
-    label: bundle.auditConfidence.label,
-    reasons: bundle.auditConfidence.confidenceReasons,
-    warnings: bundle.auditConfidence.confidenceWarnings,
-  })
-  console.info("Rule execution:", bundle.ruleExecution)
-  console.table(
-    bundle.pageDiagnostics.map((page) => ({
+  diagnosticsLogger.debug("Audit diagnostics bundle", {
+    pages: bundle.pageDiagnostics.length,
+    growthScore: bundle.scoreExplanation.growthScore,
+    websiteIntent: bundle.websiteIntent?.websiteIntent,
+    scoreEquation: bundle.pageDiagnostics[0]?.finalEquation ?? PAGE_SCORE_EQUATION,
+    scoreExplanation: bundle.scoreExplanation,
+    confidence: {
+      score: bundle.auditConfidence.score,
+      label: bundle.auditConfidence.label,
+      reasons: bundle.auditConfidence.confidenceReasons,
+      warnings: bundle.auditConfidence.confidenceWarnings,
+    },
+    ruleExecution: bundle.ruleExecution,
+    pageScores: bundle.pageDiagnostics.map((page) => ({
       path: page.path,
       intent: page.pageIntent,
       score: page.scoreBreakdown.finalScore,
       penalty: page.scoreBreakdown.weightedPenalty,
-    }))
-  )
-  console.groupEnd()
+    })),
+  })
 }
 
 export function buildPageDiagnosticReport(input: {

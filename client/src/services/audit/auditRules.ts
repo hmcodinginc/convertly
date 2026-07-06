@@ -2,6 +2,7 @@ import {
   bootstrapIntelligenceEngine,
   runIntelligenceEngine,
 } from "@/services/audit/intelligence"
+import type { IntelligenceEngineOptions } from "@/services/audit/intelligence/execution/auditIntelligenceEngine"
 import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 import type { ScoreCategory, ScoredFindingInput } from "@/services/audit/scoring/calculateAuditScore"
 import type { ScoringEngineV3Result } from "@/services/audit/intelligence/scoring/scoringEngineV3"
@@ -27,9 +28,7 @@ export function getRegisteredAuditRules(): readonly AuditRule[] {
 
 export async function runAuditRules(
   context: AuditRuleContext,
-  options?: {
-    onPageAnalyzed?: Parameters<typeof runIntelligenceEngine>[1]["onPageAnalyzed"]
-  }
+  options?: IntelligenceEngineOptions
 ): Promise<{
   findings: ScoredFindingInput[]
   categories: Record<ScoreCategory, number>

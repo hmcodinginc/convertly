@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
@@ -20,11 +21,7 @@ import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
 import type { AuditDetail } from "@/types/audit"
 
-const auditStatusVariant = {
-  Completed: "success",
-  Running: "accent",
-  Scheduled: "neutral",
-} as const
+import { getAuditStatusVariant } from "@/lib/auditStatus"
 
 function SampleReportPage() {
   const { data: audit, isLoading, isError, error, reload } = useAsyncData(
@@ -38,7 +35,18 @@ function SampleReportPage() {
 
       <Section containerClassName="marketing-container">
         <div className="marketing-section-stack">
-          <div className="space-y-4 border-b border-[color-mix(in_srgb,var(--border)_70%,transparent)] pb-8">
+          <div className="sample-report-intro">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="sample-report-intro__back h-9 gap-1.5 px-0 text-foreground/70 hover:bg-transparent hover:text-foreground"
+              asChild
+            >
+              <Link to={ROUTES.home}>
+                <ArrowLeft className="size-4" aria-hidden />
+                Back to marketing site
+              </Link>
+            </Button>
             <Text
               size="sm"
               className="max-w-none font-medium tracking-[0.16em] uppercase text-foreground/62"
@@ -72,68 +80,82 @@ function SampleReportPage() {
 }
 
 function SampleReportContent({ audit }: { audit: AuditDetail }) {
+  const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
+
   return (
-    <div className="space-y-6">
-      <header className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] p-6 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Text
-                variant="muted"
-                size="sm"
-                className="max-w-none font-medium tracking-[0.16em] uppercase"
-              >
-                Audit report
-              </Text>
-              <StatusBadge label={audit.status} variant={auditStatusVariant[audit.status]} />
-            </div>
-            <Heading level={2} size="section" className="max-w-none">
-              {audit.name}
-            </Heading>
-            <Text variant="muted" size="sm" className="max-w-none">
-              {audit.domain} · {audit.completedAt} · {audit.pagesAnalyzed} pages analyzed
+    <div className="sample-report-body audit-report-page">
+      <header className="audit-report-hero">
+        <div className="audit-report-hero__content">
+          <div className="audit-report-hero__eyebrow">
+            <Text
+              variant="muted"
+              size="sm"
+              className="max-w-none font-medium tracking-[0.18em] uppercase"
+            >
+              Audit report
             </Text>
+            <StatusBadge label={audit.status} variant={getAuditStatusVariant(audit.status)} />
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-4xl font-medium tabular-nums tracking-tight text-foreground">
-              {audit.overallScore}
-            </p>
-            <Text variant="muted" size="sm" className="mt-1 max-w-none">
-              Conversion score
-            </Text>
+          <h1 className="audit-report-hero__title">{audit.name}</h1>
+          <p className="audit-report-hero__meta">
+            <span>{audit.websiteUrl ?? audit.domain}</span>
+            <span aria-hidden>·</span>
+            <span>{headerDate}</span>
+            <span aria-hidden>·</span>
+            <span>{audit.pagesAnalyzed} pages analyzed</span>
+          </p>
+        </div>
+
+        <div className="audit-report-hero__aside">
+          <div
+            className="audit-report-score-panel"
+            aria-label={`Growth score ${audit.overallScore}`}
+          >
+            <p className="audit-report-score-panel__value">{audit.overallScore}</p>
+            <p className="audit-report-score-panel__label">Growth score</p>
+            <p className="audit-report-score-panel__hint">Weighted conversion health</p>
           </div>
         </div>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_17rem] xl:items-start">
-        <AuditSummarySection audit={audit} />
-        <AuditTimelineSection events={audit.timeline} compact />
+      <div className="audit-report-layout">
+        <div className="audit-report-layout__main">
+          <AuditSummarySection audit={audit} />
+          <ScoreBreakdownSection categories={audit.scoreBreakdown} auditStatus={audit.status} />
+          <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
+          <SiteWideFindingsSection findings={audit.siteFindings} auditStatus={audit.status} />
+          <PrioritizedIssuesSection
+            issues={audit.issues}
+            pages={audit.pageFindings}
+            auditStatus={audit.status}
+          />
+          <AuditRecommendationsSection
+            recommendations={audit.recommendations}
+            pages={audit.pageFindings}
+          />
+          <AuditMetadataSection audit={audit} />
+        </div>
+
+        <aside className="audit-report-layout__rail" aria-label="Audit timeline">
+          <AuditTimelineSection events={audit.timeline} compact />
+        </aside>
       </div>
 
-      <ScoreBreakdownSection categories={audit.scoreBreakdown} auditStatus={audit.status} />
-      <PageFindingsSection pages={audit.pageFindings} auditStatus={audit.status} />
-      <SiteWideFindingsSection findings={audit.siteFindings} auditStatus={audit.status} />
-      <PrioritizedIssuesSection
-        issues={audit.issues}
-        pages={audit.pageFindings}
-        auditStatus={audit.status}
-      />
-      <AuditRecommendationsSection
-        recommendations={audit.recommendations}
-        pages={audit.pageFindings}
-      />
-      <AuditMetadataSection audit={audit} />
-
-      <div className="rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] p-6 text-center sm:p-8">
-        <Heading level={3} size="subsection" className="mx-auto max-w-xl text-balance">
+      <div className="sample-report-cta">
+        <Heading level={3} size="subsection" className="sample-report-cta__title">
           Ready to run this on your site?
         </Heading>
-        <Text variant="muted" size="sm" className="mx-auto mt-3 max-w-lg leading-6">
+        <Text variant="muted" size="sm" className="sample-report-cta__description">
           Create a free account and launch your first Convertly audit in minutes.
         </Text>
-        <Button className="mt-5 h-11 px-6" asChild>
-          <Link to={ROUTES.signup}>Create free account</Link>
-        </Button>
+        <div className="sample-report-cta__actions">
+          <Button className="sample-report-cta__btn" asChild>
+            <Link to={ROUTES.signup}>Create free account</Link>
+          </Button>
+          <Button variant="outline" className="sample-report-cta__btn" asChild>
+            <Link to={ROUTES.home}>Return to marketing site</Link>
+          </Button>
+        </div>
       </div>
     </div>
   )
