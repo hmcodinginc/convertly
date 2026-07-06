@@ -16,6 +16,9 @@ import type { DiscoveredPageCandidate } from "@/types/auditEngine"
 import {
   createEmptyCrawlDiagnostics,
   crawlStopReasonFromFailureKind,
+  crawlStageFromFailureKind,
+  mergeAcquisitionIntoCrawlDiagnostics,
+  describeCrawlStopReason,
   type CrawlDiagnostics,
 } from "@/services/audit/intelligence/diagnostics/crawlDiagnostics"
 
@@ -204,6 +207,10 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
         finalUrl: homepageFetch.finalUrl,
       })
 
+      if (homepageFetch.acquisitionDiagnostics) {
+        mergeAcquisitionIntoCrawlDiagnostics(diagnostics, homepageFetch.acquisitionDiagnostics)
+      }
+
       logDiscovery("Homepage unreachable — discovery aborted", {
         url: homepageUrl,
         ok: homepageFetch.ok,
@@ -213,10 +220,20 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
       })
 
       diagnostics.crawlStoppedReason = crawlStopReasonFromFailureKind(classified.kind)
-      diagnostics.crawlStoppedDetail = classified.userMessage
+      diagnostics.crawlStage = crawlStageFromFailureKind(classified.kind)
+      diagnostics.crawlStoppedDetail = describeCrawlStopReason({
+        ...diagnostics,
+        crawlStoppedReason: crawlStopReasonFromFailureKind(classified.kind),
+        crawlError: homepageFetch.error ?? classified.userMessage,
+      })
       diagnostics.failureKind = classified.kind
+      diagnostics.crawlError = homepageFetch.error ?? classified.userMessage
 
-      throw new Error(classified.userMessage)
+      throw new Error(diagnostics.crawlStoppedDetail)
+    }
+
+    if (homepageFetch.acquisitionDiagnostics) {
+      mergeAcquisitionIntoCrawlDiagnostics(diagnostics, homepageFetch.acquisitionDiagnostics)
     }
 
     if (homepageFetch.finalUrl !== homepageUrl) {

@@ -1,7 +1,6 @@
 import { FileSearch } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
-import { AuditTableLink } from "@/components/dashboard/AuditTableLink"
 import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import {
   DataTable,
@@ -13,31 +12,29 @@ import {
   DataTableRow,
 } from "@/components/data/DataTable"
 import { EmptyState } from "@/components/feedback/EmptyState"
-import { Button } from "@/components/ui/button"
 import { AppPageSection } from "@/components/layout/AppPageSection"
 import { Card } from "@/components/surfaces/Card"
+import { RecentAuditRowActions } from "@/features/dashboard/components/RecentAuditRowActions"
 import { ROUTES, auditDetailPath } from "@/lib/routes"
 import type { Audit } from "@/types/audit"
 
 type RecentAuditsSectionProps = {
   audits: Audit[]
+  onDeleteRequest: (audit: Audit) => void
 }
 
-function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
+function RecentAuditsSection({ audits, onDeleteRequest }: RecentAuditsSectionProps) {
   const navigate = useNavigate()
+  const recentAudits = audits.slice(0, 5)
 
   return (
     <AppPageSection
+      className="dashboard-recent-audits"
       eyebrow="Activity"
       title="Recent audits"
-      description="Latest runs across your workspace with conversion scores."
-      actions={
-        <Button variant="outline" size="sm" asChild>
-          <Link to={ROUTES.audits}>View all audits</Link>
-        </Button>
-      }
+      description="Jump back into your latest conversion reports."
     >
-      {audits.length === 0 ? (
+      {recentAudits.length === 0 ? (
         <EmptyState
           icon={FileSearch}
           title="No audits yet"
@@ -46,25 +43,35 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
         />
       ) : (
         <Card className="app-card-table hover:translate-y-0">
-          <DataTable minWidth="37.5rem">
+          <DataTable minWidth="44rem" className="app-table-relaxed">
+            <colgroup>
+              <col />
+              <col />
+              <col />
+              <col />
+              <col />
+              <col className="dashboard-recent-audits__actions-col" />
+            </colgroup>
             <DataTableHead>
               <DataTableHeadRow>
-                <DataTableHeaderCell>Audit</DataTableHeaderCell>
                 <DataTableHeaderCell>Domain</DataTableHeaderCell>
-                <DataTableHeaderCell>Completed</DataTableHeaderCell>
-                <DataTableHeaderCell>Pages</DataTableHeaderCell>
+                <DataTableHeaderCell>Date</DataTableHeaderCell>
                 <DataTableHeaderCell>Score</DataTableHeaderCell>
+                <DataTableHeaderCell>Pages</DataTableHeaderCell>
                 <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell className="dashboard-recent-audits__actions-header">
+                  Actions
+                </DataTableHeaderCell>
               </DataTableHeadRow>
             </DataTableHead>
             <DataTableBody>
-              {audits.slice(0, 5).map((audit) => (
+              {recentAudits.map((audit) => (
                 <DataTableRow
                   key={audit.id}
                   interactive
                   tabIndex={0}
                   role="link"
-                  aria-label={`Open audit report for ${audit.name}`}
+                  aria-label={`Open audit report for ${audit.domain}`}
                   onClick={() => navigate(auditDetailPath(audit.id))}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -73,28 +80,23 @@ function RecentAuditsSection({ audits }: RecentAuditsSectionProps) {
                     }
                   }}
                 >
-                  <DataTableCell>
-                    <AuditTableLink
-                      auditId={audit.id}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {audit.name}
-                    </AuditTableLink>
-                  </DataTableCell>
-                  <DataTableCell className="font-mono text-xs text-foreground/80">
+                  <DataTableCell className="font-medium text-foreground">
                     {audit.domain}
                   </DataTableCell>
                   <DataTableCell className="text-foreground/75">
                     {audit.completedAt}
                   </DataTableCell>
-                  <DataTableCell className="tabular-nums text-foreground/85">
-                    {audit.pagesScanned}
-                  </DataTableCell>
                   <DataTableCell className="font-medium tabular-nums text-foreground">
                     {audit.conversionScore}
                   </DataTableCell>
+                  <DataTableCell className="tabular-nums text-foreground/85">
+                    {audit.pagesScanned}
+                  </DataTableCell>
                   <DataTableCell>
                     <AuditStatusBadge status={audit.status} />
+                  </DataTableCell>
+                  <DataTableCell className="dashboard-recent-audits__actions-cell">
+                    <RecentAuditRowActions audit={audit} onDeleteRequest={onDeleteRequest} />
                   </DataTableCell>
                 </DataTableRow>
               ))}

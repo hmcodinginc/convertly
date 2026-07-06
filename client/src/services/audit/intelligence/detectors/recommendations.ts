@@ -64,7 +64,7 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
   "hero-cta-below-fold": (c) =>
     `Move the primary CTA on ${pagePath(c)} into the first viewport on desktop and mobile so visitors do not need to hunt for it.`,
 
-  "hero-generic-headline": (c) =>
+  "hero-generic-headline": () =>
     `Rewrite the homepage headline to state who you help and the measurable outcome they should expect within one sentence.`,
 
   "hero-no-value-proposition": (c) =>

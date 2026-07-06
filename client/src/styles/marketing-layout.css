@@ -148,6 +148,126 @@
   padding-inline: 1.5rem;
 }
 
+/* Sample report — marketing intro & footer */
+.sample-report-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.sample-report-intro__back {
+  align-self: flex-start;
+}
+
+@media (min-width: 1024px) {
+  .sample-report-intro {
+    gap: 1.25rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .sample-report-intro__back {
+    margin-bottom: 0.5rem;
+  }
+
+  .sample-report-body {
+    margin-top: 0.25rem;
+  }
+
+  .sample-report-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding: 3.25rem 2.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 58%, transparent);
+  }
+
+  .sample-report-cta__title {
+    max-width: 36rem;
+    text-wrap: balance;
+  }
+
+  .sample-report-cta__description {
+    max-width: 32rem;
+    line-height: 1.625;
+  }
+
+  .sample-report-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.75rem;
+  }
+
+  .sample-report-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding-inline: 1.5rem;
+    padding-block: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: var(--radius-md);
+    border-width: 1px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .sample-report-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.875rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 58%, transparent);
+  }
+
+  .sample-report-cta__description {
+    max-width: 24rem;
+    line-height: 1.5;
+  }
+
+  .sample-report-cta__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .sample-report-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding-inline: 1.5rem;
+    padding-block: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: var(--radius-md);
+    border-width: 1px;
+  }
+}
+
 /* Desktop: center content block inside full-width CTA (mobile unchanged) */
 @media (min-width: 1024px) {
   .marketing-cta-section [data-slot="glass-panel"] {

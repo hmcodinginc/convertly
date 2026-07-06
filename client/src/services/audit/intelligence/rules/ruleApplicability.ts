@@ -8,6 +8,7 @@ import type { RulePackId } from "@/services/audit/intelligence/rules/rulePacks"
 export type RuleSkipReason =
   | "excluded_page_type"
   | "not_applicable_page_type"
+  | "not_applicable_website_intent"
   | "pack_not_allowed_for_intent"
   | "pack_ignored_for_intent"
   | "missing_rule_metadata"
@@ -175,7 +176,7 @@ export function evaluateRuleApplicability(
   const scoringProfile = resolveRuleScoringProfile(meta)
   if (scoringProfile.applicablePageTypes !== "all") {
     const rulePageType = intentToRulePageType(intent)
-    if (!scoringProfile.applicablePageTypes.includes(rulePageType)) {
+    if (!(scoringProfile.applicablePageTypes as readonly string[]).includes(rulePageType)) {
       return {
         applicable: false,
         optional: false,

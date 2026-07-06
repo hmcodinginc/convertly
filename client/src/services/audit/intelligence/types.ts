@@ -62,6 +62,11 @@ export type IntelligenceFindingDraft = {
   verificationReason?: string
   excludeFromScoring?: boolean
   suppressRecommendation?: boolean
+  /**
+   * Implementation best practice that still scores via category penalties
+   * but does not participate in Growth Score blocker ceilings.
+   */
+  technicalBestPractice?: boolean
 }
 
 export type IntelligenceExecutionResult = {
@@ -80,6 +85,7 @@ export type IntelligenceExecutionResult = {
   websiteIntent?: import("@/services/audit/intelligence/websiteIntentTypes").DetectedWebsiteIntent
   renderConfidence?: import("@/services/audit/intelligence/rendering/renderConfidence").SiteRenderConfidence
   reliabilityReport?: import("@/services/audit/intelligence/rendering/renderReliability").ReliabilityReport
+  engineDiagnostics?: import("@/services/audit/intelligence/diagnostics/engineDiagnostics").EngineDiagnostics
 }
 
 export type RecommendationDraft = {

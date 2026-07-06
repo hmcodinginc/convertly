@@ -186,7 +186,7 @@ export function buildConsultantRecommendation(
 }
 
 function mergeRecommendations(
-  existing: ConsultantRecommendation,
+  existing: MutableConsultantRecommendation,
   draft: ConsultantRecommendation,
   finding: IntelligenceFindingDraft,
   pagePath?: string
@@ -257,7 +257,10 @@ export function consolidateConsultantRecommendations(
   })
 
   return [...groups.values()]
-    .map(({ occurrenceCount: _count, ...rec }) => rec)
+    .map(({ occurrenceCount, ...rec }) => {
+      void occurrenceCount
+      return rec
+    })
     .sort((a, b) => {
       const severityDelta = severityRank(a.severity) - severityRank(b.severity)
       if (severityDelta !== 0) return severityDelta

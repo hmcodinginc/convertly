@@ -96,11 +96,11 @@ function buildMetricsFromWorkspace(workspace: WorkspaceData): DashboardMetric[] 
   return [
     {
       id: "growth-score",
-      label: "Growth Score",
+      label: "Average Growth Score",
       value: averageGrowth > 0 ? String(averageGrowth) : "—",
       change: `${workspace.completedSessionCount} audits`,
       trend: averageGrowth >= 70 ? "up" : averageGrowth > 0 ? "neutral" : "neutral",
-      hint: "Average weighted score across completed audits",
+      hint: "Average score across completed audits.",
     },
     {
       id: "total-audits",

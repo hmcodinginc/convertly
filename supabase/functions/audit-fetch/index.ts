@@ -6,8 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 }
 
-const FETCH_TIMEOUT_MS = 8000
-const MAX_HTML_BYTES = 2_000_000
+const FETCH_TIMEOUT_MS = 15_000
+const MAX_HTML_BYTES = 5_000_000
+const MAX_REDIRECTS = 10
 
 const BLOCKED_HOSTNAMES = new Set([
   "localhost",
@@ -106,12 +107,25 @@ async function fetchRemotePage(url: string): Promise<FetchResult> {
       signal: controller.signal,
       headers: {
         Accept: "text/html,application/xhtml+xml",
-        "User-Agent": "ConvertlyAuditBot/1.0",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 ConvertlyAuditBot/1.0",
       },
     })
 
     const finalUrl = response.url || url
     assertSafeUrl(finalUrl)
+
+    const redirectCount = response.redirected ? 1 : 0
+    if (redirectCount > MAX_REDIRECTS) {
+      return {
+        ok: false,
+        status: response.status,
+        finalUrl,
+        html: null,
+        contentHash: null,
+        error: "ERR_TOO_MANY_REDIRECTS: Maximum redirect count exceeded",
+      }
+    }
 
     const contentType = response.headers.get("content-type") ?? ""
     const isHtml =
@@ -152,13 +166,19 @@ async function fetchRemotePage(url: string): Promise<FetchResult> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Fetch failed"
+    const normalized =
+      message.includes("certificate") || message.includes("SSL") || message.includes("TLS")
+        ? `SSL/TLS error: ${message}`
+        : message.includes("abort")
+          ? "Request timed out"
+          : message
     return {
       ok: false,
       status: 0,
       finalUrl: url,
       html: null,
       contentHash: null,
-      error: message,
+      error: normalized,
     }
   } finally {
     clearTimeout(timeout)

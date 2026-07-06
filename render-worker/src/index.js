@@ -5,6 +5,7 @@ import { renderPage } from "./playwrightRenderer.js"
 import { assertSafeUrl } from "./urlSafety.js"
 
 const PORT = Number(process.env.PORT ?? 3100)
+const REQUEST_TIMEOUT_MS = 50_000
 
 function sendJson(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json" })
@@ -21,14 +22,34 @@ async function readBody(req) {
   return JSON.parse(raw)
 }
 
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Render request timed out")), ms)
+    promise
+      .then((value) => {
+        clearTimeout(timer)
+        resolve(value)
+      })
+      .catch((error) => {
+        clearTimeout(timer)
+        reject(error)
+      })
+  })
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "content-type, authorization",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
     })
     res.end()
+    return
+  }
+
+  if (req.method === "GET" && req.url === "/health") {
+    sendJson(res, 200, { ok: true, service: "convertly-render-worker" })
     return
   }
 
@@ -45,11 +66,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     assertSafeUrl(body.url.trim())
-    const result = await renderPage(body.url.trim())
+    const result = await withTimeout(renderPage(body.url.trim()), REQUEST_TIMEOUT_MS)
     sendJson(res, 200, result)
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error"
-    sendJson(res, 400, { error: message })
+    sendJson(res, 200, {
+      ok: false,
+      finalUrl: "",
+      html: null,
+      text: null,
+      title: null,
+      links: [],
+      headings: { h1: [], h2: [] },
+      contentHash: null,
+      rendered: true,
+      error: message,
+    })
   }
 })
 

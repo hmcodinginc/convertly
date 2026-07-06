@@ -79,8 +79,7 @@ export function calculateAuditScore(findings: ScoredFindingInput[]): {
 export function toPersistedFinding(
   finding: ScoredFindingInput
 ): AuditFindingInput {
-  const { ruleId, scoreCategory, ...persisted } = finding
-  void ruleId
+  const { scoreCategory, ...persisted } = finding
   void scoreCategory
   return persisted
 }

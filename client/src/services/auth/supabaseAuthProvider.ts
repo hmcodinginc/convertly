@@ -1,4 +1,11 @@
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js"
+import {
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+  type AuthChangeEvent,
+  type Session,
+  type User,
+} from "@supabase/supabase-js"
 
 import { getEmailConfirmationRedirectUrl, getPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import {

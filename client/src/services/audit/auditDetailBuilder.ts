@@ -417,6 +417,19 @@ function mapFindingsToRecommendations(data: AuditSessionData): Recommendation[] 
     return consultantRecs.slice(0, 8).map(consultantToUiRecommendation)
   }
 
+  return buildLegacyRecommendationsFromPersistedFindings(data, intelligenceSnapshot)
+}
+
+/**
+ * Legacy path — only used when persisted audits lack V5 consultantRecommendations
+ * in the intelligence snapshot. Reconstructs groups from finding titles because
+ * audit_findings rows do not store ruleId. Do not extend this path; new audits
+ * must always persist consultantRecommendations with ruleId metadata.
+ */
+function buildLegacyRecommendationsFromPersistedFindings(
+  data: AuditSessionData,
+  intelligenceSnapshot: ReturnType<typeof parseIntelligenceSnapshotFromHistory>
+): Recommendation[] {
   const websiteIntent =
     intelligenceSnapshot?.websiteIntent?.websiteIntent ??
     detectWebsiteIntent({
@@ -442,7 +455,9 @@ function mapFindingsToRecommendations(data: AuditSessionData): Recommendation[] 
   const groups = new Map<string, RecommendationGroup>()
 
   for (const finding of data.findings) {
-    const ruleId = ruleTitleByNormalizedTitle.get(finding.title.trim().toLowerCase())
+    const ruleId =
+      finding.ruleId ??
+      ruleTitleByNormalizedTitle.get(finding.title.trim().toLowerCase())
     if (ruleId && !isRuleApplicableToWebsiteIntent(ruleId, websiteIntent)) {
       continue
     }

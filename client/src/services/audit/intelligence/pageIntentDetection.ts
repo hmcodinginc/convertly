@@ -4,11 +4,9 @@ import { getSnapshotMetrics } from "@/services/audit/rules/snapshotMetrics"
 import {
   getPageIntentProfile,
   PAGE_INTENT_PACKS,
-  intentToRulePageType,
 } from "@/services/audit/intelligence/pageIntentProfiles"
 import type { DetectedPageIntent, PageIntent } from "@/services/audit/intelligence/pageIntentTypes"
 import { getPackRuleIds } from "@/services/audit/intelligence/rules/rulePacks"
-import { getRuleMetadata } from "@/services/audit/intelligence/rules/ruleMetadata"
 import { evaluateRuleApplicability } from "@/services/audit/intelligence/rules/ruleApplicability"
 
 export type PageIntentContext = {

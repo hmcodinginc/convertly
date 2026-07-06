@@ -76,24 +76,30 @@
 @media (min-width: 1024px) {
   .audit-report-hero {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 2rem;
-    padding-bottom: 2rem;
+    align-items: center;
+    gap: 2.5rem;
+    padding-bottom: 2.25rem;
   }
 }
 
 .audit-report-hero__content {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.875rem;
   min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .audit-report-hero__content {
+    gap: 1rem;
+  }
 }
 
 .audit-report-hero__eyebrow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem 0.875rem;
 }
 
 .audit-report-hero__title {
@@ -339,11 +345,16 @@
 }
 
 /* Score breakdown */
+.audit-score-grid {
+  align-items: stretch;
+}
+
 .audit-score-card {
   display: flex;
   flex-direction: column;
   gap: 0;
   min-width: 0;
+  height: 100%;
 }
 
 .audit-score-card__label {
@@ -793,6 +804,20 @@
   color: var(--foreground);
 }
 
+@media (min-width: 1024px) {
+  .audit-summary-metrics {
+    gap: 1.25rem;
+  }
+
+  .audit-summary-overview.app-card-metric {
+    padding: 1.5rem;
+  }
+
+  .audit-summary-metric.app-card-metric {
+    padding: 1.5rem;
+  }
+}
+
 .audit-page-card {
   display: flex;
   flex-direction: column;
@@ -882,6 +907,51 @@
   gap: 1.25rem;
 }
 
+@media (min-width: 1024px) {
+  .audit-score-grid {
+    gap: 1.25rem;
+  }
+
+  .audit-score-card.app-card-metric {
+    padding: 1.5rem;
+  }
+
+  .audit-page-grid {
+    gap: 1.25rem;
+  }
+
+  .audit-page-card.app-card-metric {
+    padding: 1.5rem;
+  }
+
+  .audit-page-card__stats {
+    align-self: center;
+    gap: 1.5rem;
+    min-width: 7.5rem;
+    padding-inline: 0.25rem;
+  }
+
+  .audit-page-card__stat {
+    flex: 1;
+    min-width: 3.25rem;
+    text-align: center;
+  }
+
+  .audit-report-layout__main .app-section {
+    gap: 1.75rem;
+  }
+
+  .app-page-sections .app-section {
+    gap: 1.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .audit-score-grid {
+    gap: 1.5rem;
+  }
+}
+
 .audit-page-card__stat {
   text-align: right;
 }
@@ -963,8 +1033,9 @@
 @media (min-width: 640px) {
   .app-section-header-row {
     flex-direction: row;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 1.25rem;
   }
 }
 
@@ -1129,5 +1200,101 @@
 @media (min-width: 640px) {
   .app-input-search {
     max-width: 20rem;
+  }
+}
+
+/* Dashboard — current audit label → selector spacing */
+.dashboard-current-audit__selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Dashboard — recent audits actions column */
+col.dashboard-recent-audits__actions-col {
+  width: 1%;
+}
+
+.app-table-relaxed th.dashboard-recent-audits__actions-header {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.app-table-relaxed td.dashboard-recent-audits__actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+  padding-left: 0.75rem;
+  padding-right: 1rem;
+  text-align: right;
+}
+
+.dashboard-recent-audits__actions-toolbar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.dashboard-recent-audits__action-btn {
+  height: 2rem;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.dashboard-recent-audits__action-btn--icon {
+  width: 2rem;
+  padding: 0;
+}
+
+/* Dashboard section rhythm (desktop polish) */
+@media (min-width: 1024px) {
+  .dashboard-current-audit__selector {
+    gap: 0.875rem;
+  }
+
+  .dashboard-opportunity-queue .app-section-header-row {
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .dashboard-opportunity-queue__badge {
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .dashboard-ai-recommendations [data-slot="section-header"] {
+    gap: 0.625rem;
+  }
+
+  .dashboard-recommendation-grid {
+    gap: 1.25rem;
+    align-items: stretch;
+    grid-auto-rows: 1fr;
+  }
+
+  .dashboard-recommendation-grid > * {
+    height: 100%;
+  }
+
+  .app-table-relaxed .app-table-th,
+  .app-table-relaxed .app-table-td {
+    padding: 1rem 1.5rem;
+  }
+
+  .app-table-relaxed .app-table-th:first-child,
+  .app-table-relaxed .app-table-td:first-child {
+    padding-left: 1.75rem;
+  }
+
+  .app-table-relaxed .app-table-th:last-child,
+  .app-table-relaxed .app-table-td:last-child {
+    padding-right: 1.75rem;
   }
 }
