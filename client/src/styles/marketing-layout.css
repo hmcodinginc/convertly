@@ -1,7 +1,38 @@
 /* Marketing page layout rhythm (spacing only — mirrors app discipline) */
 
 .marketing-container {
-  --container-max: 90rem;
+  --container-max: 80rem;
+  --container-gutter: 1rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-container {
+    --container-gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .marketing-container {
+    --container-gutter: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-container {
+    --container-gutter: 3.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .marketing-container {
+    --container-gutter: 4.5rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .marketing-container {
+    --container-gutter: 5.5rem;
+  }
 }
 
 /* Fixed navbar offset for in-page section navigation */

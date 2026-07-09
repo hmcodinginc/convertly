@@ -5,3 +5,7 @@ client/node_modules/
 
 supabase/.temp/
 supabase/audit_engine_full.sql
+.vscode/
+.client/.env
+.client/.env.local
+.client/.env.example

@@ -10,6 +10,8 @@ import { FooterSection } from "@/features/home/sections/FooterSection"
 import { HeroSection } from "@/features/home/sections/HeroSection"
 import { HowItWorksSection } from "@/features/home/sections/HowItWorksSection"
 import { SocialProofSection } from "@/features/home/sections/SocialProofSection"
+import { TestimonialsSection } from "@/features/home/sections/TestimonialsSection"
+import { PricingSection } from "@/features/home/sections/PricingSection"
 import {
   handleMarketingHashOnLoad,
   isSupabaseAuthCallbackHash,
@@ -56,6 +58,8 @@ function HomePage() {
       <SocialProofSection />
       <FeaturesSection />
       <HowItWorksSection />
+      <TestimonialsSection />
+      <PricingSection />
       <CtaSection />
       <FooterSection />
     </main>

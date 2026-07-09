@@ -13,12 +13,42 @@ import { cn } from "@/lib/utils"
 function Navbar() {
   const [scrolled, setScrolled] = React.useState(false)
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
+  const [activeSection, setActiveSection] = React.useState<string>("home-hero-title")
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const sectionIds = ["home-hero-title", "features-title", "how-it-works-title", "cta-title"]
+      let currentSection = "home-hero-title"
+      let minDistance = Infinity
+
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          if (rect.top < window.innerHeight * 0.45 && rect.bottom > 100) {
+            currentSection = id
+            break
+          }
+          const distance = Math.abs(rect.top - 120)
+          if (distance < minDistance) {
+            minDistance = distance
+            currentSection = id
+          }
+        }
+      }
+      setActiveSection(currentSection)
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   function closeMobileNav() {
@@ -40,15 +70,26 @@ function Navbar() {
             <ConvertlyMarketingLogoLink sectionId="home-hero-title" />
 
             <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
-              {MARKETING_NAV_ITEMS.map((item) => (
-                <MarketingNavLink
-                  key={item.label}
-                  sectionId={item.sectionId}
-                  className="text-sm text-foreground/70 transition-colors duration-[var(--motion-fast)] hover:text-foreground"
-                >
-                  {item.label}
-                </MarketingNavLink>
-              ))}
+              {MARKETING_NAV_ITEMS.map((item) => {
+                const isActive = activeSection === item.sectionId
+                return (
+                  <MarketingNavLink
+                    key={item.label}
+                    sectionId={item.sectionId}
+                    className={cn(
+                      "text-sm font-medium transition-all duration-300 relative py-1.5 px-2.5 rounded-[var(--radius-sm)]",
+                      isActive
+                        ? "text-foreground font-semibold bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                        : "text-foreground/70 hover:text-foreground hover:bg-[color-mix(in_srgb,var(--surface)_50%,transparent)]"
+                    )}
+                  >
+                    {item.label}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)]" />
+                    )}
+                  </MarketingNavLink>
+                )
+              })}
             </nav>
 
             <div className="hidden items-center gap-2 md:flex">
@@ -81,16 +122,24 @@ function Navbar() {
         className="max-w-[20rem] md:hidden"
       >
         <nav className="flex flex-col gap-1" aria-label="Primary">
-          {MARKETING_NAV_ITEMS.map((item) => (
-            <MarketingNavLink
-              key={item.label}
-              sectionId={item.sectionId}
-              onClick={closeMobileNav}
-              className="flex min-h-11 items-center rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium text-foreground/75 transition-colors hover:bg-[color-mix(in_srgb,var(--surface)_80%,transparent)] hover:text-foreground"
-            >
-              {item.label}
-            </MarketingNavLink>
-          ))}
+          {MARKETING_NAV_ITEMS.map((item) => {
+            const isActive = activeSection === item.sectionId
+            return (
+              <MarketingNavLink
+                key={item.label}
+                sectionId={item.sectionId}
+                onClick={closeMobileNav}
+                className={cn(
+                  "flex min-h-11 items-center rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-foreground font-semibold"
+                    : "text-foreground/75 hover:bg-[color-mix(in_srgb,var(--surface)_80%,transparent)] hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </MarketingNavLink>
+            )
+          })}
         </nav>
 
         <div className="mt-6 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)] pt-6">
