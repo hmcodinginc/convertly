@@ -25,10 +25,14 @@ import { Card } from "@/components/surfaces/Card"
 import { DeleteAuditModal } from "@/features/audits/components/DeleteAuditModal"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import {
+  AUDIT_SCORE_FILTER_OPTIONS,
+  AUDIT_SORT_OPTIONS,
   AUDIT_STATUS_FILTER_OPTIONS,
   exportAuditsToCsv,
   filterAudits,
   isDeletableAudit,
+  type AuditScoreFilter,
+  type AuditSortOption,
   type AuditStatusFilter,
 } from "@/lib/auditHistoryUtils"
 import { ROUTES, auditDetailPath } from "@/lib/routes"
@@ -46,17 +50,29 @@ function AuditsPage() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<AuditStatusFilter>("all")
+  const [scoreFilter, setScoreFilter] = useState<AuditScoreFilter>("all")
+  const [sortOption, setSortOption] = useState<AuditSortOption>("newest")
   const [filterOpen, setFilterOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Audit | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
 
   const filteredAudits = useMemo(
-    () => filterAudits(audits ?? [], { searchQuery, statusFilter }),
-    [audits, searchQuery, statusFilter]
+    () =>
+      filterAudits(audits ?? [], {
+        searchQuery,
+        statusFilter,
+        scoreFilter,
+        sort: sortOption,
+      }),
+    [audits, searchQuery, statusFilter, scoreFilter, sortOption]
   )
 
-  const hasActiveFilters = searchQuery.trim().length > 0 || statusFilter !== "all"
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    statusFilter !== "all" ||
+    scoreFilter !== "all" ||
+    sortOption !== "newest"
   const showFilteredEmpty = !isEmpty && filteredAudits.length === 0
 
   function showSuccess(message: string) {
@@ -132,7 +148,7 @@ function AuditsPage() {
           onChange={(event) => setSearchQuery(event.target.value)}
         />
         {!isEmpty ? (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="app-toolbar__actions flex shrink-0 items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -163,22 +179,58 @@ function AuditsPage() {
       </div>
 
       {filterOpen && !isEmpty ? (
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label htmlFor="audit-status-filter" className="text-sm text-muted-foreground">
-            Status
-          </label>
-          <select
-            id="audit-status-filter"
-            className="app-input sm:max-w-xs"
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as AuditStatusFilter)}
-          >
-            {AUDIT_STATUS_FILTER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="audit-status-filter" className="text-sm text-muted-foreground">
+              Status
+            </label>
+            <select
+              id="audit-status-filter"
+              className="app-input"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as AuditStatusFilter)}
+            >
+              {AUDIT_STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="audit-score-filter" className="text-sm text-muted-foreground">
+              Score
+            </label>
+            <select
+              id="audit-score-filter"
+              className="app-input"
+              value={scoreFilter}
+              onChange={(event) => setScoreFilter(event.target.value as AuditScoreFilter)}
+            >
+              {AUDIT_SCORE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="audit-sort-filter" className="text-sm text-muted-foreground">
+              Sort
+            </label>
+            <select
+              id="audit-sort-filter"
+              className="app-input"
+              value={sortOption}
+              onChange={(event) => setSortOption(event.target.value as AuditSortOption)}
+            >
+              {AUDIT_SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       ) : null}
 
@@ -247,7 +299,7 @@ function AuditsPage() {
                   <DataTableCell className="font-mono text-xs text-foreground/80">
                     {audit.domain}
                   </DataTableCell>
-                  <DataTableCell className="text-foreground/75">
+                  <DataTableCell className="whitespace-nowrap text-foreground/75 tabular-nums">
                     {audit.completedAt}
                   </DataTableCell>
                   <DataTableCell className="tabular-nums">{audit.conversionScore}</DataTableCell>

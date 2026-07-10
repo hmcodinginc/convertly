@@ -13,6 +13,16 @@ APP_URL=https://your-app.vercel.app
 
 ## Razorpay (V1)
 
+Environment selector (defaults to production when unset):
+
+```
+RAZORPAY_ENVIRONMENT=test
+```
+
+Set `RAZORPAY_ENVIRONMENT=production` (or remove the secret) before launch. All Razorpay credential reads go through `_shared/payment/razorpayConfig.ts`.
+
+### Production secrets (leave configured; not used while `RAZORPAY_ENVIRONMENT=test`)
+
 ```
 RAZORPAY_KEY_ID=rzp_live_...
 RAZORPAY_KEY_SECRET=...
@@ -20,6 +30,22 @@ RAZORPAY_WEBHOOK_SECRET=...
 RAZORPAY_PLAN_STARTER=plan_...
 RAZORPAY_PLAN_GROWTH=plan_...
 RAZORPAY_PLAN_SCALE=plan_...
+```
+
+### Test secrets (used when `RAZORPAY_ENVIRONMENT=test`)
+
+```
+RAZORPAY_TEST_KEY_ID=rzp_test_...
+RAZORPAY_TEST_KEY_SECRET=...
+RAZORPAY_TEST_WEBHOOK_SECRET=...
+RAZORPAY_TEST_PLAN_STARTER=plan_...
+RAZORPAY_TEST_PLAN_GROWTH=plan_...
+RAZORPAY_TEST_PLAN_SCALE=plan_...
+```
+
+### Shared
+
+```
 RAZORPAY_SUBSCRIPTION_TOTAL_COUNT=1200
 ```
 
@@ -45,6 +71,18 @@ STRIPE_PRICE_SCALE=price_...
 ```
 
 Webhook endpoint: same `payment-webhook` function when `PAYMENT_PROVIDER=stripe`.
+
+## Razorpay checkout return URL
+
+Subscription checkout uses Razorpay Standard Checkout with `callback_url` pointing to:
+
+```
+{APP_URL}/billing/return?checkout=success
+```
+
+Allowlist this URL in Razorpay Dashboard → **Settings → Payment Methods → Settings** (callback URL allowlist).
+
+If Checkout.js cannot load, the client falls back to the subscription `short_url` from the API.
 
 ## Edge functions
 

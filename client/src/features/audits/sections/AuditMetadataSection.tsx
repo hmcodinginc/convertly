@@ -39,6 +39,7 @@ function AuditMetadataSection({ audit }: AuditMetadataSectionProps) {
           ? audit.completedAt
           : "—"),
     },
+    ...(audit.duration ? [{ label: "Duration", value: audit.duration }] : []),
     { label: "Status", value: getAuditStatusLabel(audit.status), isStatus: true },
   ]
 
@@ -104,7 +105,7 @@ function AuditMetadataSection({ audit }: AuditMetadataSectionProps) {
                     {row.value}
                   </Text>
                 ) : (
-                  <Text size="sm" className="max-w-none text-foreground/85">
+                  <Text size="sm" className="max-w-none tabular-nums text-foreground/85">
                     {row.value}
                   </Text>
                 )}

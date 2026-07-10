@@ -16,6 +16,7 @@ import { useAsyncData } from "@/hooks/useAsyncData"
 import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { ROUTES } from "@/lib/routes"
 import * as workspaceService from "@/services/workspaceService"
+import { formatAuditDateTime } from "@/lib/formatAuditDateTime"
 
 function WorkspacePage() {
   const { session } = useAuthSession()
@@ -76,7 +77,7 @@ function WorkspacePage() {
   }
 
   return (
-    <AppPageShell header={header} sectionsClassName="gap-5">
+    <AppPageShell header={header} sectionsClassName="gap-6">
       <WorkspaceOverviewCard workspaceName={data.name} usage={data.usage} />
 
       <Card className="app-card-table hover:translate-y-0">
@@ -92,13 +93,13 @@ function WorkspacePage() {
           onAdd={() => setDomainDialogOpen(true)}
           onSetPrimary={(id) => void handleSetPrimary(id)}
           onDelete={(id) => void handleDeleteDomain(id)}
-          formatLastAudited={workspaceService.formatLastAudited}
+          formatLastAudited={(value) => formatAuditDateTime(value)}
         />
       </Card>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="app-button-row">
         <Button variant="outline" size="sm" asChild>
-          <Link to={ROUTES.settingsPreferences}>Account settings</Link>
+          <Link to={ROUTES.settings}>Account settings</Link>
         </Button>
         <Button variant="outline" size="sm" asChild>
           <Link to={ROUTES.billing}>Billing & upgrades</Link>

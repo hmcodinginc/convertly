@@ -56,11 +56,23 @@ export async function syncSubscriptionRecord(
     Object.entries(update).filter(([, value]) => value !== undefined)
   )
 
-  await adminClient
+  const { error } = await adminClient
     .from("subscriptions")
     .update(payload)
     .eq("workspace_id", input.workspaceId)
     .eq("user_id", input.userId)
+
+  if (error) {
+    console.error(
+      JSON.stringify({
+        scope: "payment-webhook",
+        step: "update_subscriptions_failed",
+        workspaceId: input.workspaceId,
+        userId: input.userId,
+        error,
+      })
+    )
+  }
 }
 
 export async function revertToFreePlan(

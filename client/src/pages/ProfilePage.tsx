@@ -15,8 +15,6 @@ import {
   ProfileDetailsValue,
 } from "@/features/profile/components/ProfileDetailsGrid"
 import { ProfileEditDrawer } from "@/features/profile/components/ProfileEditDrawer"
-import { AppPageHeader } from "@/components/layout/AppPageHeader"
-import { AppPageShell } from "@/components/layout/AppPageShell"
 import { Card } from "@/components/surfaces/Card"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/typography/Text"
@@ -31,7 +29,7 @@ import {
 } from "@/lib/profileDrawerPersistence"
 import {
   finalizePasswordRecovery,
-  isPasswordRecoveryActive,
+  isInAppPasswordRecoveryActive,
 } from "@/lib/passwordRecoveryPersistence"
 import { validateProfileNameFields } from "@/lib/profileValidation"
 import { shouldUseLocalAuth } from "@/lib/env"
@@ -65,7 +63,7 @@ function ProfilePage() {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const persistedEdit = readEditDrawerState()
   const persistedPassword = readPasswordDrawerState()
-  const recoveryActiveOnLoad = isPasswordRecoveryActive()
+  const recoveryActiveOnLoad = isInAppPasswordRecoveryActive()
 
   const [editDrawerOpen, setEditDrawerOpen] = useState(() => persistedEdit?.open ?? false)
   const [passwordDrawerOpen, setPasswordDrawerOpen] = useState(
@@ -158,7 +156,7 @@ function ProfilePage() {
     if (!account || shouldUseLocalAuth() || recoveryDismissedRef.current) return
 
     const activateRecoveryUi = () => {
-      if (recoveryDismissedRef.current || !isPasswordRecoveryActive()) return
+      if (recoveryDismissedRef.current || !isInAppPasswordRecoveryActive()) return
 
       const persisted = readPasswordDrawerState()
       setIsRecoveryMode(true)
@@ -181,7 +179,7 @@ function ProfilePage() {
       )
     }
 
-    if (isPasswordRecoveryActive()) {
+    if (isInAppPasswordRecoveryActive()) {
       activateRecoveryUi()
     }
 
@@ -241,7 +239,7 @@ function ProfilePage() {
     setPasswordDrawerOpen(false)
     setPasswordNewValue("")
     setPasswordConfirmValue("")
-    syncPasswordPersistence(false, isPasswordRecoveryActive(), "", "")
+    syncPasswordPersistence(false, isInAppPasswordRecoveryActive(), "", "")
   }, [syncPasswordPersistence])
 
   const closePasswordDrawer = useCallback(() => {
@@ -249,12 +247,12 @@ function ProfilePage() {
     setMobilePasswordMode(false)
     setPasswordNewValue("")
     setPasswordConfirmValue("")
-    syncPasswordPersistence(false, isPasswordRecoveryActive(), "", "")
+    syncPasswordPersistence(false, isInAppPasswordRecoveryActive(), "", "")
   }, [syncPasswordPersistence])
 
   const openChangePassword = useCallback(() => {
     setPasswordSuccess(null)
-    const recovery = isPasswordRecoveryActive()
+    const recovery = isInAppPasswordRecoveryActive()
     setIsRecoveryMode(recovery)
 
     if (isDesktop) {
@@ -328,7 +326,7 @@ function ProfilePage() {
       setPasswordSuccess(null)
 
       try {
-        if (isRecoveryMode || isPasswordRecoveryActive()) {
+        if (isRecoveryMode || isInAppPasswordRecoveryActive()) {
           await authService.completePasswordRecovery(input.newPassword, { keepSession: true })
           dismissRecoveryUi()
           setPasswordSuccess("Password updated successfully.")
@@ -366,33 +364,19 @@ function ProfilePage() {
   }, [logout, navigate])
 
   if (isLoading) {
-    return (
-      <AppPageShell>
-        <PageLoading label="Loading profile…" />
-      </AppPageShell>
-    )
+    return <PageLoading label="Loading profile…" />
   }
 
   if (!account) {
     return (
-      <AppPageShell
-        header={
-          <AppPageHeader
-            eyebrow="Account"
-            title="Profile"
-            description="Your Convertly account details."
-          />
-        }
-      >
-        <Card className="app-card-body app-card-stack profile-card hover:translate-y-0">
-          <Text variant="muted" size="sm" className="max-w-none">
-            Unable to load account information. Try signing in again.
-          </Text>
-          <Button variant="outline" size="sm" className="h-9" asChild>
-            <Link to={ROUTES.login}>Go to login</Link>
-          </Button>
-        </Card>
-      </AppPageShell>
+      <Card className="app-card-body app-card-stack profile-card hover:translate-y-0">
+        <Text variant="muted" size="sm" className="max-w-none">
+          Unable to load account information. Try signing in again.
+        </Text>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={ROUTES.login}>Go to login</Link>
+        </Button>
+      </Card>
     )
   }
 
@@ -408,15 +392,7 @@ function ProfilePage() {
     !isDesktop && (isEditing || isMobilePasswordActive || deleteModalOpen)
 
   return (
-    <AppPageShell
-      header={
-        <AppPageHeader
-          eyebrow="Account"
-          title="Profile"
-          description="View and manage your Convertly account details."
-        />
-      }
-    >
+    <>
       <Card className="app-card-body profile-card app-card-stack hover:translate-y-0">
         <div
           className={
@@ -533,7 +509,6 @@ function ProfilePage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-9 min-h-9"
                 onClick={closeEdit}
                 disabled={isSaving}
               >
@@ -542,7 +517,6 @@ function ProfilePage() {
               <Button
                 type="button"
                 size="sm"
-                className="h-9 min-h-9"
                 onClick={() => void handleMobileSave()}
                 disabled={isSaving}
               >
@@ -592,7 +566,7 @@ function ProfilePage() {
         onClose={() => setDeleteModalOpen(false)}
         onConfirmDelete={handleDeleteAccount}
       />
-    </AppPageShell>
+    </>
   )
 }
 

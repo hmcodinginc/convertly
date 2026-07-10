@@ -70,6 +70,46 @@
   color: #fca5a5;
 }
 
+.auth-field-input-wrap {
+  position: relative;
+}
+
+.auth-field-input--password {
+  padding-right: 2.75rem;
+}
+
+.auth-field-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: color-mix(in srgb, var(--foreground) 52%, transparent);
+  cursor: pointer;
+  transition: color var(--motion-fast);
+}
+
+.auth-field-password-toggle:hover:not(:disabled) {
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+
+.auth-field-password-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.auth-field-password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .auth-form-terms {
   display: flex;
   align-items: flex-start;

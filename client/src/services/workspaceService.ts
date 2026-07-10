@@ -1,11 +1,14 @@
 import {
   formatPlanPrice,
-  getPlanEntitlement,
-  PLAN_ENTITLEMENTS,
-  planDisplayName,
+  getEffectivePlanEntitlement,
+  type EffectivePlanId,
 } from "@/lib/billingPlans"
 import { assertBusinessFoundationEnabled, isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
+import {
+  buildPlanUsage,
+  resolvePlanForUser,
+} from "@/services/planResolutionService"
 import * as domainRepository from "@/services/repositories/business/domainRepository"
 import * as workspaceRepository from "@/services/repositories/business/workspaceRepository"
 import type {
@@ -49,11 +52,8 @@ export async function getWorkspace(userId: string): Promise<WorkspaceSnapshot> {
     throw new Error("Workspace data is unavailable.")
   }
 
-  const entitlement = getPlanEntitlement(subscription.plan)
-  const auditsUsed =
-    subscription.plan === "free"
-      ? subscription.lifetime_audits_used
-      : subscription.period_audits_used
+  const resolved = await resolvePlanForUser(userId)
+  const usage = buildPlanUsage(subscription, resolved)
 
   return {
     id: workspace.id,
@@ -61,13 +61,13 @@ export async function getWorkspace(userId: string): Promise<WorkspaceSnapshot> {
     type: workspace.type,
     domains: domains.map(mapDomain),
     usage: {
-      planId: subscription.plan,
-      planName: planDisplayName(subscription.plan),
-      auditsUsed,
-      auditsIncluded: entitlement.auditsPerPeriod,
-      auditsRemaining: Math.max(0, entitlement.auditsPerPeriod - auditsUsed),
-      period: entitlement.period,
-      periodEnd: subscription.current_period_end,
+      planId: usage.effectivePlanId,
+      planName: usage.planName,
+      auditsUsed: usage.auditsUsed,
+      auditsIncluded: usage.auditsIncluded,
+      auditsRemaining: usage.auditsRemaining,
+      period: usage.period,
+      periodEnd: usage.periodEnd,
     },
   }
 }
@@ -118,10 +118,13 @@ export async function recordAuditForDomain(
   }
 }
 
-export function getWorkspacePlanSummary(planId: keyof typeof PLAN_ENTITLEMENTS): string {
-  const plan = getPlanEntitlement(planId)
+export function getWorkspacePlanSummary(planId: EffectivePlanId): string {
+  const plan = getEffectivePlanEntitlement(planId)
   if (plan.period === "lifetime") {
     return `${plan.name} · ${plan.auditsPerPeriod} lifetime audits`
+  }
+  if (planId === "internal") {
+    return `${plan.name} · ${plan.auditsPerPeriod} audits/mo`
   }
   return `${plan.name} · ${formatPlanPrice(planId)}/mo · ${plan.auditsPerPeriod} audits/mo`
 }

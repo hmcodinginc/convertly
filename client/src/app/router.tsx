@@ -10,6 +10,7 @@ import { ROUTES } from "@/lib/routes"
 import AuditDetailPage from "@/pages/AuditDetailPage"
 import AuditsPage from "@/pages/AuditsPage"
 import BillingPage from "@/pages/BillingPage"
+import PaymentReturnPage from "@/pages/PaymentReturnPage"
 import DashboardPage from "@/pages/DashboardPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
@@ -52,10 +53,12 @@ function AppRouter() {
             <Route path={ROUTES.audits} element={<AuditsPage />} />
             <Route path={ROUTES.auditDetail} element={<AuditDetailPage />} />
             <Route path={ROUTES.workspace} element={<WorkspacePage />} />
+            <Route path={ROUTES.billingReturn} element={<PaymentReturnPage />} />
             <Route path={ROUTES.billing} element={<BillingPage />} />
-            <Route path={ROUTES.profile} element={<ProfilePage />} />
+            <Route path="/profile" element={<Navigate to={ROUTES.profile} replace />} />
             <Route path={ROUTES.settings} element={<SettingsLayout />}>
-              <Route index element={<Navigate to="preferences" replace />} />
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfilePage />} />
               <Route path="preferences" element={<SettingsPreferencesPage />} />
               <Route path="notifications" element={<SettingsNotificationsPage />} />
               <Route path="security" element={<SettingsSecurityPage />} />

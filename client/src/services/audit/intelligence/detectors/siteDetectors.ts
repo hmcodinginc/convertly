@@ -91,6 +91,32 @@ export const SITE_DETECTORS: Record<string, SiteDetector> = {
     if (hasServices) return pass()
     return fail(74, [{ label: "Services page", value: "No services page or link discovered" }])
   },
+
+  "site-missing-pricing-link": (c) => {
+    if (siteHasReachablePageType(c.pages, "pricing")) return pass()
+    const hasPricing = htmlContainsLinkPattern(c.combinedHtml, [
+      /href=["'][^"']*pricing/i,
+      /href=["'][^"']*plans/i,
+    ])
+    if (hasPricing) return pass()
+    return fail(72, [{ label: "Pricing link", value: "No pricing page or nav link discovered" }])
+  },
+
+  "site-missing-blog-link": (c) => {
+    const hasBlogPage = c.pages.some(
+      (page) =>
+        page.discoveryStatus === "reachable" &&
+        /blog|articles|resources|news/i.test(page.path)
+    )
+    if (hasBlogPage) return pass()
+    const hasBlog = htmlContainsLinkPattern(c.combinedHtml, [
+      /href=["'][^"']*blog/i,
+      /href=["'][^"']*resources/i,
+      /href=["'][^"']*articles/i,
+    ])
+    if (hasBlog) return pass()
+    return fail(64, [{ label: "Blog link", value: "No blog or resources link discovered" }])
+  },
 }
 
 export function runSiteDetector(

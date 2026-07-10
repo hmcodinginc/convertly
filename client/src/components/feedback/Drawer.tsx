@@ -59,7 +59,7 @@ function Drawer({
         aria-modal="true"
         aria-labelledby="drawer-title"
         className={cn(
-          "relative flex h-full w-full max-w-md flex-col bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
+          "app-drawer-panel relative flex h-full w-full max-w-md flex-col bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
           side === "left"
             ? "border-r border-[color-mix(in_srgb,var(--border)_75%,transparent)]"
             : "border-l border-[color-mix(in_srgb,var(--border)_75%,transparent)]",
@@ -68,7 +68,7 @@ function Drawer({
       >
         <div
           className={cn(
-            "flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-6",
+            "app-drawer-header flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-6",
             headerClassName
           )}
         >
@@ -92,7 +92,7 @@ function Drawer({
             <X className="size-4" aria-hidden />
           </button>
         </div>
-        <div className={cn("flex-1 overflow-y-auto px-6 py-5", contentClassName)}>
+        <div className={cn("app-drawer-body flex-1 overflow-y-auto px-6 py-5", contentClassName)}>
           {children}
         </div>
       </aside>

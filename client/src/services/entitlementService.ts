@@ -1,41 +1,36 @@
 import {
   formatPlanPrice,
-  getPlanEntitlement,
   planDisplayName,
-  type SubscriptionPlanId,
+  type EffectivePlanId,
 } from "@/lib/billingPlans"
 import { assertBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import * as bootstrapRepository from "@/services/repositories/business/bootstrapRepository"
-import * as workspaceRepository from "@/services/repositories/business/workspaceRepository"
+import {
+  buildPlanUsage,
+  resolvePlanForUser,
+} from "@/services/planResolutionService"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
+import * as workspaceRepository from "@/services/repositories/business/workspaceRepository"
 import type { AuditEntitlementCheck } from "@/types/entitlement"
 import { AuditLimitError } from "@/types/billing"
 
-function buildUsage(subscription: NonNullable<Awaited<ReturnType<typeof workspaceRepository.getSubscriptionByWorkspaceId>>>) {
-  const entitlement = getPlanEntitlement(subscription.plan)
-  const auditsUsed =
-    subscription.plan === "free"
-      ? subscription.lifetime_audits_used
-      : subscription.period_audits_used
-  const auditsIncluded = entitlement.auditsPerPeriod
-  const auditsRemaining = Math.max(0, auditsIncluded - auditsUsed)
-
-  return {
-    planId: subscription.plan,
-    planName: planDisplayName(subscription.plan),
-    auditsUsed,
-    auditsIncluded,
-    auditsRemaining,
-    period: entitlement.period,
-    periodEnd: subscription.current_period_end,
-  }
-}
-
 export async function getAuditEntitlement(userId: string): Promise<AuditEntitlementCheck> {
   assertBusinessFoundationEnabled()
-  const workspaceId = await ensureBusinessFoundation(userId)
-  const subscription = await workspaceRepository.getSubscriptionByWorkspaceId(workspaceId)
+  await ensureBusinessFoundation(userId)
 
+  const workspace = await workspaceRepository.getPersonalWorkspace(userId)
+  if (!workspace) {
+    return {
+      allowed: false,
+      planId: "free",
+      auditsUsed: 0,
+      auditsIncluded: 2,
+      auditsRemaining: 0,
+      reason: "Workspace not found.",
+    }
+  }
+
+  const subscription = await workspaceRepository.getSubscriptionByWorkspaceId(workspace.id)
   if (!subscription) {
     return {
       allowed: false,
@@ -47,17 +42,17 @@ export async function getAuditEntitlement(userId: string): Promise<AuditEntitlem
     }
   }
 
-  const usage = buildUsage(subscription)
-  const activeStatus = subscription.status === "active" || subscription.status === "trialing"
+  const resolved = await resolvePlanForUser(userId)
+  const usage = buildPlanUsage(subscription, resolved)
 
   return {
-    allowed: activeStatus && usage.auditsRemaining > 0,
-    planId: usage.planId,
+    allowed: usage.subscriptionActive && usage.auditsRemaining > 0,
+    planId: usage.effectivePlanId,
     auditsUsed: usage.auditsUsed,
     auditsIncluded: usage.auditsIncluded,
     auditsRemaining: usage.auditsRemaining,
     reason:
-      activeStatus && usage.auditsRemaining > 0
+      usage.subscriptionActive && usage.auditsRemaining > 0
         ? undefined
         : usage.auditsRemaining <= 0
           ? "You have used all audits included in your plan."
@@ -84,14 +79,15 @@ export async function consumeAuditEntitlement(userId: string): Promise<void> {
   }
 }
 
-export async function getPlanIdForUser(userId: string): Promise<SubscriptionPlanId> {
+export async function getPlanIdForUser(userId: string): Promise<EffectivePlanId> {
   assertBusinessFoundationEnabled()
-  const workspaceId = await ensureBusinessFoundation(userId)
-  const subscription = await workspaceRepository.getSubscriptionByWorkspaceId(workspaceId)
-  return subscription?.plan ?? "free"
+  await ensureBusinessFoundation(userId)
+  const resolved = await resolvePlanForUser(userId)
+  return resolved.effectivePlanId
 }
 
-export function formatPlanLabel(planId: SubscriptionPlanId): string {
+export function formatPlanLabel(planId: EffectivePlanId): string {
   if (planId === "free") return "Free"
+  if (planId === "internal") return planDisplayName(planId)
   return `${planDisplayName(planId)} · ${formatPlanPrice(planId)}/mo`
 }

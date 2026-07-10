@@ -19,7 +19,7 @@ function TimelineEventRow({ event }: { event: TimelineEvent }) {
   return (
     <div className="audit-timeline__content">
       <p className="audit-timeline__label">{event.label}</p>
-      <Text variant="muted" size="sm" className="audit-timeline__time max-w-none text-xs">
+      <Text variant="muted" size="sm" className="audit-timeline__time max-w-none text-xs tabular-nums">
         {event.timestamp}
       </Text>
     </div>
@@ -72,8 +72,10 @@ function PageAnalysisGroup({
                   <span className="audit-timeline__group-path">
                     {parsed?.path ?? event.label}
                   </span>
-                  <span className="audit-timeline__group-meta">
-                    {parsed ? `${parsed.findings} findings` : event.timestamp}
+                  <span className="audit-timeline__group-meta tabular-nums">
+                    {parsed
+                      ? `${parsed.findings} finding${parsed.findings === 1 ? "" : "s"} · ${event.timestamp}`
+                      : event.timestamp}
                   </span>
                 </li>
               )

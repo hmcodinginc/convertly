@@ -1,0 +1,269 @@
+/* Authenticated app — responsive layout polish */
+
+/* Prevent horizontal page scroll */
+.app-atmosphere {
+  overflow-x: clip;
+}
+
+.app-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.app-page-sections {
+  min-width: 0;
+}
+
+/* Page headers — stack actions on narrow viewports */
+.app-page-header {
+  min-width: 0;
+}
+
+.app-page-header__content {
+  min-width: 0;
+}
+
+.app-page-header__actions {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.app-page-header__actions > * {
+  min-height: 2.25rem;
+}
+
+@media (min-width: 640px) {
+  .app-page-header__actions {
+    width: auto;
+    align-items: center;
+    justify-content: flex-end;
+  }
+}
+
+/* Toolbars — full-width controls on mobile */
+@media (max-width: 639px) {
+  .app-toolbar {
+    gap: 0.625rem;
+  }
+
+  .app-toolbar__actions {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .app-toolbar__actions > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Tables — horizontal scroll without page overflow */
+.app-card-table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Audit report — timeline below main until xl */
+@media (max-width: 1279px) {
+  .audit-report-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .audit-report-layout__rail {
+    order: 2;
+    padding-left: 0;
+    border-left: none;
+    padding-top: 0.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+  }
+
+  .audit-report-layout__main {
+    order: 1;
+  }
+
+  .audit-report-hero__aside {
+    width: 100%;
+  }
+
+  .audit-report-score-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  .audit-report-page {
+    gap: 1.5rem;
+  }
+
+  .audit-report-hero {
+    gap: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .audit-report-hero__title {
+    font-size: clamp(1.375rem, 6vw, 1.75rem);
+  }
+
+  .audit-report-hero__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .audit-report-hero__meta span[aria-hidden] {
+    display: none;
+  }
+
+  .audit-report-layout {
+    gap: 1.75rem;
+  }
+
+  .audit-report-layout__main {
+    gap: 1.75rem;
+  }
+
+  .audit-summary-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .audit-score-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Billing — stack top cards on tablet portrait */
+@media (max-width: 1023px) {
+  .billing-top-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Settings — segmented nav on tablet/mobile */
+@media (max-width: 1023px) {
+  .settings-layout__nav {
+    padding: 0.5rem;
+  }
+
+  .settings-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.375rem;
+  }
+
+  .settings-nav__link {
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.5625rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .settings-nav__link--workspace {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    padding-top: 0.625rem;
+  }
+}
+
+@media (max-width: 399px) {
+  .settings-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Forms — preference rows fill width on mobile */
+@media (max-width: 639px) {
+  .preference-row__control {
+    width: 100%;
+  }
+
+  .preference-row__control .app-input,
+  .preference-row__control select {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Modals — fit small viewports */
+@media (max-width: 639px) {
+  .app-modal-shell {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .app-modal-panel {
+    max-height: min(92dvh, 100%);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .app-modal-header,
+  .app-modal-body,
+  .app-modal-footer {
+    padding-inline: 1.25rem;
+  }
+
+  .app-modal-header {
+    padding-block: 1rem;
+  }
+
+  .app-modal-body {
+    padding-block: 1.25rem;
+  }
+
+  .app-modal-footer {
+    padding-block: 1rem;
+  }
+}
+
+/* Drawers — safe area on mobile */
+@media (max-width: 639px) {
+  .app-drawer-panel {
+    max-width: min(100%, 20rem);
+  }
+
+  .app-drawer-header,
+  .app-drawer-body {
+    padding-inline: 1.25rem;
+  }
+}
+
+/* Metric / plan cards — avoid forced height on phones */
+@media (max-width: 639px) {
+  .billing-plan-card-grid .app-card-body {
+    min-height: 0;
+  }
+}
+
+/* Dashboard audit selector */
+@media (max-width: 639px) {
+  .dashboard-current-audit__selector {
+    width: 100%;
+  }
+}
+
+/* Compact page padding on very small phones */
+@media (max-width: 399px) {
+  .app-page {
+    padding-inline: 0.875rem;
+    padding-block: 1.25rem;
+  }
+
+  .app-card-compact,
+  .app-card-body {
+    padding: 1rem;
+  }
+}

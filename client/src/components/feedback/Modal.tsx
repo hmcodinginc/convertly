@@ -43,7 +43,7 @@ function Modal({
 
   return (
     <div
-      className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", className)}
+      className={cn("fixed inset-0 z-50 flex items-center justify-center p-4 app-modal-shell", className)}
       role="presentation"
     >
       <button
@@ -58,11 +58,11 @@ function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          "relative flex max-h-[min(90vh,40rem)] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
+          "app-modal-panel relative flex max-h-[min(90dvh,40rem)] w-full max-w-lg flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--background-elevated)_96%,transparent)] shadow-[var(--shadow-medium)]",
           panelClassName
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-5">
+        <div className="app-modal-header flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-5">
           <div className="min-w-0 space-y-1">
             <h2
               id={titleId}
@@ -86,10 +86,10 @@ function Modal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
+        <div className="app-modal-body flex-1 overflow-y-auto px-6 py-6">{children}</div>
 
         {footer ? (
-          <div className="border-t border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-5">
+          <div className="app-modal-footer border-t border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-6 py-5">
             {footer}
           </div>
         ) : null}

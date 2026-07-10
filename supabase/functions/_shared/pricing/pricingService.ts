@@ -1,4 +1,5 @@
 import type { PaymentProviderId } from "../payment/common.ts"
+import { readRazorpayPlanMappings } from "../payment/razorpayConfig.ts"
 import {
   CONVERTLY_PLANS,
   PAID_PLAN_IDS,
@@ -36,22 +37,11 @@ export function getPlanDefinition(planId: ConvertlyPlanId, _region: PricingRegio
   return CONVERTLY_PLANS[planId]
 }
 
-function providerPlanEnvKeys(
-  provider: PaymentProviderId
-): Record<PaidPlanId, string> {
-  switch (provider) {
-    case "razorpay":
-      return {
-        starter: "RAZORPAY_PLAN_STARTER",
-        growth: "RAZORPAY_PLAN_GROWTH",
-        scale: "RAZORPAY_PLAN_SCALE",
-      }
-    case "stripe":
-      return {
-        starter: "STRIPE_PRICE_STARTER",
-        growth: "STRIPE_PRICE_GROWTH",
-        scale: "STRIPE_PRICE_SCALE",
-      }
+function stripePlanEnvKeys(): Record<PaidPlanId, string> {
+  return {
+    starter: "STRIPE_PRICE_STARTER",
+    growth: "STRIPE_PRICE_GROWTH",
+    scale: "STRIPE_PRICE_SCALE",
   }
 }
 
@@ -59,11 +49,17 @@ function readProviderMappings(
   provider: PaymentProviderId,
   _region: PricingRegion = "default"
 ): Record<PaidPlanId, string | undefined> {
-  const keys = providerPlanEnvKeys(provider)
-  return {
-    starter: Deno.env.get(keys.starter),
-    growth: Deno.env.get(keys.growth),
-    scale: Deno.env.get(keys.scale),
+  switch (provider) {
+    case "razorpay":
+      return readRazorpayPlanMappings()
+    case "stripe": {
+      const keys = stripePlanEnvKeys()
+      return {
+        starter: Deno.env.get(keys.starter),
+        growth: Deno.env.get(keys.growth),
+        scale: Deno.env.get(keys.scale),
+      }
+    }
   }
 }
 

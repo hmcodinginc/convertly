@@ -99,7 +99,7 @@ export async function changePassword(email: string, input: ChangePasswordInput):
 }
 
 export async function requestAccountPasswordReset(email: string): Promise<void> {
-  await authService.requestPasswordReset({ email })
+  await authService.requestInAppPasswordReset({ email })
 }
 
 export async function getEnrichedAccount(): Promise<AccountInfo | null> {

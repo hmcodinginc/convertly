@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
-import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
+import { AuditExecutionView } from "@/components/audit/execution/AuditExecutionView"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
@@ -18,7 +18,7 @@ import { getAuditEntitlement } from "@/services/entitlementService"
 import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
-import type { AuditSessionStatus } from "@/types/auditEngine"
+import type { AuditDetail } from "@/types/audit"
 import { cn } from "@/lib/utils"
 
 const auditTypes = [
@@ -55,7 +55,7 @@ function NewAuditPage() {
   const [urlError, setUrlError] = useState<string | null>(null)
   const [urlWarning, setUrlWarning] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [sessionStatus, setSessionStatus] = useState<AuditSessionStatus>("pending")
+  const [runningAuditId, setRunningAuditId] = useState<string | null>(null)
 
   const { data: entitlement } = useAsyncData(
     () => getAuditEntitlement(session!.userId),
@@ -78,24 +78,11 @@ function NewAuditPage() {
       setUrlError(null)
       setUrlWarning(validation.warnings[0] ?? null)
       setIsRunning(true)
-      setSessionStatus("pending")
+      setRunningAuditId(null)
 
       try {
-        const { audit, finalStatus, errorMessage } = await auditService.runAuditWorkflow(
-          validation.sanitizedUrl,
-          { onStatus: setSessionStatus }
-        )
-
-        if (finalStatus === "failed") {
-          setUrlError(
-            errorMessage ??
-              "Audit could not be completed. Check the URL and try again."
-          )
-          setIsRunning(false)
-          return
-        }
-
-        navigate(auditDetailPath(audit.id))
+        const audit = await auditService.createAudit({ url: validation.sanitizedUrl })
+        setRunningAuditId(audit.id)
       } catch (error) {
         if (error instanceof AuditLimitError) {
           navigate(ROUTES.billing)
@@ -144,18 +131,38 @@ function NewAuditPage() {
     setUrlWarning(validation.warnings[0] ?? null)
   }
 
+  if (isRunning && runningAuditId) {
+    return (
+      <AppPageShell header={null} sectionsClassName="gap-0">
+        <AuditExecutionView
+          auditId={runningAuditId}
+          onComplete={(detail: AuditDetail) => {
+            navigate(auditDetailPath(detail.id))
+          }}
+          onFailed={(errorMessage) => {
+            setUrlError(
+              errorMessage ??
+                "Audit could not be completed. Check the URL and try again."
+            )
+            setIsRunning(false)
+            setRunningAuditId(null)
+          }}
+          onBackToNewAudit={() => {
+            setIsRunning(false)
+            setRunningAuditId(null)
+          }}
+          onRetry={() => {
+            void executeAudit(url)
+          }}
+        />
+      </AppPageShell>
+    )
+  }
+
   if (isRunning) {
     return (
-      <AppPageShell
-        header={
-          <AppPageHeader
-            eyebrow="Audits"
-            title="Running audit"
-            description="Convertly is discovering pages and preparing your conversion report."
-          />
-        }
-      >
-        <AuditRunningExperience status={sessionStatus} />
+      <AppPageShell header={null} sectionsClassName="gap-0">
+        <div className="min-h-[24rem]" aria-busy aria-label="Starting audit" />
       </AppPageShell>
     )
   }

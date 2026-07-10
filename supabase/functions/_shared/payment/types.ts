@@ -36,10 +36,18 @@ export type VerifiedWebhook = {
   rawBody: string
 }
 
+export type CheckoutResult = {
+  /** Provider checkout URL (Stripe) or legacy alias for Razorpay short_url */
+  url?: string
+  subscriptionId?: string
+  shortUrl?: string
+  keyId?: string
+}
+
 export interface PaymentProvider {
   readonly id: PaymentProviderId
 
-  createCheckout(context: CheckoutContext): Promise<{ url: string }>
+  createCheckout(context: CheckoutContext): Promise<CheckoutResult>
 
   getCustomerPortal(context: PortalContext): Promise<{ url: string }>
 

@@ -1,0 +1,35 @@
+.premium-unlock-list {
+  display: grid;
+  gap: 0.625rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.premium-unlock-list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.premium-unlock-list__icon {
+  display: flex;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.0625rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #34d399 34%, var(--border));
+  background: color-mix(in srgb, #34d399 12%, var(--surface));
+  color: #34d399;
+}
+
+.premium-unlock-list__label {
+  max-width: none;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+}

@@ -10,6 +10,7 @@ import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
 import { validateEmail, validateRequired } from "@/lib/authValidation"
 import { ROUTES } from "@/lib/routes"
+import { sanitizePostLoginPath } from "@/lib/paymentSession"
 import * as authService from "@/services/authService"
 
 function LoginPage() {
@@ -22,9 +23,9 @@ function LoginPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard
-  const passwordWasReset =
-    (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
+  const redirectTo = sanitizePostLoginPath(
+    (location.state as { from?: string } | null)?.from
+  )
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -60,12 +61,6 @@ function LoginPage() {
           Sign in to access your audits, workspace, and conversion insights.
         </Text>
       </div>
-
-      {passwordWasReset ? (
-        <AuthFormMessage variant="success">
-          Password updated. Sign in with your new password.
-        </AuthFormMessage>
-      ) : null}
 
       <form className="auth-form-stack" onSubmit={handleSubmit} noValidate>
         <TextField

@@ -22,11 +22,11 @@ function AppPageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 border-b border-[color-mix(in_srgb,var(--border)_70%,transparent)] pb-6 sm:flex-row sm:items-end sm:justify-between",
+        "app-page-header flex flex-col gap-4 border-b border-[color-mix(in_srgb,var(--border)_70%,transparent)] pb-5 sm:pb-6 md:flex-row md:items-end md:justify-between",
         className
       )}
     >
-      <div className="space-y-2">
+      <div className="app-page-header__content min-w-0 space-y-2">
         {eyebrow ? (
           <Text
             variant="muted"
@@ -45,7 +45,9 @@ function AppPageHeader({
           </Text>
         ) : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="app-page-header__actions">{actions}</div>
+      ) : null}
     </div>
   )
 }

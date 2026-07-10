@@ -4,16 +4,20 @@ import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { PageLoading } from "@/components/feedback/PageState"
 import { shouldUseLocalAuth } from "@/lib/env"
-import { isPasswordRecoveryActive } from "@/lib/passwordRecoveryPersistence"
+import { isInAppPasswordRecoveryActive } from "@/lib/passwordRecoveryPersistence"
 import { ROUTES } from "@/lib/routes"
+import { sanitizePostLoginPath } from "@/lib/paymentSession"
 
 const RECOVERY_RESOLVE_TIMEOUT_MS = 8000
 
 function ProtectedRoute() {
   const location = useLocation()
   const { isLoading, isAuthenticated } = useAuthSession()
-  const isRecoveryFlow = !shouldUseLocalAuth() && isPasswordRecoveryActive()
-  const recoveryAttempt = isRecoveryFlow ? location.pathname : null
+  const isInAppRecoveryFlow =
+    !shouldUseLocalAuth() &&
+    isInAppPasswordRecoveryActive() &&
+    location.pathname.startsWith(ROUTES.settings)
+  const recoveryAttempt = isInAppRecoveryFlow ? location.pathname : null
   const [timedOutKey, setTimedOutKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,7 +32,7 @@ function ProtectedRoute() {
 
   const recoveryTimedOut =
     recoveryAttempt !== null && timedOutKey === recoveryAttempt
-  const isAwaitingRecovery = isRecoveryFlow && !isAuthenticated && !recoveryTimedOut
+  const isAwaitingRecovery = isInAppRecoveryFlow && !isAuthenticated && !recoveryTimedOut
 
   if (isLoading || isAwaitingRecovery) {
     return (
@@ -45,7 +49,7 @@ function ProtectedRoute() {
       <Navigate
         to={ROUTES.login}
         replace
-        state={{ from: location.pathname }}
+        state={{ from: sanitizePostLoginPath(`${location.pathname}${location.search}`) }}
       />
     )
   }

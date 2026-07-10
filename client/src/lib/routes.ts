@@ -11,12 +11,15 @@ export const ROUTES = {
   auditDetail: "/audits/:id",
   workspace: "/workspace",
   billing: "/billing",
+  billingReturn: "/billing/return",
   settings: "/settings",
+  settingsProfile: "/settings/profile",
   settingsPreferences: "/settings/preferences",
   settingsNotifications: "/settings/notifications",
   settingsSecurity: "/settings/security",
   settingsDangerZone: "/settings/danger-zone",
-  profile: "/profile",
+  /** Profile lives under Settings; legacy `/profile` redirects here. */
+  profile: "/settings/profile",
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]

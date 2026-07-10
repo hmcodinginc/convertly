@@ -424,6 +424,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_plan_overrides: {
+        Row: {
+          id: string
+          user_id: string
+          email: string
+          override_plan: "starter" | "growth" | "scale" | "internal"
+          enabled: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          email: string
+          override_plan: "starter" | "growth" | "scale" | "internal"
+          enabled?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          email?: string
+          override_plan?: "starter" | "growth" | "scale" | "internal"
+          enabled?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -438,6 +468,10 @@ export type Database = {
       get_personal_workspace_id: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      get_active_plan_override: {
+        Args: { p_user_id: string }
+        Returns: "starter" | "growth" | "scale" | "internal" | null
       }
     }
     Enums: {

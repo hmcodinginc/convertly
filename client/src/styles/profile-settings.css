@@ -185,6 +185,7 @@
 .profile-drawer-footer {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0;
@@ -254,58 +255,38 @@
 .profile-delete-modal-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
 }
 
 .settings-layout {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.125rem;
 }
 
 @media (min-width: 1024px) {
   .settings-layout {
     grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
     align-items: start;
-    gap: 1.5rem;
+    gap: 1.375rem;
   }
 }
 
 .settings-layout__nav {
-  padding: 0.75rem;
+  padding: 0.625rem;
+}
+
+@media (min-width: 1024px) {
+  .settings-layout__nav {
+    position: sticky;
+    top: 1.5rem;
+  }
 }
 
 .settings-layout__content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.125rem;
   min-width: 0;
-}
-
-.settings-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.settings-nav__link {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  border-radius: var(--radius-md);
-  padding: 0.625rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: color-mix(in srgb, var(--foreground) 72%, transparent);
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.settings-nav__link:hover {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  color: var(--foreground);
-}
-
-.settings-nav__link--active {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--foreground);
 }

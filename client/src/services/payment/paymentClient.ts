@@ -20,7 +20,14 @@ export async function invokeCheckout(planId: PaidPlanId): Promise<CheckoutSessio
     throw new Error(error.message || "Unable to start checkout.")
   }
 
-  if (!data?.url) {
+  if (!data) {
+    throw new Error("Checkout session could not be created.")
+  }
+
+  const hasHostedUrl = Boolean(data.url ?? data.shortUrl)
+  const hasCheckoutJs = Boolean(data.subscriptionId && data.keyId)
+
+  if (!hasHostedUrl && !hasCheckoutJs) {
     throw new Error("Checkout session could not be created.")
   }
 

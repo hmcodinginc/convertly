@@ -1,8 +1,8 @@
-import type { SubscriptionPlanId } from "@/lib/billingPlans"
+import type { EffectivePlanId } from "@/lib/billingPlans"
 
 export type AuditEntitlementCheck = {
   allowed: boolean
-  planId: SubscriptionPlanId
+  planId: EffectivePlanId
   auditsUsed: number
   auditsIncluded: number
   auditsRemaining: number

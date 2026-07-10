@@ -136,6 +136,21 @@ export type BusinessDatabase = {
         }
         Relationships: []
       }
+      user_plan_overrides: {
+        Row: {
+          id: string
+          user_id: string
+          email: string
+          override_plan: "starter" | "growth" | "scale" | "internal"
+          enabled: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Record<string, never>
+        Update: Record<string, never>
+        Relationships: []
+      }
     }
     Functions: {
       bootstrap_business_foundation: {
@@ -149,6 +164,10 @@ export type BusinessDatabase = {
       get_personal_workspace_id: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      get_active_plan_override: {
+        Args: { p_user_id: string }
+        Returns: "starter" | "growth" | "scale" | "internal" | null
       }
     }
     Enums: Record<string, never>

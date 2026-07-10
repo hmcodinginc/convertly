@@ -40,7 +40,7 @@ function DomainDialog({
 
   return (
     <Modal open={open} onClose={onClose} title={title}>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Text variant="muted" size="sm" className="max-w-none leading-6">
           Add a hostname you monitor or audit regularly. Use the root domain only (e.g. acme.io).
         </Text>
@@ -55,11 +55,22 @@ function DomainDialog({
           error={error ?? undefined}
           autoComplete="off"
         />
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
+        <div className="domain-dialog__footer flex justify-end gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-w-[6.5rem]"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button size="sm" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+          <Button
+            size="sm"
+            className="min-w-[6.5rem]"
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Saving…" : "Save domain"}
           </Button>
         </div>

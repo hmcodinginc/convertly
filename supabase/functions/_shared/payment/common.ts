@@ -91,16 +91,24 @@ export async function loadWorkspaceContext(
   adminClient: SupabaseClient,
   userId: string
 ): Promise<WorkspaceContext | Response> {
+  const { data: ensuredWorkspaceId, error: ensureError } = await adminClient.rpc(
+    "ensure_business_foundation",
+    { p_user_id: userId }
+  )
+
+  if (ensureError || !ensuredWorkspaceId) {
+    console.error("ensure_business_foundation failed", ensureError)
+    return jsonResponse({ error: "Unable to initialize workspace." }, 500)
+  }
+
   const { data: workspace, error: workspaceError } = await adminClient
     .from("workspaces")
     .select("id")
-    .eq("owner_id", userId)
-    .eq("type", "personal")
-    .order("created_at", { ascending: true })
-    .limit(1)
+    .eq("id", ensuredWorkspaceId)
     .maybeSingle()
 
   if (workspaceError || !workspace) {
+    console.error("workspace lookup failed after ensure", workspaceError)
     return jsonResponse({ error: "Workspace not found." }, 404)
   }
 

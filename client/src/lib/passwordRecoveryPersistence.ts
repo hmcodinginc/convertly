@@ -1,11 +1,19 @@
-import { isPasswordRecoveryLanding } from "@/lib/authRedirects"
+import {
+  isInAppRecoveryLanding,
+  isPasswordRecoveryLanding,
+  isStandaloneRecoveryLanding,
+} from "@/lib/authRedirects"
 import { getJson, removeItem, setJson } from "@/services/storage/sessionStorageClient"
 
 const STORAGE_KEY = "convertly.auth.password-recovery"
 const COMPLETED_KEY = "convertly.auth.password-recovery-completed"
+const RECOVERY_IN_PROGRESS_KEY = "convertly.auth.recovery-in-progress"
+
+export type PasswordRecoveryChannel = "standalone" | "in-app"
 
 export type PasswordRecoveryPersistedState = {
   active: boolean
+  channel: PasswordRecoveryChannel
   activatedAt: string
 }
 
@@ -34,25 +42,78 @@ function clearRecoveryCompleted(): void {
   removeItem(COMPLETED_KEY)
 }
 
+function markRecoveryInProgress(channel: PasswordRecoveryChannel): void {
+  try {
+    localStorage.setItem(RECOVERY_IN_PROGRESS_KEY, channel)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function clearRecoveryInProgress(): void {
+  try {
+    localStorage.removeItem(RECOVERY_IN_PROGRESS_KEY)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function isPasswordRecoveryInProgressElsewhere(): boolean {
+  try {
+    return localStorage.getItem(RECOVERY_IN_PROGRESS_KEY) != null
+  } catch {
+    return false
+  }
+}
+
+export function resolvePasswordRecoveryChannel(): PasswordRecoveryChannel {
+  if (isStandaloneRecoveryLanding()) {
+    return "standalone"
+  }
+
+  if (isInAppRecoveryLanding()) {
+    return "in-app"
+  }
+
+  return "standalone"
+}
+
 export function isPasswordRecoveryActive(): boolean {
   if (isRecoveryCompleted()) return false
   return readActiveState()?.active === true
 }
 
-export function activatePasswordRecovery(): void {
+export function getPasswordRecoveryChannel(): PasswordRecoveryChannel | null {
+  return readActiveState()?.channel ?? null
+}
+
+export function isStandalonePasswordRecoveryActive(): boolean {
+  return isPasswordRecoveryActive() && getPasswordRecoveryChannel() === "standalone"
+}
+
+export function isInAppPasswordRecoveryActive(): boolean {
+  return isPasswordRecoveryActive() && getPasswordRecoveryChannel() === "in-app"
+}
+
+export function activatePasswordRecovery(
+  channel: PasswordRecoveryChannel = resolvePasswordRecoveryChannel()
+): void {
   if (isRecoveryCompleted()) {
     return
   }
 
   clearRecoveryCompleted()
+  markRecoveryInProgress(channel)
   setJson(STORAGE_KEY, {
     active: true,
+    channel,
     activatedAt: new Date().toISOString(),
   })
 }
 
 export function clearPasswordRecovery(): void {
   removeItem(STORAGE_KEY)
+  clearRecoveryInProgress()
 }
 
 /**
@@ -73,7 +134,7 @@ export function bootstrapPasswordRecoveryFromUrl(): void {
   }
 
   if (isPasswordRecoveryLanding()) {
-    activatePasswordRecovery()
+    activatePasswordRecovery(resolvePasswordRecoveryChannel())
   }
 }
 

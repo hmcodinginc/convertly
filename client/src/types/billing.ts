@@ -1,9 +1,9 @@
-import type { SubscriptionPlanId, SubscriptionStatus } from "@/lib/billingPlans"
+import type { EffectivePlanId, SubscriptionPlanId, SubscriptionStatus } from "@/lib/billingPlans"
 
 export type { SubscriptionPlanId, SubscriptionStatus } from "@/lib/billingPlans"
 
 export type BillingPlanSummary = {
-  planId: SubscriptionPlanId
+  planId: EffectivePlanId
   name: string
   price: string
   interval: string
@@ -40,7 +40,10 @@ export type BillingSnapshot = {
 }
 
 export type CheckoutSessionResult = {
-  url: string
+  url?: string
+  subscriptionId?: string
+  shortUrl?: string
+  keyId?: string
 }
 
 export type PortalSessionResult = {

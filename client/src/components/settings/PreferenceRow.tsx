@@ -26,7 +26,7 @@ function PreferenceRow({ label, description, children, className }: PreferenceRo
           </Text>
         ) : null}
       </div>
-      <div className="shrink-0 sm:text-right">{children}</div>
+      <div className="shrink-0 sm:text-right preference-row__control">{children}</div>
     </div>
   )
 }

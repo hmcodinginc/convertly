@@ -76,7 +76,7 @@ Reset emails use `getPasswordResetRedirectUrl()` in `client/src/lib/authRedirect
 {origin}/reset-password
 ```
 
-Recovery is handled by `ResetPasswordPage` (`detectSessionInUrl` + `PASSWORD_RECOVERY` event).
+Recovery is handled entirely on `ResetPasswordPage` (`detectSessionInUrl` + `PASSWORD_RECOVERY` event). Users set a new password on this public page and return to login — they are not redirected into the dashboard.
 
 | Environment | Example redirect URL (must be allowlisted) |
 |-------------|------------------------------------------|

@@ -1,5 +1,10 @@
 export type SubscriptionPlanId = "free" | "starter" | "growth" | "scale"
 
+export type OverridePlanId = "starter" | "growth" | "scale" | "internal"
+
+/** Plan used for entitlements and display after override resolution. */
+export type EffectivePlanId = SubscriptionPlanId | "internal"
+
 export type SubscriptionStatus =
   | "active"
   | "canceled"
@@ -9,7 +14,7 @@ export type SubscriptionStatus =
   | "unpaid"
 
 export type PlanEntitlement = {
-  id: SubscriptionPlanId
+  id: EffectivePlanId
   name: string
   priceUsd: number
   auditsPerPeriod: number
@@ -52,10 +57,30 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionPlanId, PlanEntitlement> = {
   },
 }
 
+const INTERNAL_PLAN_ENTITLEMENT: PlanEntitlement = {
+  id: "internal",
+  name: "Internal Access",
+  priceUsd: 0,
+  auditsPerPeriod: 500,
+  period: "month",
+  description: "HM Coding internal workspace access",
+}
+
 export const PAID_PLAN_IDS: SubscriptionPlanId[] = ["starter", "growth", "scale"]
 
 export function getPlanEntitlement(planId: SubscriptionPlanId): PlanEntitlement {
   return PLAN_ENTITLEMENTS[planId]
+}
+
+export function getEffectivePlanEntitlement(planId: EffectivePlanId): PlanEntitlement {
+  if (planId === "internal") {
+    return INTERNAL_PLAN_ENTITLEMENT
+  }
+  return getPlanEntitlement(planId)
+}
+
+export function isOverridePlanId(planId: string): planId is OverridePlanId {
+  return planId === "starter" || planId === "growth" || planId === "scale" || planId === "internal"
 }
 
 export function formatPlanPrice(planId: SubscriptionPlanId): string {
@@ -64,6 +89,6 @@ export function formatPlanPrice(planId: SubscriptionPlanId): string {
   return `$${plan.priceUsd}`
 }
 
-export function planDisplayName(planId: SubscriptionPlanId): string {
-  return PLAN_ENTITLEMENTS[planId].name
+export function planDisplayName(planId: EffectivePlanId): string {
+  return getEffectivePlanEntitlement(planId).name
 }

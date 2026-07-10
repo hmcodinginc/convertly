@@ -12,7 +12,7 @@ function SettingsLayout() {
         <AppPageHeader
           eyebrow="Account"
           title="Settings"
-          description="Manage preferences, notifications, and account security."
+          description="Manage profile, preferences, notifications, and workspace settings."
         />
       }
     >

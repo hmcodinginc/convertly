@@ -1,4 +1,4 @@
-import type { SubscriptionPlanId } from "@/lib/billingPlans"
+import type { EffectivePlanId } from "@/lib/billingPlans"
 
 export type WorkspaceDomain = {
   id: string
@@ -10,7 +10,7 @@ export type WorkspaceDomain = {
 }
 
 export type WorkspaceUsage = {
-  planId: SubscriptionPlanId
+  planId: EffectivePlanId
   planName: string
   auditsUsed: number
   auditsIncluded: number
