@@ -1,6 +1,7 @@
+import type { PageContentSnapshot } from "@/services/audit/pageContentService"
+
 /** Core audit session lifecycle statuses */
-export type AuditSessionStatus =
-  | "pending"
+export type AuditSessionStatus =  | "pending"
   | "crawling"
   | "analyzing"
   | "completed"
@@ -74,6 +75,7 @@ export type AuditFinding = {
   id: string
   auditId: string
   pageId?: string
+  ruleId?: string
   category: FindingCategory
   severity: FindingSeverity
   title: string
@@ -125,11 +127,7 @@ export type AuditSessionData = {
   history: AuditHistoryEvent[]
 }
 
-import type { AuditPage, AuditSession } from "@/types/auditEngine"
-import type { PageContentSnapshot } from "@/services/audit/pageContentService"
-
-/** Contract for future audit rules */
-export type AuditRuleContext = {
+/** Contract for future audit rules */export type AuditRuleContext = {
   session: AuditSession
   pages: AuditPage[]
   pageSnapshots: PageContentSnapshot[]

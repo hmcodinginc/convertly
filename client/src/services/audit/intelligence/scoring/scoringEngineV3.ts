@@ -55,8 +55,7 @@ export { computeFindingPenaltyUnits }
 
 export function calculateCategoryScoresV3(
   findings: IntelligenceFindingDraft[],
-  pages: AuditPage[],
-  websiteIntent?: DetectedWebsiteIntent
+  pages: AuditPage[]
 ): Record<ScoreCategory, number> {
   return calculateCategoryScoresV4(findings, pages)
 }

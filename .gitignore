@@ -1,4 +1,4 @@
-.git_backup/
+.vscode/
 
 render-worker/node_modules/
 client/node_modules/

@@ -6,6 +6,7 @@ import type { ReportScoreExplanation } from "@/services/audit/intelligence/repor
 import type { DetectedWebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
 import type { SiteRenderConfidence } from "@/services/audit/intelligence/rendering/renderConfidence"
 import type { ReliabilityReport } from "@/services/audit/intelligence/rendering/renderReliability"
+import type { EngineDiagnostics } from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
 
 export const INTELLIGENCE_SNAPSHOT_PREFIX = "__INTELLIGENCE_SNAPSHOT_V1__:"
 
@@ -42,6 +43,8 @@ export type IntelligenceSnapshot = {
   reliabilityReport?: ReliabilityReport
   auditConfidenceTier?: "High" | "Medium" | "Low"
   manualVerificationRecommended?: boolean
+  /** V5 internal engine diagnostics — debugging only */
+  engineDiagnostics?: EngineDiagnostics
 }
 
 export function serializeIntelligenceSnapshot(snapshot: IntelligenceSnapshot): string {

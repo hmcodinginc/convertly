@@ -75,7 +75,6 @@ export function buildPageScoreBreakdown(
 
   let rawPenalty = 0
   let weightedPenalty = 0
-  let cumulativeScore = GROWTH_SCORE_POLICY.pageScoreBase
 
   for (const finding of pageFindings) {
     const baseUnits = SEVERITY_PENALTY_UNITS[finding.severity]
@@ -85,7 +84,7 @@ export function buildPageScoreBreakdown(
 
     const dropRatio = Math.min(1, weightedPenalty / GROWTH_SCORE_POLICY.pageScoreBudget)
     const drop = dropRatio * GROWTH_SCORE_POLICY.pageScoreBase
-    cumulativeScore = Math.max(
+    const cumulativeScore = Math.max(
       0,
       Math.min(GROWTH_SCORE_POLICY.maxPageScore, GROWTH_SCORE_POLICY.pageScoreBase - drop)
     )

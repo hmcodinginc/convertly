@@ -6,6 +6,7 @@ import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { ROUTES } from "@/lib/routes"
 import type { Recommendation } from "@/types/audit"
+import { cn } from "@/lib/utils"
 
 const priorityVariant = {
   Critical: "danger",
@@ -16,11 +17,13 @@ const priorityVariant = {
 type RecommendationCardsProps = {
   recommendations: Recommendation[]
   emptyActionTo?: string
+  className?: string
 }
 
 function RecommendationCards({
   recommendations,
   emptyActionTo = ROUTES.auditNew,
+  className,
 }: RecommendationCardsProps) {
   if (recommendations.length === 0) {
     return (
@@ -34,7 +37,7 @@ function RecommendationCards({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={cn("grid gap-4 lg:grid-cols-2", className)}>
       {recommendations.map((rec) => (
         <Card key={rec.id} className="app-card-metric flex h-full flex-col hover:translate-y-0">
           <div className="flex flex-1 flex-col gap-4">

@@ -10,16 +10,26 @@ export type WebsiteRuleApplicabilitySpec = {
   priority: "critical" | "high" | "medium" | "low"
 }
 
-const MARKETING_INTENTS: WebsiteIntent[] = [
+/** CRO / landing-page conversion intents (excludes marketplaces and platforms) */
+const CRO_LANDING_INTENTS: WebsiteIntent[] = [
   "saas",
   "agency",
   "marketing",
   "commerce",
   "ecommerce",
-  "marketplace",
+]
+
+const MARKETING_INTENTS: WebsiteIntent[] = [
+  ...CRO_LANDING_INTENTS,
 ]
 const COMMERCIAL_INTENTS: WebsiteIntent[] = [
   ...MARKETING_INTENTS,
+  "portfolio",
+  "community",
+]
+/** Contact / sales outreach — not for marketplaces or platforms */
+const CONTACT_SALES_INTENTS: WebsiteIntent[] = [
+  ...CRO_LANDING_INTENTS,
   "portfolio",
   "community",
 ]
@@ -29,25 +39,25 @@ const PLATFORM_INTENTS: WebsiteIntent[] = PLATFORM_WEBSITE_INTENTS
 const PACK_WEBSITE_INTENT_DEFAULTS: Partial<Record<RulePackId, WebsiteIntent[] | "all">> = {
   "shared.technical": "all",
   "shared.accessibility": "all",
-  "homepage.conversion": MARKETING_INTENTS,
-  "homepage.trust": MARKETING_INTENTS,
-  "services.conversion": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketplace", "marketing"],
-  "services.trust": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketplace", "marketing"],
-  "services.content": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketplace", "marketing"],
+  "homepage.conversion": CRO_LANDING_INTENTS,
+  "homepage.trust": CRO_LANDING_INTENTS,
+  "services.conversion": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketing"],
+  "services.trust": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketing"],
+  "services.content": ["agency", "portfolio", "saas", "commerce", "ecommerce", "marketing"],
   "about.trust": COMMERCIAL_INTENTS,
   "about.content": COMMERCIAL_INTENTS,
   "about.ux": COMMERCIAL_INTENTS,
-  "pricing.pricing": ["saas", "ecommerce", "marketplace"],
-  "pricing.conversion": ["saas", "ecommerce", "marketplace"],
-  "pricing.trust": ["saas", "ecommerce", "marketplace"],
-  "contact.conversion": COMMERCIAL_INTENTS,
-  "contact.technical": COMMERCIAL_INTENTS,
-  "projects.portfolio": ["agency", "portfolio", "saas", "marketing", "marketplace"],
-  "projects.conversion": ["agency", "portfolio", "saas", "marketing", "marketplace"],
+  "pricing.pricing": ["saas", "ecommerce"],
+  "pricing.conversion": ["saas", "ecommerce"],
+  "pricing.trust": ["saas", "ecommerce"],
+  "contact.conversion": CONTACT_SALES_INTENTS,
+  "contact.technical": CONTACT_SALES_INTENTS,
+  "projects.portfolio": ["agency", "portfolio", "saas", "marketing"],
+  "projects.conversion": ["agency", "portfolio", "saas", "marketing"],
   "blog.seo": ["blog", "saas", "agency", "community"],
   "blog.content": ["blog", "saas", "agency", "community"],
   "legal.compliance": "all",
-  "signup.conversion": ["saas", "ecommerce", "marketplace", "community"],
+  "signup.conversion": ["saas", "ecommerce", "community"],
   "login.conversion": "all",
   "site.navigation-trust": "all",
 }
@@ -57,32 +67,32 @@ export const WEBSITE_RULE_APPLICABILITY_OVERRIDES: Partial<
   Record<string, Partial<WebsiteRuleApplicabilitySpec>>
 > = {
   "hero-missing-primary-cta": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: PLATFORM_INTENTS,
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: [...PLATFORM_INTENTS, "marketplace"],
     optional: false,
     priority: "high",
   },
   "hero-no-value-proposition": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: PLATFORM_INTENTS,
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: [...PLATFORM_INTENTS, "marketplace"],
     optional: false,
     priority: "high",
   },
   "hero-generic-headline": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: PLATFORM_INTENTS,
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: [...PLATFORM_INTENTS, "marketplace"],
     optional: true,
     priority: "medium",
   },
   "hero-cta-below-fold": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: PLATFORM_INTENTS,
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: [...PLATFORM_INTENTS, "marketplace"],
     optional: false,
     priority: "high",
   },
   "hero-multiple-competing-ctas": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: ["search_engine", "documentation"],
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: ["search_engine", "documentation", "marketplace"],
     optional: true,
     priority: "medium",
   },
@@ -93,14 +103,14 @@ export const WEBSITE_RULE_APPLICABILITY_OVERRIDES: Partial<
     priority: "medium",
   },
   "conversion-no-urgency": {
-    applicableIntents: ["saas", "ecommerce", "marketplace"],
+    applicableIntents: ["saas", "ecommerce"],
     excludedIntents: PLATFORM_INTENTS,
     optional: true,
     priority: "low",
   },
   "conversion-weak-cta-language": {
-    applicableIntents: MARKETING_INTENTS,
-    excludedIntents: PLATFORM_INTENTS,
+    applicableIntents: CRO_LANDING_INTENTS,
+    excludedIntents: [...PLATFORM_INTENTS, "marketplace"],
     optional: true,
     priority: "medium",
   },
@@ -117,8 +127,8 @@ export const WEBSITE_RULE_APPLICABILITY_OVERRIDES: Partial<
     priority: "low",
   },
   "trust-missing-contact-page": {
-    applicableIntents: COMMERCIAL_INTENTS,
-    excludedIntents: ["search_engine", "developer_platform"],
+    applicableIntents: CONTACT_SALES_INTENTS,
+    excludedIntents: ["search_engine", "developer_platform", "marketplace", "open_source", "dashboard"],
     optional: true,
     priority: "medium",
   },
@@ -153,6 +163,7 @@ export const WEBSITE_INTENT_BLOCKER_EXCLUSIONS: Partial<
   Record<WebsiteIntent, string[]>
 > = {
   search_engine: [
+    "tech-missing-viewport",
     "hero-missing-primary-cta",
     "conversion-no-lead-capture",
     "trust-missing-contact-page",
@@ -162,7 +173,24 @@ export const WEBSITE_INTENT_BLOCKER_EXCLUSIONS: Partial<
     "site-missing-about-link",
     "site-missing-services-link",
   ],
+  marketplace: [
+    "tech-missing-viewport",
+    "hero-missing-primary-cta",
+    "hero-no-value-proposition",
+    "hero-generic-headline",
+    "hero-cta-below-fold",
+    "hero-multiple-competing-ctas",
+    "conversion-no-lead-capture",
+    "conversion-no-urgency",
+    "conversion-weak-cta-language",
+    "trust-no-testimonials",
+    "trust-no-social-proof",
+    "trust-missing-contact-page",
+    "contact-no-form",
+    "contact-missing-cta",
+  ],
   developer_platform: [
+    "tech-missing-viewport",
     "hero-missing-primary-cta",
     "conversion-no-lead-capture",
     "trust-missing-contact-page",
@@ -179,6 +207,7 @@ export const WEBSITE_INTENT_BLOCKER_EXCLUSIONS: Partial<
     "trust-no-social-proof",
   ],
   open_source: [
+    "tech-missing-viewport",
     "hero-missing-primary-cta",
     "conversion-no-lead-capture",
     "trust-missing-contact-page",
@@ -189,6 +218,7 @@ export const WEBSITE_INTENT_BLOCKER_EXCLUSIONS: Partial<
     "site-missing-services-link",
   ],
   dashboard: [
+    "tech-missing-viewport",
     "hero-missing-primary-cta",
     "conversion-no-lead-capture",
     "trust-no-testimonials",
@@ -254,8 +284,8 @@ function priorityFromSeverity(
 }
 
 /**
- * Returns whether a rule finding should contribute to scoring for this website intent.
- * Non-applicable rules still appear as recommendations — they score zero penalty.
+ * Returns whether a rule is declared applicable for a website intent.
+ * Used by the V5 Applicability Engine before execution (and by scoring as a safety net).
  */
 export function isRuleApplicableToWebsiteIntent(
   ruleId: string,

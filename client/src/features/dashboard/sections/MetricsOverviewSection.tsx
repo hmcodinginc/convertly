@@ -32,11 +32,17 @@ function MetricsOverviewSection({ metrics }: MetricsOverviewSectionProps) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => {
           const TrendIcon = trendIcon[metric.trend]
+          const showAverageTooltip = metric.id === "growth-score"
 
           return (
             <Card key={metric.id} className="app-card-metric hover:translate-y-0">
               <div className="space-y-4">
-                <Text variant="muted" size="sm" className="max-w-none font-medium">
+                <Text
+                  variant="muted"
+                  size="sm"
+                  className="max-w-none font-medium"
+                  title={showAverageTooltip ? "Average score across completed audits." : undefined}
+                >
                   {metric.label}
                 </Text>
                 <div className="flex items-end justify-between gap-3">

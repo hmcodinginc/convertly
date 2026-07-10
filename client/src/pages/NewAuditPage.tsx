@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
+import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
 import { AppPageSection } from "@/components/layout/AppPageSection"
@@ -66,20 +67,29 @@ function NewAuditPage() {
       setSessionStatus("pending")
 
       try {
-        const { audit, finalStatus } = await auditService.runAuditWorkflow(
+        const { audit, finalStatus, errorMessage } = await auditService.runAuditWorkflow(
           validation.sanitizedUrl,
           { onStatus: setSessionStatus }
         )
 
         if (finalStatus === "failed") {
-          setUrlError("Audit could not be completed. Check the URL and try again.")
+          setUrlError(
+            errorMessage ??
+              "Audit could not be completed. Check the URL and try again."
+          )
           setIsRunning(false)
           return
         }
 
         navigate(auditDetailPath(audit.id))
-      } catch {
-        setUrlError("Unable to start audit. Please try again.")
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unable to start audit. Please try again."
+        setUrlError(
+          message === "Audit timed out"
+            ? "The audit took too long to complete. The site may be slow or blocking automated access."
+            : message
+        )
         setIsRunning(false)
       }
     },
@@ -180,9 +190,9 @@ function NewAuditPage() {
             </Button>
           </div>
           {urlError ? (
-            <Text size="sm" className="audit-target-card__error max-w-none text-[#fca5a5]">
+            <AuthFormMessage className="audit-target-card__error">
               {urlError}
-            </Text>
+            </AuthFormMessage>
           ) : null}
           {!urlError && urlWarning ? (
             <Text size="sm" className="max-w-none text-[#fde68a]">

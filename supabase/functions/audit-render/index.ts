@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 }
 
+const WORKER_TIMEOUT_MS = 45_000
+
 const BLOCKED_HOSTNAMES = new Set([
   "localhost",
   "127.0.0.1",
@@ -123,15 +125,47 @@ Deno.serve(async (req) => {
 
     const safeUrl = assertSafeUrl(body.url.trim())
 
-    const workerResponse = await fetch(`${workerUrl.replace(/\/$/, "")}/render`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: safeUrl.toString() }),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), WORKER_TIMEOUT_MS)
+
+    let workerResponse: Response
+    try {
+      workerResponse = await fetch(`${workerUrl.replace(/\/$/, "")}/render`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: safeUrl.toString() }),
+        signal: controller.signal,
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error && error.name === "AbortError"
+          ? "Render worker timed out"
+          : error instanceof Error
+            ? error.message
+            : "Render worker request failed"
+
+      return jsonResponse(
+        {
+          ok: false,
+          finalUrl: safeUrl.toString(),
+          html: null,
+          text: null,
+          title: null,
+          links: [],
+          headings: { h1: [], h2: [] },
+          contentHash: null,
+          rendered: true,
+          error: message,
+        },
+        200
+      )
+    } finally {
+      clearTimeout(timeout)
+    }
 
     const result = await workerResponse.json()
 
-    if (!workerResponse.ok) {
+    if (!workerResponse.ok || result.ok === false) {
       return jsonResponse(
         {
           ok: false,
@@ -144,6 +178,7 @@ Deno.serve(async (req) => {
           contentHash: null,
           rendered: true,
           error: result.error ?? "Render worker failed",
+          acquisitionDiagnostics: result.acquisitionDiagnostics,
         },
         200
       )

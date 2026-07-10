@@ -356,7 +356,10 @@ function resolveIntentAwareBlockerCeiling(
     return true
   })
 
-  return resolveBlockerCeiling(scoringFindings, pages)
+  return resolveBlockerCeiling(scoringFindings, pages, {
+    allFindings: scoringFindings,
+    websiteIntent: websiteIntent.websiteIntent,
+  })
 }
 
 export function calculatePageScoreV4(

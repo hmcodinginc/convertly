@@ -162,9 +162,11 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     )
 
     if (discovered.length === 0) {
-      throw new Error(
+      const detail =
+        crawlDiagnostics.crawlStoppedDetail ??
+        crawlDiagnostics.crawlError ??
         "Unable to reach the website. Verify the URL is public and accessible over HTTPS."
-      )
+      throw new Error(detail)
     }
 
     const pagesWithScreenshots = attachScreenshotsToPages(discovered)
@@ -276,6 +278,12 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       reliabilityReport: execution.reliabilityReport,
       auditConfidenceTier: scoring.auditConfidence.tier,
       manualVerificationRecommended: scoring.auditConfidence.manualVerificationRecommended,
+      engineDiagnostics: execution.engineDiagnostics
+        ? {
+            ...execution.engineDiagnostics,
+            crawlDiagnostics: finalCrawlDiagnostics,
+          }
+        : undefined,
       comparisonRecord: {
         auditId,
         websiteUrl: analyzingSession.websiteUrl,

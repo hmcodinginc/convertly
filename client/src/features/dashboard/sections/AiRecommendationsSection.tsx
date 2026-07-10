@@ -5,16 +5,26 @@ import type { Recommendation } from "@/types/audit"
 
 type AiRecommendationsSectionProps = {
   recommendations: Recommendation[]
+  auditDomain?: string
 }
 
-function AiRecommendationsSection({ recommendations }: AiRecommendationsSectionProps) {
+function AiRecommendationsSection({
+  recommendations,
+  auditDomain,
+}: AiRecommendationsSectionProps) {
   return (
     <AppPageSection
+      className="dashboard-ai-recommendations"
       eyebrow="AI insights"
       title="AI recommendations"
-      description="Actionable experiments generated from your latest audit signals."
+      description={
+        auditDomain
+          ? `Recommendations generated for ${auditDomain}`
+          : "Actionable experiments generated from your latest audit signals."
+      }
     >
       <RecommendationCards
+        className="dashboard-recommendation-grid"
         recommendations={recommendations}
         emptyActionTo={ROUTES.auditNew}
       />

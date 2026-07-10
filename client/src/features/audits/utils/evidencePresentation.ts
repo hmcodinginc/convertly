@@ -1,4 +1,4 @@
-import type { ImpactEvidenceRow, ParsedImpact } from "@/features/audits/utils/impactDisplay"
+import type { ImpactEvidenceRow } from "@/features/audits/utils/impactDisplay"
 import { parseImpactForDisplay } from "@/features/audits/utils/impactDisplay"
 
 export type HumanizedEvidenceRow = ImpactEvidenceRow & {

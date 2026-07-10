@@ -42,12 +42,13 @@ function metricsFromDocument(snapshot: PageContentSnapshot): Omit<SnapshotMetric
   const html = snapshot.html ?? ""
   const visibleText = (document?.body?.textContent ?? "").replace(/\s+/g, " ").trim()
 
-  let pathname = snapshot.page.path
-  try {
-    pathname = new URL(snapshot.finalUrl ?? snapshot.page.url).pathname
-  } catch {
-    pathname = snapshot.page.path
-  }
+  const pathname = (() => {
+    try {
+      return new URL(snapshot.finalUrl ?? snapshot.page.url).pathname
+    } catch {
+      return snapshot.page.path
+    }
+  })()
 
   return {
     pathname,
