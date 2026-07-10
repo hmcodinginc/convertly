@@ -66,7 +66,6 @@ function DeleteAuditModal({ open, audit, onClose, onConfirmDelete }: DeleteAudit
               type="button"
               variant="outline"
               size="sm"
-              className="h-9"
               onClick={handleClose}
               disabled={isDeleting}
             >
@@ -76,7 +75,7 @@ function DeleteAuditModal({ open, audit, onClose, onConfirmDelete }: DeleteAudit
               type="button"
               variant="destructive"
               size="sm"
-              className="h-9 border border-[color-mix(in_srgb,#ef4444_65%,transparent)] bg-[#dc2626] hover:bg-[#b91c1c]"
+              className="border border-[color-mix(in_srgb,#ef4444_65%,transparent)] bg-[#dc2626] hover:bg-[#b91c1c]"
               onClick={() => void handleDelete()}
               disabled={!audit || isDeleting}
             >

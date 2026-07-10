@@ -8,7 +8,7 @@ Deletes the authenticated user via Admin API (service role stays server-side).
 
 | Name | Value |
 |------|--------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Project service role key |
+| `SERVICE_ROLE_KEY` | Project service role key |
 
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected automatically.
 
@@ -16,6 +16,6 @@ Deletes the authenticated user via Admin API (service role stays server-side).
 
 ```bash
 supabase link --project-ref <project-ref>
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+supabase secrets set SERVICE_ROLE_KEY="<service-role-key>"
 supabase functions deploy delete-account
 ```

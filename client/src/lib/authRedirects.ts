@@ -27,10 +27,16 @@ export function getEmailConfirmationRedirectUrl(): string {
 }
 
 /**
- * Password-reset emails redirect here after the user follows the Supabase link.
- * Recovery is handled on the profile page (drawer auto-opens in recovery mode).
+ * Logged-out forgot-password emails redirect here (standalone recovery page).
  */
 export function getPasswordResetRedirectUrl(): string {
+  return `${getAppOrigin()}${ROUTES.resetPassword}`
+}
+
+/**
+ * Logged-in change-password drawer emails return to Settings → Profile.
+ */
+export function getInAppPasswordResetRedirectUrl(): string {
   return `${getAppOrigin()}${ROUTES.profile}`
 }
 
@@ -43,13 +49,31 @@ export function isPasswordRecoveryLanding(): boolean {
   return hash.includes("type=recovery") || search.includes("type=recovery")
 }
 
+export function isStandaloneRecoveryLanding(): boolean {
+  if (typeof window === "undefined") return false
+  if (!isPasswordRecoveryLanding()) return false
+
+  const { pathname } = window.location
+  return pathname === ROUTES.resetPassword
+}
+
+export function isInAppRecoveryLanding(): boolean {
+  if (typeof window === "undefined") return false
+  if (!isPasswordRecoveryLanding()) return false
+
+  const { pathname } = window.location
+  return pathname === ROUTES.profile || pathname.startsWith(`${ROUTES.settings}/`)
+}
+
 /**
  * Reference URLs for Supabase Dashboard → Authentication → URL Configuration.
  * Add every environment you deploy to the Redirect URLs allowlist.
  */
 export const PASSWORD_RESET_REDIRECT_ALLOWLIST = {
-  local: "http://localhost:5173/profile",
-  localAlt: "http://127.0.0.1:5173/profile",
-  stage: "https://convertly-qxoh.vercel.app/profile",
-  resetPasswordFallback: "http://localhost:5173/reset-password",
+  standaloneLocal: "http://localhost:5173/reset-password",
+  standaloneLocalAlt: "http://127.0.0.1:5173/reset-password",
+  standaloneStage: "https://convertly-qxoh.vercel.app/reset-password",
+  inAppLocal: "http://localhost:5173/settings/profile",
+  inAppLocalAlt: "http://127.0.0.1:5173/settings/profile",
+  inAppStage: "https://convertly-qxoh.vercel.app/settings/profile",
 } as const

@@ -3,9 +3,13 @@ import type { AuthChangeEvent } from "@supabase/supabase-js"
 
 import { AuthSessionContext } from "@/components/auth/authSessionContext"
 import { clearAuthSnapshot, setAuthSnapshot } from "@/lib/authSessionCache"
+import { handleAuthSessionPaymentBoundary } from "@/lib/paymentSession"
 import { shouldUseLocalAuth } from "@/lib/env"
 import { bootstrapPasswordRecoveryFromUrl } from "@/lib/passwordRecoveryPersistence"
+import * as accountService from "@/services/accountService"
 import * as authService from "@/services/authService"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import * as supabaseAuth from "@/services/auth/supabaseAuthProvider"
 import type { AuthSession } from "@/types/auth"
 import type { AccountInfo } from "@/types/account"
@@ -14,6 +18,7 @@ const SESSION_EVENTS = new Set<AuthChangeEvent>([
   "SIGNED_IN",
   "TOKEN_REFRESHED",
   "USER_UPDATED",
+  "PASSWORD_RECOVERY",
 ])
 
 function applyAuthState(
@@ -40,7 +45,16 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
 
     const task = (async () => {
       const next = await authService.loadAuthState({ validate: true })
-      applyAuthState(setSession, setAccount, next)
+      let account = next.account
+      if (account && isBusinessFoundationEnabled()) {
+        try {
+          await ensureBusinessFoundation(account.userId)
+          account = (await accountService.getEnrichedAccount()) ?? account
+        } catch {
+          /* keep base account */
+        }
+      }
+      applyAuthState(setSession, setAccount, { session: next.session, account })
     })()
 
     refreshInFlight.current = task
@@ -52,8 +66,12 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const sessionUserIdRef = React.useRef<string | null>(null)
+
   const logout = React.useCallback(async () => {
     await authService.logout()
+    handleAuthSessionPaymentBoundary(sessionUserIdRef.current, null)
+    sessionUserIdRef.current = null
     setSession(null)
     setAccount(null)
     clearAuthSnapshot()
@@ -72,7 +90,18 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
       try {
         const next = await authService.loadAuthState({ validate: true })
         if (!cancelled) {
-          applyAuthState(setSession, setAccount, next)
+          let account = next.account
+          if (account && isBusinessFoundationEnabled()) {
+            try {
+              await ensureBusinessFoundation(account.userId)
+              account = (await accountService.getEnrichedAccount()) ?? account
+            } catch {
+              /* bootstrap may fail offline — keep base account */
+            }
+          }
+          applyAuthState(setSession, setAccount, { session: next.session, account })
+          handleAuthSessionPaymentBoundary(sessionUserIdRef.current, next.session?.userId ?? null)
+          sessionUserIdRef.current = next.session?.userId ?? null
         }
       } finally {
         if (!cancelled) {
@@ -95,6 +124,8 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (event === "SIGNED_OUT") {
+        handleAuthSessionPaymentBoundary(sessionUserIdRef.current, null)
+        sessionUserIdRef.current = null
         setSession(null)
         setAccount(null)
         clearAuthSnapshot()
@@ -107,12 +138,16 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
 
       const user = authSession?.user
       if (!user) {
+        handleAuthSessionPaymentBoundary(sessionUserIdRef.current, null)
+        sessionUserIdRef.current = null
         setSession(null)
         setAccount(null)
         return
       }
 
       const next = supabaseAuth.authStateFromUser(user)
+      handleAuthSessionPaymentBoundary(sessionUserIdRef.current, next.session?.userId ?? null)
+      sessionUserIdRef.current = next.session?.userId ?? null
       applyAuthState(setSession, setAccount, next)
     })
 

@@ -1,4 +1,5 @@
 import { getRecommendationPlaybook as resolvePlaybook } from "@/features/audits/data/auditPlaybooks"
+import type { PlaybookBuildInput } from "@/services/audit/playbooks/buildRecommendationPlaybook"
 import { auditDetailsMap } from "@/features/audits/data/auditDetails"
 import {
   buildAuditDetailFromSession,
@@ -33,8 +34,16 @@ import {
 } from "@/lib/completedAuditCache"
 import { getCachedAuthSession } from "@/lib/authSessionCache"
 import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
+import { applyScoreDeltaFromHistory } from "@/services/audit/utils/auditScoreHistory"
 import { shouldUseSupabaseAudits } from "@/lib/env"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
+import { AuditLimitError } from "@/types/billing"
+import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
+import {
+  assertCanRunAudit,
+  consumeAuditEntitlement,
+} from "@/services/entitlementService"
+import { recordAuditForDomain } from "@/services/workspaceService"
 import type {
   Audit,
   AuditDetail,
@@ -105,7 +114,9 @@ export async function getAuditDetail(id: string): Promise<AuditDetail | null> {
 
   const sessionData = await getAuditSessionData(id)
   if (sessionData) {
-    const detail = buildAuditDetailFromSession(sessionData)
+    let detail = buildAuditDetailFromSession(sessionData)
+    const audits = await getAudits()
+    detail = applyScoreDeltaFromHistory(detail, audits)
     setCompletedAuditDetail(detail)
     if (!shouldUseSupabaseAudits()) {
       auditDetailRepository.saveAuditDetail(detail)
@@ -130,7 +141,19 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
     throw new Error(validation.errors[0] ?? "Invalid audit URL")
   }
 
-  const auditSession = await createSession(userId, validation.sanitizedUrl)
+  let workspaceId: string | undefined
+
+  if (shouldUseSupabaseAudits()) {
+    await assertCanRunAudit(userId)
+    workspaceId = await ensureBusinessFoundation(userId)
+    await consumeAuditEntitlement(userId)
+  }
+
+  const auditSession = await createSession(userId, validation.sanitizedUrl, workspaceId)
+
+  if (shouldUseSupabaseAudits()) {
+    void recordAuditForDomain(userId, validation.sanitizedUrl)
+  }
 
   await createHistoryEvent(auditSession.id, "pending", "Audit session created")
 
@@ -187,7 +210,7 @@ export async function waitForAuditCompletion(
   }
 ): Promise<AuditSessionStatus> {
   const intervalMs = options?.intervalMs ?? 750
-  const timeoutMs = options?.timeoutMs ?? 120_000
+  const timeoutMs = options?.timeoutMs ?? 150_000
   const startedAt = Date.now()
 
   return new Promise((resolve, reject) => {
@@ -291,9 +314,12 @@ export async function getDashboardRecommendations(): Promise<Recommendation[]> {
   return buildDashboardRecommendations(userId)
 }
 
+export { AuditLimitError } from "@/types/billing"
+
 export async function getRecommendationPlaybook(
-  recommendationId: string
+  recommendationId: string,
+  options: Omit<PlaybookBuildInput, "recommendationId"> = {}
 ): Promise<RecommendationPlaybook> {
   await delay()
-  return resolvePlaybook(recommendationId)
+  return resolvePlaybook(recommendationId, options)
 }

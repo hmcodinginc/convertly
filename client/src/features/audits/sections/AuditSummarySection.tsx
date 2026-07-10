@@ -85,7 +85,7 @@ function AuditSummarySection({ audit }: AuditSummarySectionProps) {
           </div>
           <div className="audit-summary-overview__item">
             <dt className="audit-summary-overview__label">Audit date</dt>
-            <dd className="audit-summary-overview__value">{headerDate}</dd>
+            <dd className="audit-summary-overview__value tabular-nums">{headerDate}</dd>
           </div>
         </dl>
       </Card>

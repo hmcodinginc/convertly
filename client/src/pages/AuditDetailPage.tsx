@@ -1,8 +1,8 @@
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowLeft } from "lucide-react"
-import { Link, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 
-import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
+import { AuditExecutionView } from "@/components/audit/execution/AuditExecutionView"
 import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { PageError, PageLoading } from "@/components/feedback/PageState"
@@ -14,6 +14,7 @@ import { AuditMetadataSection } from "@/features/audits/sections/AuditMetadataSe
 import { AuditReportActions } from "@/features/audits/components/AuditReportActions"
 import { AuditRecommendationsSection } from "@/features/audits/sections/AuditRecommendationsSection"
 import { AuditSummarySection } from "@/features/audits/sections/AuditSummarySection"
+import { AuditScoreExplanationSection } from "@/features/audits/sections/AuditScoreExplanationSection"
 import { AuditTimelineSection } from "@/features/audits/sections/AuditTimelineSection"
 import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSection"
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
@@ -24,19 +25,13 @@ import {
   setNetworkTraceRoute,
 } from "@/diagnostics/networkTrace"
 import { useAsyncData } from "@/hooks/useAsyncData"
-import { isAuditInProgress, isAuditSessionStatus } from "@/lib/auditStatus"
+import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
+import { isAuditInProgress } from "@/lib/auditStatus"
 import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
-import type { AuditDetail, AuditStatus } from "@/types/audit"
-import type { AuditSessionStatus } from "@/types/auditEngine"
+import type { AuditDetail } from "@/types/audit"
 
 const IN_PROGRESS_POLL_MS = 2_500
-
-function toSessionStatus(status: AuditStatus): AuditSessionStatus {
-  if (isAuditSessionStatus(status)) return status
-  if (status === "Running") return "analyzing"
-  return "pending"
-}
 
 function AuditDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,6 +44,26 @@ function AuditDetailPage() {
   const { data: audit, isLoading, isError, error, reload } = useAsyncData(loadAudit, [id])
 
   const inProgress = audit ? isAuditInProgress(audit.status) : false
+
+  const vertlyContext = useMemo(
+    () =>
+      audit
+        ? {
+            surface: "audit-detail" as const,
+            title: audit.domain,
+            description: `Reviewing ${audit.domain}`,
+            metadata: {
+              auditId: audit.id,
+              domain: audit.domain,
+              score: audit.overallScore,
+              status: audit.status,
+            },
+          }
+        : null,
+    [audit]
+  )
+
+  useVertlyPageContext(vertlyContext)
 
   useEffect(() => {
     if (import.meta.env.VITE_NETWORK_TRACE === "true" && id) {
@@ -130,11 +145,57 @@ function AuditDetailPage() {
     )
   }
 
-  return <AuditDetailContent audit={audit} />
+  return <AuditDetailContent audit={audit} onReload={reload} />
 }
 
-function AuditDetailContent({ audit }: { audit: AuditDetail }) {
+function AuditDetailContent({
+  audit,
+  onReload,
+}: {
+  audit: AuditDetail
+  onReload: (options?: { silent?: boolean }) => void
+}) {
+  const navigate = useNavigate()
   const running = isAuditInProgress(audit.status)
+  const [showExecution, setShowExecution] = useState(running)
+
+  useEffect(() => {
+    if (running) {
+      setShowExecution(true)
+    }
+  }, [running, audit.id])
+
+  if (running && showExecution) {
+    return (
+      <AppPageShell header={null} sectionsClassName="gap-0">
+        <AuditExecutionView
+          auditId={audit.id}
+          onComplete={() => {
+            setShowExecution(false)
+            auditService.invalidateCompletedAuditDetail(audit.id)
+            onReload()
+          }}
+          onFailed={() => {
+            setShowExecution(false)
+            onReload()
+          }}
+          onBackToNewAudit={() => {
+            navigate(ROUTES.auditNew)
+          }}
+          onRetry={() => {
+            navigate(ROUTES.auditNew, {
+              state: { autoStart: true, url: audit.websiteUrl ?? audit.domain },
+            })
+          }}
+        />
+      </AppPageShell>
+    )
+  }
+
+  return <AuditDetailReport audit={audit} />
+}
+
+function AuditDetailReport({ audit }: { audit: AuditDetail }) {
   const failed = audit.status === "failed"
   const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
 
@@ -171,7 +232,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
             <p className="audit-report-hero__meta">
               <span>{audit.websiteUrl ?? audit.domain}</span>
               <span aria-hidden>·</span>
-              <span>{headerDate}</span>
+              <span className="tabular-nums">{headerDate}</span>
               <span aria-hidden>·</span>
               <span>{audit.pagesAnalyzed} pages analyzed</span>
             </p>
@@ -194,11 +255,10 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
           <AuthFormMessage className="audit-report-alert">{audit.errorMessage}</AuthFormMessage>
         ) : null}
 
-        {running ? <AuditRunningExperience status={toSessionStatus(audit.status)} /> : null}
-
         <div className="audit-report-layout">
           <div className="audit-report-layout__main">
             <AuditSummarySection audit={audit} />
+            <AuditScoreExplanationSection audit={audit} />
             <ScoreBreakdownSection
               categories={audit.scoreBreakdown}
               auditStatus={audit.status}
@@ -213,6 +273,7 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
             <AuditRecommendationsSection
               recommendations={audit.recommendations}
               pages={audit.pageFindings}
+              domain={audit.domain}
             />
             <AuditMetadataSection audit={audit} />
           </div>
@@ -221,13 +282,6 @@ function AuditDetailContent({ audit }: { audit: AuditDetail }) {
             <AuditTimelineSection events={audit.timeline} compact />
           </aside>
         </div>
-
-        {running ? (
-          <Text variant="muted" size="sm" className="audit-report-progress-note">
-            This audit is still in progress. Scores and recommendations will update when the
-            scan completes.
-          </Text>
-        ) : null}
       </div>
     </AppPageShell>
   )

@@ -1,11 +1,30 @@
 import { Button } from "@/components/ui/button"
 import { Heading } from "@/components/ui/typography/Heading"
-import { Text } from "@/components/ui/typography/Text"
+import {
+  AboutDocumentation,
+  PrivacyDocumentation,
+  TermsDocumentation,
+} from "@/features/auth/components/documentation"
 import { useAuthPanel } from "@/hooks/useAuthPanel"
 import { legalContent, type AuthLegalView } from "@/features/auth/content/authContent"
 
+import "@/features/auth/components/documentation/auth-documentation.css"
+
 type AuthLegalPanelProps = {
   view: AuthLegalView
+}
+
+function LegalDocumentationBody({ view }: { view: AuthLegalView }) {
+  switch (view) {
+    case "terms":
+      return <TermsDocumentation />
+    case "privacy":
+      return <PrivacyDocumentation />
+    case "about":
+      return <AboutDocumentation />
+    default:
+      return null
+  }
 }
 
 function AuthLegalPanel({ view }: AuthLegalPanelProps) {
@@ -24,18 +43,7 @@ function AuthLegalPanel({ view }: AuthLegalPanelProps) {
       </div>
 
       <div className="auth-legal-scroll min-h-0 flex-1 overflow-y-auto pr-1">
-        <div className="space-y-5">
-          {content.sections.map((section) => (
-            <div key={section.heading} className="space-y-2">
-              <Text size="sm" className="max-w-none font-medium text-foreground/88">
-                {section.heading}
-              </Text>
-              <Text variant="muted" size="sm" className="max-w-none leading-6">
-                {section.body}
-              </Text>
-            </div>
-          ))}
-        </div>
+        <LegalDocumentationBody view={view} />
       </div>
     </div>
   )

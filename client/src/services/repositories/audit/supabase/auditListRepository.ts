@@ -27,7 +27,7 @@ export async function getAuditListForUser(userId: string): Promise<AuditListItem
 
   if (error) throw new Error(error.message)
 
-  return ((data ?? []) as AuditListRow[]).map((row) => ({
+  return ((data ?? []) as unknown as AuditListRow[]).map((row) => ({
     session: mapAuditRowToSession(row),
     pageCount: row.audit_pages?.length ?? 0,
     scores: (row.audit_scores ?? []).map(mapScoreRowToScore),

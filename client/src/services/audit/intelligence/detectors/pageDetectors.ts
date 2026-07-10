@@ -460,6 +460,222 @@ export const PAGE_DETECTORS: Record<string, PageDetector> = {
     if (c.metrics.formCount > 0) return pass()
     return fail(86, [{ label: "Forms", value: String(c.metrics.formCount) }])
   },
+
+  "hero-missing-subheadline": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (!s.h1 || s.metrics.visibleTextLength < 120) return pass()
+    const hero = c.document.querySelector("[class*='hero' i], main section, section")
+    const sub = hero?.querySelector("p, h2")
+    const subText = sub?.textContent?.replace(/\s+/g, " ").trim() ?? ""
+    if (subText.length >= 24 && subText.toLowerCase() !== (s.h1 ?? "").toLowerCase()) return pass()
+    return fail(74, [{ label: "Hero subheadline", value: "No supporting line detected under H1" }])
+  },
+
+  "nav-missing-logo-link": (c) => {
+    const header = c.document.querySelector("header, nav")
+    if (!header) return pass()
+    const logoLink = header.querySelector("a[href='/'], a[href*='index'], a[class*='logo' i]")
+    if (logoLink) return pass()
+    return fail(66, [{ label: "Logo link", value: "No home link detected in header" }])
+  },
+
+  "footer-missing-navigation": (c) => {
+    const footer = c.document.querySelector("footer")
+    if (!footer) return pass()
+    const links = footer.querySelectorAll("a[href]").length
+    if (links >= 3) return pass()
+    return fail(72, [{ label: "Footer links", value: String(links) }])
+  },
+
+  "layout-missing-main-landmark": (c) => {
+    if (c.document.querySelector("main, [role='main']")) return pass()
+    return fail(70, [{ label: "Main landmark", value: "No <main> or role=main detected" }])
+  },
+
+  "a11y-missing-alt-text": (c) => {
+    const images = Array.from(c.document.querySelectorAll("img"))
+    if (images.length === 0) return pass()
+    const missing = images.filter((img) => !(img.getAttribute("alt") ?? "").trim())
+    if (missing.length === 0) return pass()
+    return fail(76, [
+      { label: "Images without alt", value: String(missing.length) },
+      { label: "Total images", value: String(images.length) },
+    ])
+  },
+
+  "a11y-empty-button-labels": (c) => {
+    const buttons = Array.from(c.document.querySelectorAll("button, [role='button']"))
+    if (buttons.length === 0) return pass()
+    const unlabeled = buttons.filter((btn) => {
+      const text = (btn.textContent ?? "").replace(/\s+/g, " ").trim()
+      const aria = (btn.getAttribute("aria-label") ?? "").trim()
+      return text.length === 0 && aria.length === 0
+    })
+    if (unlabeled.length === 0) return pass()
+    return fail(82, [{ label: "Unlabeled buttons", value: String(unlabeled.length) }])
+  },
+
+  "form-missing-labels": (c) => {
+    if (c.metrics.formCount === 0) return pass()
+    const inputs = Array.from(
+      c.document.querySelectorAll("input:not([type='hidden']), textarea, select")
+    )
+    const unlabeled = inputs.filter((input) => {
+      const id = input.getAttribute("id")
+      const hasLabel = id ? Boolean(c.document.querySelector(`label[for='${id}']`)) : false
+      const aria = (input.getAttribute("aria-label") ?? input.getAttribute("placeholder") ?? "").trim()
+      return !hasLabel && aria.length < 2
+    })
+    if (unlabeled.length === 0) return pass()
+    return fail(78, [{ label: "Unlabeled fields", value: String(unlabeled.length) }])
+  },
+
+  "form-excessive-fields": (c) => {
+    if (c.metrics.formCount === 0) return pass()
+    const fields = c.document.querySelectorAll(
+      "form input:not([type='hidden']), form textarea, form select"
+    ).length
+    if (fields <= 6) return pass()
+    return fail(80, [{ label: "Visible form fields", value: String(fields) }])
+  },
+
+  "form-no-privacy-consent": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (!s.hasLeadForm && c.metrics.formCount === 0) return pass()
+    if (/privacy|terms|consent|gdpr/i.test(s.visibleTextLower)) return pass()
+    return fail(74, [{ label: "Privacy reference", value: "Not found near lead capture" }])
+  },
+
+  "trust-missing-guarantee": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (!s.hasPricingSignals && c.metrics.buttonCount === 0) return pass()
+    if (/guarantee|refund|money back|cancel anytime|risk-free/i.test(s.visibleTextLower)) return pass()
+    return fail(68, [{ label: "Guarantee copy", value: "Not detected near decision point" }])
+  },
+
+  "trust-missing-security-signals": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (c.metrics.formCount === 0 && !s.hasPricingSignals) return pass()
+    if (/secure|ssl|encrypted|pci|soc 2|gdpr/i.test(s.visibleTextLower)) return pass()
+    return fail(70, [{ label: "Security signals", value: "Not detected on sensitive page" }])
+  },
+
+  "seo-missing-canonical": (c) => {
+    if (c.document.querySelector("link[rel='canonical']")) return pass()
+    return fail(64, [{ label: "Canonical", value: "link rel=canonical not found" }])
+  },
+
+  "seo-missing-og-tags": (c) => {
+    const hasOg = Boolean(
+      c.document.querySelector("meta[property='og:title' i], meta[property='og:description' i]")
+    )
+    if (hasOg) return pass()
+    return fail(62, [{ label: "Open Graph", value: "og:title or og:description missing" }])
+  },
+
+  "seo-missing-lang": (c) => {
+    const lang = c.document.documentElement.getAttribute("lang")?.trim()
+    if (lang && lang.length >= 2) return pass()
+    return fail(72, [{ label: "html lang", value: lang ?? "Missing" }])
+  },
+
+  "tech-missing-lazy-images": (c) => {
+    const images = Array.from(c.document.querySelectorAll("img"))
+    if (images.length < 3) return pass()
+    const eager = images.filter((img) => (img.getAttribute("loading") ?? "eager") !== "lazy")
+    if (eager.length <= 2) return pass()
+    return fail(66, [
+      { label: "Non-lazy images", value: String(eager.length) },
+      { label: "Total images", value: String(images.length) },
+    ])
+  },
+
+  "tech-missing-favicon": (c) => {
+    const hasIcon = Boolean(
+      c.document.querySelector("link[rel*='icon' i], link[rel='apple-touch-icon' i]")
+    )
+    if (hasIcon) return pass()
+    return fail(60, [{ label: "Favicon", value: "No icon link detected" }])
+  },
+
+  "copy-jargon-heavy": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (s.metrics.visibleTextLength < 200) return pass()
+    const jargon = ["synergy", "leverage", "paradigm", "disrupt", "best-in-class", "world-class", "cutting-edge", "holistic"]
+    const hits = jargon.filter((word) => s.visibleTextLower.includes(word)).length
+    if (hits < 3) return pass()
+    return fail(64, [{ label: "Jargon density", value: `${hits} buzzwords detected` }])
+  },
+
+  "pricing-no-faq": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (!s.hasPricingSignals) return pass()
+    if (/faq|frequently asked|common questions/i.test(s.visibleTextLower)) return pass()
+    return fail(72, [{ label: "FAQ section", value: "Not detected on pricing page" }])
+  },
+
+  "pricing-missing-comparison": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (!s.hasPricingSignals) return pass()
+    const hasTable = Boolean(c.document.querySelector("table"))
+    const hasList = c.document.querySelectorAll("ul li, ol li").length >= 6
+    if (hasTable || (hasList && s.h2Count >= 2)) return pass()
+    return fail(74, [{ label: "Plan comparison", value: "No table or structured tier list detected" }])
+  },
+
+  "blog-missing-author": (c) => {
+    if (c.metrics.visibleTextLength < 350) return pass()
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (/author|written by|by [a-z]/i.test(s.visibleTextLower)) return pass()
+    if (c.document.querySelector("[class*='author' i], [rel='author'], .byline")) return pass()
+    return fail(66, [{ label: "Author", value: "No byline or author block detected" }])
+  },
+
+  "blog-missing-cta": (c) => {
+    if (c.metrics.visibleTextLength < 350) return pass()
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (s.metrics.buttonCount >= 1 || s.heroCtaCount >= 1) return pass()
+    return fail(70, [{ label: "Article CTA", value: "No button detected on long-form content" }])
+  },
+
+  "signup-missing-privacy-link": (c) => {
+    if (c.metrics.formCount === 0) return pass()
+    const html = c.document.documentElement.outerHTML.toLowerCase()
+    if (html.includes("privacy") || html.includes("terms")) return pass()
+    return fail(76, [{ label: "Privacy link", value: "Not found on signup page" }])
+  },
+
+  "login-missing-recovery-link": (c) => {
+    if (c.metrics.formCount === 0) return pass()
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (/forgot|reset password|recover/i.test(s.visibleTextLower)) return pass()
+    return fail(78, [{ label: "Recovery link", value: "Forgot password path not detected" }])
+  },
+
+  "contact-missing-phone": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (/\+?\d[\d\s().-]{7,}\d|tel:/i.test(s.visibleText)) return pass()
+    return fail(64, [{ label: "Phone", value: "No phone number or tel: link detected" }])
+  },
+
+  "about-missing-values": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (/values|principles|what we believe|culture/i.test(s.visibleTextLower)) return pass()
+    return fail(66, [{ label: "Values section", value: "Not detected on about page" }])
+  },
+
+  "services-missing-process": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (/process|how it works|how we work|step 1|our approach/i.test(s.visibleTextLower)) return pass()
+    return fail(74, [{ label: "Process section", value: "Not detected on services page" }])
+  },
+
+  "projects-missing-metrics": (c) => {
+    const s = analyzePageSignals(c.document, c.metrics)
+    if (s.hasOutcomeContent) return pass()
+    if (/\d+%|\d+x|saved \$|increased|reduced/i.test(s.visibleText)) return pass()
+    return fail(76, [{ label: "Outcome metrics", value: "No quantified results detected" }])
+  },
 }
 
 export function runPageDetector(

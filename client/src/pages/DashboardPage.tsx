@@ -1,6 +1,9 @@
-import { Link } from "react-router-dom"
-import { useMemo, useState } from "react"
+import { AnimatePresence } from "framer-motion"
+import { Link, useSearchParams } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
 
+import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
+import { PremiumWelcomeCard } from "@/components/billing/PremiumWelcomeCard"
 import { OnboardingCard } from "@/components/feedback/OnboardingCard"
 import { PageError, PageLoading } from "@/components/feedback/PageState"
 import { Button } from "@/components/ui/button"
@@ -8,6 +11,7 @@ import { AppPageHeader } from "@/components/layout/AppPageHeader"
 import { AppPageShell } from "@/components/layout/AppPageShell"
 import { CurrentAuditSelector } from "@/features/dashboard/components/CurrentAuditSelector"
 import { AiRecommendationsSection } from "@/features/dashboard/sections/AiRecommendationsSection"
+import { DashboardPriorityInsights } from "@/features/dashboard/sections/DashboardPriorityInsights"
 import { MetricsOverviewSection } from "@/features/dashboard/sections/MetricsOverviewSection"
 import { OpportunityQueueSection } from "@/features/dashboard/sections/OpportunityQueueSection"
 import { RecentAuditsSection } from "@/features/dashboard/sections/RecentAuditsSection"
@@ -19,7 +23,16 @@ import {
   mergeMetricsForSelectedAudit,
   sortAuditsNewestFirst,
 } from "@/features/dashboard/utils/auditDashboardView"
+import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
+import { type SubscriptionPlanId } from "@/lib/billingPlans"
+import { isKnownPlan } from "@/services/pricingService"
+import {
+  dismissPremiumWelcome,
+  peekPremiumActivation,
+  shouldShowPremiumWelcome,
+  type PremiumActivationContext,
+} from "@/lib/premiumWelcomePersistence"
 import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
 import type { Audit, Recommendation } from "@/types/audit"
@@ -41,10 +54,58 @@ async function loadDashboard(): Promise<DashboardData> {
   }
 }
 
+function resolveActivationContext(
+  activatedParam: string | null
+): PremiumActivationContext | null {
+  const sessionActivation = peekPremiumActivation()
+  if (sessionActivation) return sessionActivation
+
+  if (activatedParam && isKnownPlan(activatedParam)) {
+    const planId = activatedParam as SubscriptionPlanId
+    return {
+      planId,
+      planName: planId.charAt(0).toUpperCase() + planId.slice(1),
+      previousPlanId: "free",
+      activatedAt: Date.now(),
+    }
+  }
+
+  return null
+}
+
 function DashboardPage() {
+  const { session } = useAuthSession()
+  const userId = session?.userId ?? ""
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [activationContext, setActivationContext] = useState<PremiumActivationContext | null>(
+    null
+  )
+  const [showWelcomeCard, setShowWelcomeCard] = useState(false)
+  const [showCelebration, setShowCelebration] = useState(false)
   const { data, isLoading, isError, error, reload } = useAsyncData(loadDashboard, [])
   const [userSelectedAuditId, setUserSelectedAuditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Audit | null>(null)
+
+  useEffect(() => {
+    const activated = searchParams.get("activated")
+    const context = resolveActivationContext(activated)
+    if (!context) return
+
+    setActivationContext(context)
+    setShowCelebration(true)
+
+    if (userId && shouldShowPremiumWelcome(userId, context.planId)) {
+      setShowWelcomeCard(true)
+    }
+
+    setSearchParams({}, { replace: true })
+
+    const timerId = window.setTimeout(() => {
+      setShowCelebration(false)
+    }, 6_000)
+
+    return () => window.clearTimeout(timerId)
+  }, [searchParams, setSearchParams, userId])
 
   const selectedAuditId = useMemo(() => {
     if (!data || data.audits.length === 0) return null
@@ -91,6 +152,18 @@ function DashboardPage() {
     [selectedDetail]
   )
 
+  function handleDismissWelcome() {
+    if (userId && activationContext) {
+      dismissPremiumWelcome(userId, activationContext.planId)
+    }
+    setShowWelcomeCard(false)
+  }
+
+  const celebrationPlanName = activationContext?.planName ?? "Premium"
+  const heroCtaLabel = showCelebration
+    ? "Run your first Premium Audit"
+    : "Run new audit"
+
   const header = (
     <AppPageHeader
       eyebrow="Workspace"
@@ -98,7 +171,7 @@ function DashboardPage() {
       description="Monitor conversion health, prioritize fixes, and track audit outcomes across your funnel."
       actions={
         <Button size="sm" asChild>
-          <Link to={ROUTES.auditNew}>Run new audit</Link>
+          <Link to={ROUTES.auditNew}>{heroCtaLabel}</Link>
         </Button>
       }
     />
@@ -132,6 +205,20 @@ function DashboardPage() {
 
   return (
     <AppPageShell header={header}>
+      {showCelebration && !showWelcomeCard ? (
+        <PremiumCelebrationBanner planName={celebrationPlanName} />
+      ) : null}
+
+      <AnimatePresence>
+        {showWelcomeCard && activationContext ? (
+          <PremiumWelcomeCard
+            planId={activationContext.planId}
+            planName={activationContext.planName}
+            onDismiss={handleDismissWelcome}
+          />
+        ) : null}
+      </AnimatePresence>
+
       {data.showOnboarding ? <OnboardingCard /> : null}
 
       {data.audits.length > 0 ? (
@@ -148,6 +235,13 @@ function DashboardPage() {
         <PageLoading label="Loading audit insights…" />
       ) : (
         <>
+          <DashboardPriorityInsights
+            audits={data.audits}
+            selectedDetail={selectedDetail}
+            opportunities={opportunities}
+            recommendations={recommendations}
+            auditId={selectedAuditId}
+          />
           <OpportunityQueueSection
             items={opportunities}
             auditDomain={selectedAudit?.domain}

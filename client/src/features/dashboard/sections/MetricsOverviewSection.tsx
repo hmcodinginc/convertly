@@ -36,7 +36,7 @@ function MetricsOverviewSection({ metrics }: MetricsOverviewSectionProps) {
 
           return (
             <Card key={metric.id} className="app-card-metric hover:translate-y-0">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Text
                   variant="muted"
                   size="sm"

@@ -21,7 +21,7 @@ Template: `client/.env.example`
 | `client/src/services/auth/supabaseAuthProvider.ts` | Auth + `functions.invoke('delete-account')` |
 | `client/vite-env.d.ts` | TypeScript env declarations |
 
-**Never** add `VITE_SUPABASE_SERVICE_ROLE_KEY` or any service role key to the frontend.
+**Never** add `VITE_SERVICE_ROLE_KEY` or any service role key to the frontend.
 
 ## Server-side secrets (Edge Functions only)
 
@@ -29,7 +29,7 @@ Template: `client/.env.example`
 |--------|--------|---------|
 | `SUPABASE_URL` | Auto-injected on Edge Functions | Project URL |
 | `SUPABASE_ANON_KEY` | Auto-injected | Verify caller JWT |
-| `SUPABASE_SERVICE_ROLE_KEY` | Dashboard → Edge Functions → Secrets | `auth.admin.deleteUser` in `delete-account` |
+| `SERVICE_ROLE_KEY` | Dashboard → Edge Functions → Secrets | `auth.admin.deleteUser` in `delete-account` |
 
 ## Account deletion flow
 
@@ -48,7 +48,7 @@ SDK note (`@supabase/supabase-js` ^2.106): **self-delete is not available** on t
 
 1. Supabase Dashboard → **Settings → API** → rotate **anon** key (and service role if exposed).
 2. Update `VITE_SUPABASE_ANON_KEY` in local `.env`, stage, and production host env (Vercel/Netlify/etc.).
-3. Update **Edge Function secret** `SUPABASE_SERVICE_ROLE_KEY` if service role was rotated.
+3. Update **Edge Function secret** `SERVICE_ROLE_KEY` if service role was rotated.
 4. Redeploy the `delete-account` function after secret changes.
 5. Run smoke tests: sign up, login, profile edit, account delete on stage.
 6. Invalidate old JWTs (rotation does this for new sign-ins; existing sessions expire naturally).
@@ -60,11 +60,11 @@ Do **not** commit real keys to the repository.
 From repo root (with [Supabase CLI](https://supabase.com/docs/guides/cli) linked to the project):
 
 ```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY="<your-service-role-key>"
+supabase secrets set SERVICE_ROLE_KEY="<your-service-role-key>"
 supabase functions deploy delete-account
 ```
 
-Dashboard alternative: **Edge Functions** → create/deploy `delete-account` → add secret `SUPABASE_SERVICE_ROLE_KEY`.
+Dashboard alternative: **Edge Functions** → create/deploy `delete-account` → add secret `SERVICE_ROLE_KEY`.
 
 `supabase/config.toml` sets `verify_jwt = true` for this function.
 
@@ -76,7 +76,7 @@ Reset emails use `getPasswordResetRedirectUrl()` in `client/src/lib/authRedirect
 {origin}/reset-password
 ```
 
-Recovery is handled by `ResetPasswordPage` (`detectSessionInUrl` + `PASSWORD_RECOVERY` event).
+Recovery is handled entirely on `ResetPasswordPage` (`detectSessionInUrl` + `PASSWORD_RECOVERY` event). Users set a new password on this public page and return to login — they are not redirected into the dashboard.
 
 | Environment | Example redirect URL (must be allowlisted) |
 |-------------|------------------------------------------|

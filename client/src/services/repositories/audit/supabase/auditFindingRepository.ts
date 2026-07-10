@@ -49,7 +49,7 @@ export async function getFindingsForUser(): Promise<FindingWithPagePath[]> {
 
   if (error) throw new Error(error.message)
 
-  return ((data ?? []) as FindingWithPageRow[]).map((row) => ({
+  return ((data ?? []) as unknown as FindingWithPageRow[]).map((row) => ({
     finding: mapFindingRowToFinding(row),
     pagePath: row.audit_pages?.path,
   }))

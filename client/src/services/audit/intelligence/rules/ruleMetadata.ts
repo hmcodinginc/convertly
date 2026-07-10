@@ -116,6 +116,53 @@ export const RULE_METADATA: RuleMetadata[] = [
   meta("signup-thin-page", { scope: "page", packIds: ["signup.conversion"], category: "ux", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.55, tags: ["signup"], title: "Thin signup page" }),
   meta("login-missing-form", { scope: "page", packIds: ["login.conversion"], category: "conversion", severity: "high", scoreCategory: "conversion", businessImpact: "high", weight: 0.95, tags: ["login"], title: "Missing login form" }),
 
+  // Expanded hero / CTA / navigation
+  meta("hero-missing-subheadline", { scope: "page", packIds: ["homepage.conversion"], category: "copy", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.78, tags: ["hero", "copy"], title: "Missing hero subheadline" }),
+  meta("nav-missing-logo-link", { scope: "page", packIds: ["homepage.conversion"], category: "ux", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.55, tags: ["navigation"], title: "Missing logo home link" }),
+  meta("footer-missing-navigation", { scope: "page", packIds: ["shared.technical"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.72, tags: ["navigation"], title: "Footer missing navigation" }),
+  meta("layout-missing-main-landmark", { scope: "page", packIds: ["shared.accessibility"], category: "accessibility", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.7, tags: ["accessibility"], title: "Missing main landmark" }),
+
+  // Expanded accessibility
+  meta("a11y-missing-alt-text", { scope: "page", packIds: ["shared.accessibility"], category: "accessibility", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.82, tags: ["accessibility", "images"], title: "Images missing alt text" }),
+  meta("a11y-empty-button-labels", { scope: "page", packIds: ["shared.accessibility"], category: "accessibility", severity: "high", scoreCategory: "ux", businessImpact: "high", weight: 0.88, tags: ["accessibility", "cta"], title: "Buttons missing accessible labels" }),
+
+  // Forms & trust
+  meta("form-missing-labels", { scope: "page", packIds: ["contact.conversion"], category: "accessibility", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.8, tags: ["forms"], title: "Form fields missing labels" }),
+  meta("form-excessive-fields", { scope: "page", packIds: ["signup.conversion"], category: "conversion", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.85, tags: ["forms"], title: "Excessive form fields" }),
+  meta("form-no-privacy-consent", { scope: "page", packIds: ["signup.conversion"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.78, tags: ["forms", "legal"], title: "Missing privacy consent near form" }),
+  meta("trust-missing-guarantee", { scope: "page", packIds: ["pricing.trust"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.8, tags: ["trust"], title: "Missing guarantee or refund signal" }),
+  meta("trust-missing-security-signals", { scope: "page", packIds: ["pricing.trust"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.76, tags: ["trust", "security"], title: "Missing security signals" }),
+
+  // SEO & metadata
+  meta("seo-missing-canonical", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.6, tags: ["seo"], title: "Missing canonical URL" }),
+  meta("seo-missing-og-tags", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.58, tags: ["seo"], title: "Missing Open Graph tags" }),
+  meta("seo-missing-lang", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.68, tags: ["seo", "accessibility"], title: "Missing html lang attribute" }),
+
+  // Performance & technical
+  meta("tech-missing-lazy-images", { scope: "page", packIds: ["shared.technical"], category: "performance", severity: "low", scoreCategory: "mobile", businessImpact: "low", weight: 0.62, tags: ["performance", "images"], title: "Images not lazy-loaded" }),
+  meta("tech-missing-favicon", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "trust", businessImpact: "low", weight: 0.5, tags: ["technical"], title: "Missing favicon" }),
+
+  // Copywriting
+  meta("copy-jargon-heavy", { scope: "page", packIds: ["homepage.conversion"], category: "copy", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.58, tags: ["copy"], title: "Jargon-heavy copy" }),
+
+  // Pricing expansion
+  meta("pricing-no-faq", { scope: "page", packIds: ["pricing.pricing"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.75, tags: ["pricing"], title: "Missing pricing FAQ" }),
+  meta("pricing-missing-comparison", { scope: "page", packIds: ["pricing.pricing"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.8, tags: ["pricing"], title: "Missing plan comparison" }),
+
+  // Blog expansion
+  meta("blog-missing-author", { scope: "page", packIds: ["blog.content"], category: "trust", severity: "low", scoreCategory: "trust", businessImpact: "low", weight: 0.55, tags: ["blog"], title: "Missing author attribution" }),
+  meta("blog-missing-cta", { scope: "page", packIds: ["blog.content"], category: "conversion", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.72, tags: ["blog", "cta"], title: "Missing article CTA" }),
+
+  // Signup / login / contact expansion
+  meta("signup-missing-privacy-link", { scope: "page", packIds: ["signup.conversion"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.76, tags: ["signup", "legal"], title: "Signup missing privacy link" }),
+  meta("login-missing-recovery-link", { scope: "page", packIds: ["login.conversion"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.74, tags: ["login"], title: "Missing password recovery link" }),
+  meta("contact-missing-phone", { scope: "page", packIds: ["contact.technical"], category: "trust", severity: "low", scoreCategory: "trust", businessImpact: "low", weight: 0.6, tags: ["contact"], title: "Missing phone contact option" }),
+
+  // About / services / projects expansion
+  meta("about-missing-values", { scope: "page", packIds: ["about.trust"], category: "trust", severity: "low", scoreCategory: "trust", businessImpact: "low", weight: 0.62, tags: ["about"], title: "Missing company values" }),
+  meta("services-missing-process", { scope: "page", packIds: ["services.content"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.78, tags: ["services"], title: "Missing service process section" }),
+  meta("projects-missing-metrics", { scope: "page", packIds: ["projects.portfolio"], category: "conversion", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.82, tags: ["projects"], title: "Missing project metrics" }),
+
   // Site-wide
   meta("trust-missing-contact-page", { scope: "site", packIds: ["site.navigation-trust"], category: "trust", severity: "high", scoreCategory: "trust", businessImpact: "high", weight: 1.15, tags: ["site"], title: "Missing contact page" }),
   meta("trust-missing-privacy-policy", { scope: "site", packIds: ["site.navigation-trust"], category: "trust", severity: "high", scoreCategory: "trust", businessImpact: "high", weight: 1.1, tags: ["site"], title: "Missing privacy policy" }),
@@ -125,6 +172,8 @@ export const RULE_METADATA: RuleMetadata[] = [
   meta("site-weak-internal-linking", { scope: "site", packIds: ["site.navigation-trust"], category: "ux", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.75, tags: ["site"], title: "Weak internal linking" }),
   meta("site-missing-about-link", { scope: "site", packIds: ["site.navigation-trust"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.78, tags: ["site"], title: "Missing about page" }),
   meta("site-missing-services-link", { scope: "site", packIds: ["site.navigation-trust"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.78, tags: ["site"], title: "Missing services page" }),
+  meta("site-missing-pricing-link", { scope: "site", packIds: ["site.navigation-trust"], category: "conversion", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.8, tags: ["site", "pricing"], title: "Missing pricing page link" }),
+  meta("site-missing-blog-link", { scope: "site", packIds: ["site.navigation-trust"], category: "ux", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.58, tags: ["site", "blog"], title: "Missing blog or resources link" }),
 ]
 
 const metadataById = new Map(RULE_METADATA.map((entry) => [entry.id, entry]))

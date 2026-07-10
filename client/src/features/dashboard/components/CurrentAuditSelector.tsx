@@ -76,7 +76,7 @@ function CurrentAuditSelector({
                   {selected.domain}
                 </span>
                 <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted">
-                  <span>{selected.completedAt}</span>
+                  <span className="tabular-nums">{selected.completedAt}</span>
                   <span aria-hidden>·</span>
                   <span className="tabular-nums">Score {selected.conversionScore}</span>
                 </span>
@@ -120,7 +120,7 @@ function CurrentAuditSelector({
                               {audit.domain}
                             </span>
                             <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                              <span>{audit.completedAt}</span>
+                              <span className="tabular-nums">{audit.completedAt}</span>
                               <span className="tabular-nums font-medium text-foreground/80">
                                 {audit.conversionScore}
                               </span>

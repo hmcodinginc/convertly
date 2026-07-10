@@ -1,0 +1,367 @@
+.payment-status {
+  display: flex;
+  width: 100%;
+  min-height: min(52vh, 520px);
+  align-items: flex-start;
+  justify-content: center;
+  padding-block: 0.5rem 1.5rem;
+}
+
+.payment-status__card {
+  width: min(100%, 40rem);
+  padding: clamp(2rem, 4.5vw, 2.75rem);
+  border-color: color-mix(in srgb, var(--border) 88%, rgba(255, 255, 255, 0.05));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 92%, rgba(255, 255, 255, 0.03)) 0%,
+      color-mix(in srgb, var(--surface) 88%, transparent) 100%
+    );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 48px rgba(2, 6, 23, 0.34);
+}
+
+.payment-status__card--success {
+  border-color: color-mix(in srgb, #34d399 24%, var(--border));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px color-mix(in srgb, #34d399 10%, transparent),
+    0 20px 52px rgba(2, 6, 23, 0.36);
+}
+
+.payment-status__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.payment-status__icon-wrap {
+  position: relative;
+  display: flex;
+  width: 5.5rem;
+  height: 5.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.375rem;
+  border-radius: calc(var(--radius-lg) + 2px);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 28px rgba(2, 6, 23, 0.22);
+}
+
+.payment-status__icon-wrap--loading {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      color-mix(in srgb, var(--accent) 12%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 82%, transparent) 68%
+    );
+}
+
+.payment-status__icon-wrap--success {
+  border-color: color-mix(in srgb, #34d399 34%, var(--border));
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      color-mix(in srgb, #34d399 16%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 84%, transparent) 70%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px color-mix(in srgb, #34d399 12%, transparent),
+    0 12px 32px color-mix(in srgb, #34d399 10%, rgba(2, 6, 23, 0.28));
+}
+
+.payment-status__icon-wrap--warning {
+  border-color: color-mix(in srgb, #fbbf24 28%, var(--border));
+  background: color-mix(in srgb, #fbbf24 7%, var(--surface));
+}
+
+.payment-status__icon-wrap--neutral {
+  border-color: color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+}
+
+.payment-status__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.payment-status__icon--success {
+  color: #34d399;
+}
+
+.payment-status__icon--warning {
+  color: #fbbf24;
+}
+
+.payment-status__icon--muted {
+  color: color-mix(in srgb, var(--foreground) 58%, transparent);
+}
+
+.payment-status__sparkle {
+  position: absolute;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: color-mix(in srgb, #34d399 72%, white);
+  opacity: 0.85;
+  animation: payment-status-sparkle 2.4s ease-in-out infinite;
+}
+
+.payment-status__sparkle--left {
+  top: 0.65rem;
+  left: 0.55rem;
+  animation-delay: 0.15s;
+}
+
+.payment-status__sparkle--right {
+  right: 0.55rem;
+  bottom: 0.65rem;
+  animation-delay: 0.55s;
+}
+
+.payment-status__eyebrow {
+  max-width: none;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #34d399 78%, white);
+}
+
+.payment-status__title {
+  max-width: 24rem;
+  font-size: clamp(1.5rem, 3.2vw, 1.875rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.payment-status__description {
+  max-width: 28rem;
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.payment-status__reassurance {
+  max-width: 28rem;
+  margin-top: 0.625rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+}
+
+.payment-status__progress {
+  display: grid;
+  width: 100%;
+  gap: 0;
+  margin-top: 1.625rem;
+  padding: 1rem 1.125rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  text-align: left;
+}
+
+.payment-status__progress-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.875rem;
+  align-items: center;
+  padding-block: 0.625rem;
+  opacity: 0.42;
+  transition:
+    opacity var(--motion-base) var(--ease-standard),
+    transform var(--motion-base) var(--ease-standard);
+}
+
+.payment-status__progress-step + .payment-status__progress-step {
+  border-top: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
+}
+
+.payment-status__progress-step--complete,
+.payment-status__progress-step--current {
+  opacity: 1;
+}
+
+.payment-status__progress-step--current {
+  transform: translateX(1px);
+}
+
+.payment-status__progress-marker {
+  display: flex;
+  width: 1.625rem;
+  height: 1.625rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+}
+
+.payment-status__progress-step--complete .payment-status__progress-marker {
+  border-color: color-mix(in srgb, #34d399 40%, var(--border));
+  background: color-mix(in srgb, #34d399 14%, var(--surface));
+}
+
+.payment-status__progress-step--current .payment-status__progress-marker {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+  animation: payment-status-pulse 1.8s ease-in-out infinite;
+}
+
+.payment-status__progress-check {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: #34d399;
+}
+
+.payment-status__progress-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+
+.payment-status__progress-step--current .payment-status__progress-dot {
+  background: color-mix(in srgb, var(--accent) 88%, white);
+}
+
+.payment-status__progress-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.payment-status__progress-label {
+  max-width: none;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+}
+
+.payment-status__progress-step--complete .payment-status__progress-label {
+  color: color-mix(in srgb, var(--foreground) 86%, transparent);
+}
+
+.payment-status__progress-step--current .payment-status__progress-label {
+  color: var(--foreground);
+}
+
+.payment-status__progress-status {
+  max-width: none;
+  color: color-mix(in srgb, var(--accent) 78%, white);
+}
+
+.payment-status__unlock-list {
+  margin-top: 1.375rem;
+  padding: 1rem 1.125rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, #34d399 18%, var(--border));
+  background: color-mix(in srgb, #34d399 4%, var(--surface));
+}
+
+.payment-status__actions {
+  width: 100%;
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+
+.payment-status__actions--success {
+  margin-top: 2rem;
+}
+
+.payment-status__actions--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.payment-status__actions-primary,
+.payment-status__actions-secondary {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .payment-status {
+    min-height: auto;
+    padding-block: 0.25rem 1rem;
+  }
+
+  .payment-status__card {
+    padding: 1.625rem 1.375rem;
+  }
+
+  .payment-status__icon-wrap {
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: 1.125rem;
+  }
+
+  .payment-status__title {
+    font-size: 1.375rem;
+  }
+
+  .payment-status__description,
+  .payment-status__reassurance {
+    font-size: 0.875rem;
+  }
+
+  .payment-status__progress {
+    padding: 0.875rem 0.9375rem;
+  }
+
+  .payment-status__actions .app-button-row,
+  .payment-status__actions-primary,
+  .payment-status__actions-secondary {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payment-status__actions .app-button-row > *,
+  .payment-status__actions-primary > *,
+  .payment-status__actions-secondary > * {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payment-status__sparkle,
+  .payment-status__progress-step--current .payment-status__progress-marker {
+    animation: none;
+  }
+}
+
+@keyframes payment-status-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.06);
+    opacity: 0.9;
+  }
+}
+
+@keyframes payment-status-sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scale(1.12) rotate(8deg);
+    opacity: 1;
+  }
+}

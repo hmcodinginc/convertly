@@ -1,14 +1,16 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { AuthSessionProvider } from "@/components/auth/AuthSessionProvider"
 import { GuestRoute } from "@/components/auth/GuestRoute"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { SettingsLayout } from "@/components/settings/SettingsLayout"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { ROUTES } from "@/lib/routes"
 import AuditDetailPage from "@/pages/AuditDetailPage"
 import AuditsPage from "@/pages/AuditsPage"
 import BillingPage from "@/pages/BillingPage"
+import PaymentReturnPage from "@/pages/PaymentReturnPage"
 import DashboardPage from "@/pages/DashboardPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
@@ -17,7 +19,10 @@ import LoginPage from "@/pages/LoginPage"
 import NewAuditPage from "@/pages/NewAuditPage"
 import ProfilePage from "@/pages/ProfilePage"
 import SampleReportPage from "@/pages/SampleReportPage"
-import SettingsPage from "@/pages/SettingsPage"
+import SettingsDangerZonePage from "@/pages/settings/SettingsDangerZonePage"
+import SettingsNotificationsPage from "@/pages/settings/SettingsNotificationsPage"
+import SettingsPreferencesPage from "@/pages/settings/SettingsPreferencesPage"
+import SettingsSecurityPage from "@/pages/settings/SettingsSecurityPage"
 import SignupPage from "@/pages/SignupPage"
 import WorkspacePage from "@/pages/WorkspacePage"
 
@@ -48,9 +53,17 @@ function AppRouter() {
             <Route path={ROUTES.audits} element={<AuditsPage />} />
             <Route path={ROUTES.auditDetail} element={<AuditDetailPage />} />
             <Route path={ROUTES.workspace} element={<WorkspacePage />} />
+            <Route path={ROUTES.billingReturn} element={<PaymentReturnPage />} />
             <Route path={ROUTES.billing} element={<BillingPage />} />
-            <Route path={ROUTES.profile} element={<ProfilePage />} />
-            <Route path={ROUTES.settings} element={<SettingsPage />} />
+            <Route path="/profile" element={<Navigate to={ROUTES.profile} replace />} />
+            <Route path={ROUTES.settings} element={<SettingsLayout />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="preferences" element={<SettingsPreferencesPage />} />
+              <Route path="notifications" element={<SettingsNotificationsPage />} />
+              <Route path="security" element={<SettingsSecurityPage />} />
+              <Route path="danger-zone" element={<SettingsDangerZonePage />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

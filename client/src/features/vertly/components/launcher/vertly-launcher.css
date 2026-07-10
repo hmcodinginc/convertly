@@ -1,0 +1,676 @@
+/* ─── Launcher shell ─── */
+.vertly-launcher {
+  position: fixed;
+  z-index: 122;
+  display: flex;
+  width: 3.5rem;
+  height: 4.5rem;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  pointer-events: auto;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vertly-launcher--dragging {
+  cursor: grabbing;
+}
+
+.vertly-launcher--open {
+  z-index: 123;
+}
+
+/* ─── Speech bubble (above head) ─── */
+.vertly-speech {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.35rem);
+  z-index: 6;
+  width: max-content;
+  max-width: 11rem;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.vertly-speech__bubble {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  border-radius: calc(var(--radius-md) + 4px);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 97%, white) 0%,
+      color-mix(in srgb, var(--surface) 94%, transparent) 100%
+    );
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.16),
+    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent),
+    0 0 20px color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--foreground) 94%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-speech__bubble:hover {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  transform: translateY(-2px);
+}
+
+.vertly-speech__tail {
+  position: absolute;
+  left: 50%;
+  bottom: -0.32rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ─── Robot mascot ─── */
+.vertly-robot {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.vertly-robot__hover-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 0;
+  width: 2rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse,
+    rgba(0, 0, 0, 0.38) 0%,
+    rgba(0, 0, 0, 0.12) 50%,
+    transparent 72%
+  );
+  transform: translateX(-50%);
+  filter: blur(2px);
+  animation: vertly-shadow-float 5.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s ease;
+}
+
+.vertly-robot__aura {
+  position: absolute;
+  inset: -0.45rem -0.35rem -0.2rem;
+  z-index: 0;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 50% 38%,
+    color-mix(in srgb, var(--accent) 34%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 10%, transparent) 44%,
+    transparent 72%
+  );
+  opacity: 0.48;
+  transition:
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot__rig {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: vertly-robot-float 5.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transform-origin: 50% 88%;
+}
+
+.vertly-robot__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.vertly-robot__torso {
+  transform-origin: 28px 58px;
+  transform: rotate(var(--vertly-body-lean, 0deg));
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: vertly-torso-breathe 4.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot__arm {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot__arm--left {
+  transform-origin: 7.75px 49px;
+  transform: rotate(var(--vertly-arm-l, -24deg));
+}
+
+.vertly-robot__arm--right {
+  transform-origin: 48.25px 49px;
+  transform: rotate(var(--vertly-arm-r, 24deg));
+}
+
+.vertly-robot__head-group {
+  transform-origin: 28px 28px;
+  transform: rotate(var(--vertly-head-tilt, 0deg));
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: vertly-head-micro 7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-launcher--hover .vertly-robot__head-group,
+.vertly-robot--eye-look-up .vertly-robot__head-group,
+.vertly-robot--action-wave .vertly-robot__head-group {
+  animation: none;
+}
+
+/* ─── Expressive arm poses by mode ─── */
+.vertly-robot--mode-hover .vertly-robot__arm--left,
+.vertly-robot--mode-hover .vertly-robot__arm--right {
+  transition-duration: 0.28s;
+}
+
+.vertly-robot--mode-thinking .vertly-robot__arm--left {
+  transform: rotate(var(--vertly-arm-l, -38deg));
+}
+
+.vertly-robot--mode-thinking .vertly-robot__arm--right {
+  transform: rotate(var(--vertly-arm-r, 14deg));
+}
+
+.vertly-robot--mode-processing .vertly-robot__arm--left {
+  animation: vertly-arm-process-l 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot--mode-processing .vertly-robot__arm--right {
+  animation: vertly-arm-process-r 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot--mode-open .vertly-robot__arm--left,
+.vertly-robot--mode-success .vertly-robot__arm--left {
+  transform: rotate(var(--vertly-arm-l, -30deg));
+}
+
+.vertly-robot--mode-open .vertly-robot__arm--right,
+.vertly-robot--mode-success .vertly-robot__arm--right {
+  transform: rotate(var(--vertly-arm-r, -30deg));
+}
+
+.vertly-robot--mode-error .vertly-robot__arm--left {
+  transform: rotate(var(--vertly-arm-l, -10deg));
+}
+
+.vertly-robot--mode-error .vertly-robot__arm--right {
+  transform: rotate(var(--vertly-arm-r, 10deg));
+}
+
+.vertly-robot__eyes {
+  transform: translate(var(--vertly-gaze-x, 0px), var(--vertly-gaze-y, 0px));
+  transform-origin: 28px 20px;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot__eye {
+  fill: color-mix(in srgb, var(--accent) 92%, white);
+  transition: fill 0.24s ease, transform 0.24s ease;
+}
+
+.vertly-robot__eye-glow {
+  fill: url(#vertly-eye-glow);
+  opacity: 0.62;
+  animation: vertly-eye-glow-idle 3.6s ease-in-out infinite;
+}
+
+.vertly-robot__eye-shine {
+  fill: rgba(255, 255, 255, 0.92);
+}
+
+/* ─── Body modes ─── */
+.vertly-robot--mode-hover .vertly-robot__rig {
+  animation: vertly-robot-float 4.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot--mode-hover .vertly-robot__aura,
+.vertly-launcher--hover .vertly-robot__aura,
+.vertly-launcher--speaking .vertly-robot__aura {
+  opacity: 0.88;
+  transform: scale(1.06);
+}
+
+.vertly-launcher--hover .vertly-robot__hover-shadow {
+  transform: translateX(-50%) scale(1.18);
+  opacity: 0.92;
+}
+
+.vertly-robot--mode-open .vertly-robot__rig {
+  animation: vertly-robot-open-lift 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.vertly-robot--mode-success .vertly-robot__rig {
+  animation: vertly-robot-celebrate 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--mode-closing .vertly-robot__head-group {
+  animation: vertly-head-wave 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--mode-processing .vertly-robot__rig {
+  animation: vertly-robot-float-fast 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot--mode-thinking .vertly-robot__rig {
+  animation: vertly-robot-think-sway 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.vertly-robot--dragging .vertly-robot__rig,
+.vertly-robot--dragging .vertly-robot__torso,
+.vertly-robot--dragging .vertly-robot__head-group,
+.vertly-robot--dragging .vertly-robot__arm {
+  animation: none !important;
+}
+
+.vertly-launcher--opening .vertly-robot__rig {
+  animation: vertly-robot-open-lift 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ─── Eye states (high contrast) ─── */
+.vertly-robot--eye-idle .vertly-robot__eye {
+  transform: scale(1);
+}
+
+.vertly-robot--eye-curious .vertly-robot__eye {
+  transform: scale(1.08, 1.02);
+  fill: color-mix(in srgb, var(--accent) 96%, white);
+}
+
+.vertly-robot--eye-curious .vertly-robot__eye-glow {
+  opacity: 0.82;
+}
+
+.vertly-robot--eye-happy .vertly-robot__eye {
+  transform: scale(1.05, 0.62);
+  transform-origin: center;
+  transform-box: fill-box;
+  border-radius: 999px;
+  fill: color-mix(in srgb, var(--accent) 98%, white);
+}
+
+.vertly-robot--eye-happy .vertly-robot__eye-glow {
+  opacity: 0.9;
+}
+
+.vertly-robot--eye-thinking .vertly-robot__eye {
+  transform: scale(1.12, 0.48);
+  transform-box: fill-box;
+}
+
+.vertly-robot--eye-processing .vertly-robot__eye,
+.vertly-robot--eye-processing .vertly-robot__eye-glow {
+  animation: vertly-eye-process 0.85s ease-in-out infinite;
+}
+
+.vertly-robot--eye-sleepy .vertly-robot__eye {
+  transform: scale(1, 0.32);
+  transform-box: fill-box;
+}
+
+.vertly-robot--eye-look-left .vertly-robot__eyes {
+  transform: translate(calc(var(--vertly-gaze-x, 0px) - 2px), var(--vertly-gaze-y, 0px));
+}
+
+.vertly-robot--eye-look-right .vertly-robot__eyes {
+  transform: translate(calc(var(--vertly-gaze-x, 0px) + 2px), var(--vertly-gaze-y, 0px));
+}
+
+.vertly-robot--eye-look-up .vertly-robot__eyes {
+  transform: translate(var(--vertly-gaze-x, 0px), calc(var(--vertly-gaze-y, 0px) - 3px));
+}
+
+.vertly-robot--eye-look-down .vertly-robot__eyes {
+  transform: translate(var(--vertly-gaze-x, 0px), calc(var(--vertly-gaze-y, 0px) + 2px));
+}
+
+.vertly-robot--eye-look-down .vertly-robot__eye {
+  transform: scale(1, 0.72);
+  transform-box: fill-box;
+}
+
+/* ─── Random life actions ─── */
+.vertly-robot--action-look-left .vertly-robot__eyes {
+  transform: translate(-2.5px, 0);
+}
+
+.vertly-robot--action-look-right .vertly-robot__eyes {
+  transform: translate(2.5px, 0);
+}
+
+.vertly-robot--action-blink .vertly-robot__eye {
+  animation: vertly-eye-blink 0.9s ease;
+}
+
+.vertly-robot--action-happy-blink .vertly-robot__eye {
+  animation: vertly-eye-happy-blink 1s ease;
+}
+
+.vertly-robot--action-tilt-left .vertly-robot__head-group {
+  animation: vertly-head-tilt-left 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-tilt-right .vertly-robot__head-group {
+  animation: vertly-head-tilt-right 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-bounce .vertly-robot__rig {
+  animation: vertly-robot-bounce 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-rotate .vertly-robot__rig {
+  animation: vertly-robot-rotate 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-wave .vertly-robot__arm--right {
+  animation: vertly-arm-wave 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-shoulder .vertly-robot__arm--left {
+  animation: vertly-arm-shoulder 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-shoulder .vertly-robot__arm--right {
+  animation: vertly-arm-shoulder-r 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vertly-robot--action-bounce .vertly-robot__arm--left,
+.vertly-robot--action-bounce .vertly-robot__arm--right,
+.vertly-robot--action-happy-blink .vertly-robot__arm--left,
+.vertly-robot--action-happy-blink .vertly-robot__arm--right {
+  transition-duration: 0.22s;
+}
+
+/* ─── Keyframes ─── */
+@keyframes vertly-robot-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-3.5px) rotate(0.6deg);
+  }
+}
+
+@keyframes vertly-robot-float-fast {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4.5px);
+  }
+}
+
+@keyframes vertly-shadow-float {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translateX(-50%) scaleX(0.86);
+    opacity: 0.52;
+  }
+}
+
+@keyframes vertly-torso-breathe {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-body-lean, 0deg)) scale(1);
+  }
+
+  50% {
+    transform: rotate(var(--vertly-body-lean, 0deg)) scale(1.018, 1.026);
+  }
+}
+
+@keyframes vertly-head-micro {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-head-tilt, 0deg));
+  }
+
+  33% {
+    transform: rotate(calc(var(--vertly-head-tilt, 0deg) - 1.1deg));
+  }
+
+  66% {
+    transform: rotate(calc(var(--vertly-head-tilt, 0deg) + 1.1deg));
+  }
+}
+
+@keyframes vertly-arm-process-l {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-arm-l, -22deg));
+  }
+
+  50% {
+    transform: rotate(calc(var(--vertly-arm-l, -22deg) + 4deg));
+  }
+}
+
+@keyframes vertly-arm-process-r {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-arm-r, 22deg));
+  }
+
+  50% {
+    transform: rotate(calc(var(--vertly-arm-r, 22deg) - 4deg));
+  }
+}
+
+@keyframes vertly-arm-wave {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-arm-r, 24deg));
+  }
+
+  30% {
+    transform: rotate(calc(var(--vertly-arm-r, 24deg) - 16deg));
+  }
+
+  60% {
+    transform: rotate(calc(var(--vertly-arm-r, 24deg) - 8deg));
+  }
+}
+
+@keyframes vertly-arm-shoulder {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-arm-l, -24deg));
+  }
+
+  45% {
+    transform: rotate(calc(var(--vertly-arm-l, -24deg) - 6deg));
+  }
+}
+
+@keyframes vertly-arm-shoulder-r {
+  0%,
+  100% {
+    transform: rotate(var(--vertly-arm-r, 24deg));
+  }
+
+  45% {
+    transform: rotate(calc(var(--vertly-arm-r, 24deg) + 5deg));
+  }
+}
+
+@keyframes vertly-head-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-6deg);
+  }
+
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes vertly-head-tilt-left {
+  50% {
+    transform: rotate(calc(var(--vertly-head-tilt, 0deg) - 5deg));
+  }
+}
+
+@keyframes vertly-head-tilt-right {
+  50% {
+    transform: rotate(calc(var(--vertly-head-tilt, 0deg) + 5deg));
+  }
+}
+
+@keyframes vertly-robot-open-lift {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  40% {
+    transform: translateY(3px) scale(0.94, 1.03);
+  }
+
+  70% {
+    transform: translateY(-5px) scale(1.04);
+  }
+
+  100% {
+    transform: translateY(-2px) scale(1);
+  }
+}
+
+@keyframes vertly-robot-celebrate {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  35% {
+    transform: translateY(-6px) scale(1.05);
+  }
+
+  65% {
+    transform: translateY(-2px) scale(0.98);
+  }
+}
+
+@keyframes vertly-robot-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  45% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes vertly-robot-rotate {
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+@keyframes vertly-robot-think-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(-1.8deg);
+  }
+}
+
+@keyframes vertly-eye-glow-idle {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes vertly-eye-process {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes vertly-eye-blink {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  45% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes vertly-eye-happy-blink {
+  0%,
+  100% {
+    transform: scale(1.05, 0.62);
+  }
+
+  45% {
+    transform: scale(1.05, 0.1);
+  }
+}
+
+@media (max-width: 640px) {
+  .vertly-speech {
+    max-width: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vertly-robot__rig,
+  .vertly-robot__torso,
+  .vertly-robot__head-group,
+  .vertly-robot__arm,
+  .vertly-robot__eye-glow,
+  .vertly-robot__hover-shadow,
+  .vertly-robot--eye-processing .vertly-robot__eye,
+  .vertly-launcher--hover .vertly-robot__aura {
+    animation: none !important;
+  }
+}

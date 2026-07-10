@@ -10,7 +10,7 @@ type DataTableProps = {
 
 function DataTable({ children, className, minWidth = "36rem" }: DataTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <div className="app-table-scroll overflow-x-auto">
       <table
         className={cn("app-table w-full border-collapse text-left", className)}
         style={{ minWidth }}

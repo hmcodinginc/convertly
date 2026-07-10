@@ -83,7 +83,7 @@ function RecentAuditsSection({ audits, onDeleteRequest }: RecentAuditsSectionPro
                   <DataTableCell className="font-medium text-foreground">
                     {audit.domain}
                   </DataTableCell>
-                  <DataTableCell className="text-foreground/75">
+                  <DataTableCell className="whitespace-nowrap text-foreground/75 tabular-nums">
                     {audit.completedAt}
                   </DataTableCell>
                   <DataTableCell className="font-medium tabular-nums text-foreground">

@@ -39,6 +39,7 @@ export type RecommendationPriority = "Critical" | "High" | "Medium"
 
 export type Recommendation = {
   id: string
+  ruleId?: string
   title: string
   summary: string
   priority: RecommendationPriority
@@ -47,6 +48,48 @@ export type Recommendation = {
   affectedPages?: string[]
   affectedCount?: number
   evidenceCount?: number
+}
+
+export type PlaybookChecklistItem = {
+  id: string
+  label: string
+  done: boolean
+}
+
+export type PlaybookCodeBlock = {
+  language: string
+  code: string
+  caption?: string
+}
+
+export type RecommendationPlaybook = {
+  recommendationId: string
+  ruleId: string
+  title: string
+  priority: RecommendationPriority
+  problem: string
+  whyItMatters: string
+  /** Root cause — why this pattern typically appears */
+  whyHappened?: string
+  /** How visitors experience the issue */
+  userImpact?: string
+  businessImpact: string
+  technicalExplanation: string
+  /** Why this priority was assigned */
+  priorityReason?: string
+  implementation: string
+  exampleCode?: PlaybookCodeBlock
+  difficulty: "low" | "medium" | "high"
+  difficultyLabel: string
+  estimatedTime: string
+  expectedImprovement: string
+  estimatedLift: string
+  implementationSteps: string[]
+  checklist: PlaybookChecklistItem[]
+  /** Related rule IDs to tackle in the same sprint */
+  relatedRecommendations?: string[]
+  /** @deprecated Use `implementation` — kept for backward compatibility */
+  recommendation?: string
 }
 
 export type PageFindingStatus = "Healthy" | "At risk" | "Critical"
@@ -147,15 +190,6 @@ export type AuditRunMetadata = {
   manualVerificationRecommended?: boolean
 }
 
-export type RecommendationPlaybook = {
-  recommendationId: string
-  problem: string
-  whyItMatters: string
-  recommendation: string
-  estimatedLift: string
-  implementationSteps: string[]
-}
-
 export type AuditDetail = {
   id: string
   name: string
@@ -164,6 +198,7 @@ export type AuditDetail = {
   createdAt?: string
   completedAtDate?: string
   completedAt: string
+  duration?: string
   pagesAnalyzed: number
   overallScore: number
   previousScore: number

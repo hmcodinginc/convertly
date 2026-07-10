@@ -9,6 +9,10 @@ import { SCORING_ENGINE_VERSION } from "@/services/audit/intelligence/scoring/sc
 import { detectWebsiteIntent } from "@/services/audit/intelligence/websiteIntentDetection"
 import { isRuleApplicableToWebsiteIntent } from "@/services/audit/intelligence/websiteRuleApplicability"
 import { parseDomainFromUrl } from "@/lib/auditUrlValidation"
+import {
+  formatAuditDateTime,
+  formatAuditDuration,
+} from "@/lib/formatAuditDateTime"
 import type {
   AuditDetail,
   AuditRunMetadata,
@@ -97,21 +101,6 @@ const REPORT_SCORE_CATEGORIES: AuditScoreCategory[] = [
   "mobile",
   "ux",
 ]
-
-function formatDisplayDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
-function formatDisplayTime(isoDate: string): string {
-  return new Date(isoDate).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
 
 function buildAuditName(domain: string): string {
   return `${domain} · Conversion audit`
@@ -390,6 +379,7 @@ function consultantToUiRecommendation(
 ): Recommendation {
   return {
     id: rec.id,
+    ruleId: rec.ruleId,
     title: rec.title,
     summary: `${rec.whyThisMatters} ${rec.recommendation}`,
     priority: priorityFromSeverity(rec.severity, index),
@@ -450,6 +440,7 @@ function buildLegacyRecommendationsFromPersistedFindings(
     affectedPages: string[]
     findingIds: string[]
     evidenceCount: number
+    ruleId?: string
   }
 
   const groups = new Map<string, RecommendationGroup>()
@@ -474,6 +465,9 @@ function buildLegacyRecommendationsFromPersistedFindings(
       if (pagePath && !existing.affectedPages.includes(pagePath)) {
         existing.affectedPages.push(pagePath)
       }
+      if (!existing.ruleId && ruleId) {
+        existing.ruleId = ruleId
+      }
       if (severityRank(finding.severity) < severityRank(existing.severity)) {
         existing.severity = finding.severity
       }
@@ -488,6 +482,7 @@ function buildLegacyRecommendationsFromPersistedFindings(
       affectedPages: pagePath ? [pagePath] : [],
       findingIds: [finding.id],
       evidenceCount: 1,
+      ruleId,
     })
   }
 
@@ -500,6 +495,7 @@ function buildLegacyRecommendationsFromPersistedFindings(
     .slice(0, 8)
     .map((group, index) => ({
       id: `rec-${group.findingIds[0]}`,
+      ruleId: group.ruleId,
       title: group.title,
       summary: group.summary,
       priority: priorityFromSeverity(group.severity, index),
@@ -525,7 +521,7 @@ function mapHistoryToTimeline(data: AuditSessionData): TimelineEvent[] {
   return publicHistory.map((event, index, events) => ({
     id: event.id,
     label: event.message,
-    timestamp: `${formatDisplayDate(event.createdAt)} · ${formatDisplayTime(event.createdAt)}`,
+    timestamp: formatAuditDateTime(event.createdAt),
     status:
       index === events.length - 1 && isAuditInProgress(event.status)
         ? "in_progress"
@@ -582,10 +578,14 @@ function buildScoreBreakdown(data: AuditSessionData): ScoreBreakdownItem[] {
 export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail {
   const { session } = data
   const domain = parseDomainFromUrl(session.websiteUrl)
-  const createdAt = formatDisplayDate(session.createdAt)
+  const createdAt = formatAuditDateTime(session.createdAt)
   const completedAtDate =
     session.status === "completed" || session.status === "failed"
-      ? formatDisplayDate(session.updatedAt)
+      ? formatAuditDateTime(session.updatedAt)
+      : undefined
+  const duration =
+    session.status === "completed" || session.status === "failed"
+      ? formatAuditDuration(session.createdAt, session.updatedAt) ?? undefined
       : undefined
   const growthScore = resolveGrowthScore(data)
   const inProgress = isAuditInProgress(session.status)
@@ -600,6 +600,7 @@ export function buildAuditDetailFromSession(data: AuditSessionData): AuditDetail
     createdAt,
     completedAtDate,
     completedAt: completedAtDate ?? createdAt,
+    duration,
     pagesAnalyzed: data.pages.length,
     overallScore: inProgress ? 0 : growthScore,
     previousScore: 0,
@@ -659,7 +660,7 @@ export function buildAuditListEntryFromSummary(
     name: buildAuditName(domain),
     domain,
     websiteUrl: session.websiteUrl,
-    completedAt: formatDisplayDate(session.updatedAt),
+    completedAt: formatAuditDateTime(session.updatedAt),
     pagesScanned: pageCount,
     conversionScore: resolveGrowthScoreFromScores(scores),
     status: session.status,

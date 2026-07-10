@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
-import { AuditRunningExperience } from "@/components/audit/AuditRunningExperience"
+import { AuditExecutionView } from "@/components/audit/execution/AuditExecutionView"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { Button } from "@/components/ui/button"
 import { AppPageHeader } from "@/components/layout/AppPageHeader"
@@ -11,9 +11,14 @@ import { SectionHeader } from "@/components/layout/SectionHeader"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import type { NewAuditLocationState } from "@/lib/auditNavigation"
-import { auditDetailPath } from "@/lib/routes"
+import { auditDetailPath, ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
-import type { AuditSessionStatus } from "@/types/auditEngine"
+import { AuditLimitError } from "@/types/billing"
+import { getAuditEntitlement } from "@/services/entitlementService"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { useAuthSession } from "@/hooks/useAuthSession"
+import { useAsyncData } from "@/hooks/useAsyncData"
+import type { AuditDetail } from "@/types/audit"
 import { cn } from "@/lib/utils"
 
 const auditTypes = [
@@ -43,13 +48,22 @@ const auditTypes = [
 function NewAuditPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { session } = useAuthSession()
   const autoStartConsumed = useRef(false)
   const [url, setUrl] = useState("")
   const [selectedType, setSelectedType] = useState<string>(auditTypes[0].id)
   const [urlError, setUrlError] = useState<string | null>(null)
   const [urlWarning, setUrlWarning] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
-  const [sessionStatus, setSessionStatus] = useState<AuditSessionStatus>("pending")
+  const [runningAuditId, setRunningAuditId] = useState<string | null>(null)
+
+  const { data: entitlement } = useAsyncData(
+    () => getAuditEntitlement(session!.userId),
+    [session?.userId],
+    { enabled: Boolean(session?.userId) && isBusinessFoundationEnabled() }
+  )
+
+  const auditBlocked = entitlement != null && !entitlement.allowed
 
   const executeAudit = useCallback(
     async (urlToRun: string) => {
@@ -64,25 +78,16 @@ function NewAuditPage() {
       setUrlError(null)
       setUrlWarning(validation.warnings[0] ?? null)
       setIsRunning(true)
-      setSessionStatus("pending")
+      setRunningAuditId(null)
 
       try {
-        const { audit, finalStatus, errorMessage } = await auditService.runAuditWorkflow(
-          validation.sanitizedUrl,
-          { onStatus: setSessionStatus }
-        )
-
-        if (finalStatus === "failed") {
-          setUrlError(
-            errorMessage ??
-              "Audit could not be completed. Check the URL and try again."
-          )
-          setIsRunning(false)
+        const audit = await auditService.createAudit({ url: validation.sanitizedUrl })
+        setRunningAuditId(audit.id)
+      } catch (error) {
+        if (error instanceof AuditLimitError) {
+          navigate(ROUTES.billing)
           return
         }
-
-        navigate(auditDetailPath(audit.id))
-      } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unable to start audit. Please try again."
         setUrlError(
@@ -97,6 +102,10 @@ function NewAuditPage() {
   )
 
   const handleStartAudit = () => {
+    if (auditBlocked) {
+      navigate(ROUTES.billing)
+      return
+    }
     void executeAudit(url)
   }
 
@@ -122,18 +131,38 @@ function NewAuditPage() {
     setUrlWarning(validation.warnings[0] ?? null)
   }
 
+  if (isRunning && runningAuditId) {
+    return (
+      <AppPageShell header={null} sectionsClassName="gap-0">
+        <AuditExecutionView
+          auditId={runningAuditId}
+          onComplete={(detail: AuditDetail) => {
+            navigate(auditDetailPath(detail.id))
+          }}
+          onFailed={(errorMessage) => {
+            setUrlError(
+              errorMessage ??
+                "Audit could not be completed. Check the URL and try again."
+            )
+            setIsRunning(false)
+            setRunningAuditId(null)
+          }}
+          onBackToNewAudit={() => {
+            setIsRunning(false)
+            setRunningAuditId(null)
+          }}
+          onRetry={() => {
+            void executeAudit(url)
+          }}
+        />
+      </AppPageShell>
+    )
+  }
+
   if (isRunning) {
     return (
-      <AppPageShell
-        header={
-          <AppPageHeader
-            eyebrow="Audits"
-            title="Running audit"
-            description="Convertly is discovering pages and preparing your conversion report."
-          />
-        }
-      >
-        <AuditRunningExperience status={sessionStatus} />
+      <AppPageShell header={null} sectionsClassName="gap-0">
+        <div className="min-h-[24rem]" aria-busy aria-label="Starting audit" />
       </AppPageShell>
     )
   }
@@ -148,6 +177,16 @@ function NewAuditPage() {
         />
       }
     >
+      {auditBlocked ? (
+        <AuthFormMessage>
+          You&apos;ve used all {entitlement?.auditsIncluded ?? 2} audits on your{" "}
+          {entitlement?.planId ?? "free"} plan.{" "}
+          <Link to={ROUTES.billing} className="font-medium text-foreground underline-offset-4 hover:underline">
+            Upgrade to continue
+          </Link>
+        </AuthFormMessage>
+      ) : null}
+
       <Card className="app-card-body audit-target-card hover:translate-y-0">
         <SectionHeader
           variant="app"
@@ -246,10 +285,10 @@ function NewAuditPage() {
             type="button"
             size="sm"
             className="w-full sm:w-auto"
-            disabled={isRunning}
+            disabled={isRunning || auditBlocked}
             onClick={handleStartAudit}
           >
-            Start audit
+            {auditBlocked ? "Upgrade to run audits" : "Start audit"}
           </Button>
           <Button
             variant="outline"

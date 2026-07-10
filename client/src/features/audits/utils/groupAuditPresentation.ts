@@ -34,6 +34,7 @@ export type GroupedRecommendation = {
   affectedCount: number
   evidenceCount: number
   recommendationIds: string[]
+  ruleId?: string
 }
 
 function resolvePageLabel(path: string, pages: PageFinding[]): string {
@@ -114,6 +115,9 @@ export function groupRecommendations(
     if (existing) {
       existing.recommendationIds.push(rec.id)
       existing.evidenceCount += rec.evidenceCount ?? 1
+      if (!existing.ruleId && rec.ruleId) {
+        existing.ruleId = rec.ruleId
+      }
       for (const path of recPages) {
         if (!existing.affectedPages.includes(path)) {
           existing.affectedPages.push(path)
@@ -136,6 +140,7 @@ export function groupRecommendations(
       affectedCount: rec.affectedCount ?? (recPages.length || 1),
       evidenceCount: rec.evidenceCount ?? 1,
       recommendationIds: [rec.id],
+      ruleId: rec.ruleId,
     })
   }
 

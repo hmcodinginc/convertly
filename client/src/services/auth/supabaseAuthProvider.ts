@@ -14,6 +14,7 @@ import {
   finalizePasswordRecovery,
   isPasswordRecoveryActive,
   isPasswordRecoveryCompleted,
+  resolvePasswordRecoveryChannel,
 } from "@/lib/passwordRecoveryPersistence"
 import { getAuthSnapshot, getCachedAuthSession } from "@/lib/authSessionCache"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
@@ -283,10 +284,11 @@ export async function signOutWithSupabase(): Promise<void> {
 }
 
 export async function resetPasswordWithSupabase(
-  input: ForgotPasswordInput
+  input: ForgotPasswordInput,
+  options?: { redirectTo?: string }
 ): Promise<void> {
   const supabase = getSupabaseClient()
-  const redirectTo = getPasswordResetRedirectUrl()
+  const redirectTo = options?.redirectTo ?? getPasswordResetRedirectUrl()
 
   const { error } = await supabase.auth.resetPasswordForEmail(
     input.email.trim().toLowerCase(),
@@ -366,7 +368,7 @@ export function subscribeToPasswordRecovery(onRecovery: () => void): () => void 
     data: { subscription },
   } = supabase.auth.onAuthStateChange((event) => {
     if (event === "PASSWORD_RECOVERY") {
-      activatePasswordRecovery()
+      activatePasswordRecovery(resolvePasswordRecoveryChannel())
       onRecovery()
     }
   })

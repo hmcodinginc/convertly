@@ -1,3 +1,4 @@
+import { Eye, EyeOff } from "lucide-react"
 import * as React from "react"
 
 import { Input } from "@/components/ui/input"
@@ -17,8 +18,10 @@ function TextField({
   error,
   hint,
   id,
+  type,
   containerClassName,
   className,
+  disabled,
   ...props
 }: TextFieldProps) {
   const generatedId = React.useId()
@@ -26,19 +29,48 @@ function TextField({
   const hintId = hint ? `${fieldId}-hint` : undefined
   const errorId = error ? `${fieldId}-error` : undefined
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined
+  const isPasswordField = type === "password"
+  const [showPassword, setShowPassword] = React.useState(false)
+  const resolvedType = isPasswordField && showPassword ? "text" : type
+
+  React.useEffect(() => {
+    if (!isPasswordField) {
+      setShowPassword(false)
+    }
+  }, [isPasswordField])
 
   return (
     <div className={cn("auth-field", containerClassName)}>
       <Label htmlFor={fieldId} className="auth-field-label">
         {label}
       </Label>
-      <Input
-        id={fieldId}
-        aria-invalid={Boolean(error)}
-        aria-describedby={describedBy}
-        className={className}
-        {...props}
-      />
+      <div className={cn(isPasswordField && "auth-field-input-wrap")}>
+        <Input
+          id={fieldId}
+          type={resolvedType}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
+          disabled={disabled}
+          className={cn(isPasswordField && "auth-field-input--password", className)}
+          {...props}
+        />
+        {isPasswordField ? (
+          <button
+            type="button"
+            className="auth-field-password-toggle"
+            onClick={() => setShowPassword((current) => !current)}
+            disabled={disabled}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? (
+              <EyeOff className="size-4" aria-hidden />
+            ) : (
+              <Eye className="size-4" aria-hidden />
+            )}
+          </button>
+        ) : null}
+      </div>
       {hint ? (
         <Text id={hintId} variant="muted" size="sm" className="auth-field-hint max-w-none">
           {hint}

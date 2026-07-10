@@ -1,120 +1,34 @@
 import { Sparkles } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
-import { StatusBadge } from "@/components/dashboard/StatusBadge"
-import { Drawer } from "@/components/feedback/Drawer"
+import {
+  RecommendationCard,
+  RecommendationCardGrid,
+} from "@/components/dashboard/RecommendationCard"
 import { EmptyState } from "@/components/feedback/EmptyState"
-import { Card } from "@/components/surfaces/Card"
-import { Text } from "@/components/ui/typography/Text"
+import { RecommendationPlaybookDrawer } from "@/features/audits/components/RecommendationPlaybookDrawer"
+import { useRecommendationPlaybook } from "@/features/audits/hooks/useRecommendationPlaybook"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
 import { groupRecommendations } from "@/features/audits/utils/groupAuditPresentation"
-import * as auditService from "@/services/auditService"
-import type { PageFinding, Recommendation, RecommendationPlaybook } from "@/types/audit"
-
-const priorityVariant = {
-  Critical: "danger",
-  High: "warning",
-  Medium: "neutral",
-} as const
+import type { PageFinding, Recommendation } from "@/types/audit"
 
 type AuditRecommendationsSectionProps = {
   recommendations: Recommendation[]
   pages: PageFinding[]
-}
-
-function PlaybookDrawerContent({ playbook }: { playbook: RecommendationPlaybook }) {
-  return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <Text
-          variant="muted"
-          size="sm"
-          className="max-w-none text-xs font-medium tracking-[0.14em] uppercase"
-        >
-          Problem
-        </Text>
-        <Text size="sm" className="max-w-none leading-7">
-          {playbook.problem}
-        </Text>
-      </div>
-      <div className="space-y-2">
-        <Text
-          variant="muted"
-          size="sm"
-          className="max-w-none text-xs font-medium tracking-[0.14em] uppercase"
-        >
-          Why it matters
-        </Text>
-        <Text size="sm" className="max-w-none leading-7">
-          {playbook.whyItMatters}
-        </Text>
-      </div>
-      <div className="space-y-2">
-        <Text
-          variant="muted"
-          size="sm"
-          className="max-w-none text-xs font-medium tracking-[0.14em] uppercase"
-        >
-          Recommendation
-        </Text>
-        <Text size="sm" className="max-w-none leading-7">
-          {playbook.recommendation}
-        </Text>
-      </div>
-      <div className="rounded-[var(--radius-md)] border border-[color-mix(in_srgb,var(--border)_65%,transparent)] bg-[color-mix(in_srgb,var(--surface)_50%,transparent)] px-4 py-3">
-        <Text variant="muted" size="sm" className="max-w-none text-xs font-medium uppercase">
-          Estimated lift
-        </Text>
-        <Text size="sm" className="mt-1 max-w-none font-medium text-[#86efac]">
-          {playbook.estimatedLift}
-        </Text>
-      </div>
-      <div className="space-y-3">
-        <Text
-          variant="muted"
-          size="sm"
-          className="max-w-none text-xs font-medium tracking-[0.14em] uppercase"
-        >
-          Implementation steps
-        </Text>
-        <ol className="space-y-3">
-          {playbook.implementationSteps.map((step, index) => (
-            <li key={step} className="flex gap-3 text-sm leading-6 text-foreground/90">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--border)_75%,transparent)] text-xs font-medium text-muted">
-                {index + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </div>
-  )
+  domain?: string
 }
 
 function AuditRecommendationsSection({
   recommendations,
   pages,
+  domain,
 }: AuditRecommendationsSectionProps) {
   const grouped = useMemo(
     () => groupRecommendations(recommendations, pages),
     [recommendations, pages]
   )
-  const [activePlaybook, setActivePlaybook] = useState<{
-    rec: Recommendation
-    playbook: RecommendationPlaybook
-  } | null>(null)
-  const [loadingPlaybookId, setLoadingPlaybookId] = useState<string | null>(null)
-
-  const openPlaybook = async (recId: string, rec: Recommendation) => {
-    setLoadingPlaybookId(recId)
-    try {
-      const playbook = await auditService.getRecommendationPlaybook(recId)
-      setActivePlaybook({ rec, playbook })
-    } finally {
-      setLoadingPlaybookId(null)
-    }
-  }
+  const { activePlaybook, loadingPlaybookId, openPlaybook, closePlaybook } =
+    useRecommendationPlaybook()
 
   return (
     <>
@@ -130,7 +44,7 @@ function AuditRecommendationsSection({
             description="Recommendations will appear when analysis completes."
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <RecommendationCardGrid>
             {grouped.map((rec) => {
               const playbookId = rec.recommendationIds[0]!
               const pageCount = rec.affectedCount
@@ -140,87 +54,63 @@ function AuditRecommendationsSection({
                   ? `${evidenceCount} findings across ${pageCount || evidenceCount} page${(pageCount || evidenceCount) === 1 ? "" : "s"}. ${rec.summary}`
                   : rec.summary
 
-              return (
-                <Card key={rec.key} className="audit-recommendation-card app-card-metric flex h-full flex-col hover:translate-y-0">
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-foreground/70 uppercase">
-                        <Sparkles
-                          className="size-3.5 text-[color-mix(in_srgb,var(--accent)_80%,white)]"
-                          aria-hidden
-                        />
-                        {rec.category}
-                      </span>
-                      <StatusBadge
-                        label={rec.priority}
-                        variant={priorityVariant[rec.priority]}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-base font-semibold tracking-tight text-foreground">
-                        {rec.title}
-                      </h3>
-                      <Text variant="muted" size="sm" className="max-w-none leading-relaxed break-words">
-                        {summary}
-                      </Text>
-                    </div>
-                    {rec.pageLabels.length > 0 ? (
-                      <div className="audit-recommendation-card__pages">
-                        <p className="audit-finding-item__field-label">Affected pages</p>
-                        <ul className="audit-finding-item__page-list">
-                          {rec.pageLabels.map((label, index) => (
-                            <li key={`${label}-${rec.affectedPages[index] ?? index}`}>
-                              <span className="audit-finding-item__page-label">{label}</span>
-                              {rec.affectedPages[index] ? (
-                                <code className="audit-finding-item__path">
-                                  {rec.affectedPages[index]}
-                                </code>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)] pt-4">
-                      <Text size="sm" className="max-w-none font-medium text-[#86efac]">
-                        {rec.estimatedLift}
-                      </Text>
-                      <button
-                        type="button"
-                        disabled={loadingPlaybookId === playbookId}
-                        onClick={() =>
-                          void openPlaybook(playbookId, {
-                            id: playbookId,
-                            title: rec.title,
-                            summary: rec.summary,
-                            priority: rec.priority,
-                            estimatedLift: rec.estimatedLift,
-                            category: rec.category,
-                          })
-                        }
-                        className="audit-recommendation-link rounded-sm text-sm font-medium text-foreground/70 transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--accent)_45%,transparent)] disabled:opacity-50"
-                      >
-                        {loadingPlaybookId === playbookId ? "Loading…" : "View playbook →"}
-                      </button>
-                    </div>
+              const recommendation: Recommendation = {
+                id: playbookId,
+                ruleId: rec.ruleId,
+                title: rec.title,
+                summary: rec.summary,
+                priority: rec.priority,
+                estimatedLift: rec.estimatedLift,
+                category: rec.category,
+                affectedPages: rec.affectedPages,
+                affectedCount: rec.affectedCount,
+                evidenceCount: rec.evidenceCount,
+              }
+
+              const scrollContent =
+                rec.pageLabels.length > 0 ? (
+                  <div className="rec-card__pages">
+                    <p className="rec-card__pages-label">Affected pages</p>
+                    <ul className="rec-card__page-list">
+                      {rec.pageLabels.map((label, index) => (
+                        <li key={`${label}-${rec.affectedPages[index] ?? index}`}>
+                          <span className="rec-card__page-label">{label}</span>
+                          {rec.affectedPages[index] ? (
+                            <code className="rec-card__page-path">
+                              {rec.affectedPages[index]}
+                            </code>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </Card>
+                ) : null
+
+              return (
+                <RecommendationCard
+                  key={rec.key}
+                  category={rec.category}
+                  priority={rec.priority}
+                  title={rec.title}
+                  description={summary}
+                  estimatedLift={rec.estimatedLift}
+                  loadingPlaybook={loadingPlaybookId === playbookId}
+                  onViewPlaybook={() => void openPlaybook(recommendation)}
+                  scrollContent={scrollContent}
+                />
               )
             })}
-          </div>
+          </RecommendationCardGrid>
         )}
       </AuditReportSection>
 
-      <Drawer
+      <RecommendationPlaybookDrawer
         open={Boolean(activePlaybook)}
-        onClose={() => setActivePlaybook(null)}
-        title={activePlaybook?.rec.title ?? "Playbook"}
-        description={activePlaybook?.rec.category}
-      >
-        {activePlaybook ? (
-          <PlaybookDrawerContent playbook={activePlaybook.playbook} />
-        ) : null}
-      </Drawer>
+        onClose={closePlaybook}
+        recommendation={activePlaybook?.recommendation ?? null}
+        playbook={activePlaybook?.playbook ?? null}
+        domain={domain}
+      />
     </>
   )
 }

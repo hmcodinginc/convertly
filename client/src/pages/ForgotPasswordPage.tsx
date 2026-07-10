@@ -48,15 +48,15 @@ function ForgotPasswordPage() {
           Reset your password
         </Heading>
         <Text variant="muted" size="sm" className="max-w-none leading-6">
-          Enter your email and we&apos;ll send reset instructions when password recovery is
-          enabled.
+          Enter your email and we&apos;ll send you a secure link to reset your password.
         </Text>
       </div>
 
       {isSubmitted ? (
         <div className="auth-form-success-panel">
           <AuthFormMessage variant="success">
-            If an account exists for {email}, reset instructions will be sent shortly.
+            If an account exists for {email}, check your inbox for a secure link to reset your
+            password.
           </AuthFormMessage>
           <Button asChild className="auth-form-submit h-10 w-full">
             <Link to={ROUTES.login}>Back to sign in</Link>

@@ -25,6 +25,7 @@ export type ConversionIssue = import("@/types/audit").Issue
 const baseRecommendations: Recommendation[] = [
   {
     id: "rec-1",
+    ruleId: "signup-missing-form",
     title: "Reduce signup friction on mobile",
     summary:
       "Collapse optional fields and move SSO above email to recover an estimated 11% of abandoned sessions.",
@@ -34,6 +35,7 @@ const baseRecommendations: Recommendation[] = [
   },
   {
     id: "rec-2",
+    ruleId: "pricing-unclear-plans",
     title: "Add pricing anchor on annual plan",
     summary:
       "Display monthly equivalent and savings badge on the annual tier to improve plan comparison clarity.",
@@ -43,6 +45,7 @@ const baseRecommendations: Recommendation[] = [
   },
   {
     id: "rec-3",
+    ruleId: "pricing-missing-trust",
     title: "Reposition trust signals on checkout",
     summary:
       "Move security badges and refund policy adjacent to payment CTA to reduce hesitation at decision point.",

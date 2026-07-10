@@ -1,9 +1,13 @@
+import { clearAllPaymentClientState } from "@/lib/checkoutPersistence"
+import { getInAppPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import { shouldUseLocalAuth } from "@/lib/env"
 import {
   bootstrapPasswordRecoveryFromUrl,
   clearPasswordRecovery,
   finalizePasswordRecovery,
+  isInAppPasswordRecoveryActive,
   isPasswordRecoveryActive,
+  isStandalonePasswordRecoveryActive,
   resetPasswordRecoveryState,
 } from "@/lib/passwordRecoveryPersistence"
 
@@ -341,17 +345,21 @@ export async function signup(input: SignupInput): Promise<AuthResult> {
 
 
 export async function requestPasswordReset(input: ForgotPasswordInput): Promise<void> {
-
   if (shouldUseLocalAuth()) {
-
     return resetPasswordLocal(input)
-
   }
 
-
-
   return supabaseAuth.resetPasswordWithSupabase(input)
+}
 
+export async function requestInAppPasswordReset(input: ForgotPasswordInput): Promise<void> {
+  if (shouldUseLocalAuth()) {
+    return resetPasswordLocal(input)
+  }
+
+  return supabaseAuth.resetPasswordWithSupabase(input, {
+    redirectTo: getInAppPasswordResetRedirectUrl(),
+  })
 }
 
 
@@ -392,7 +400,9 @@ export {
   bootstrapPasswordRecoveryFromUrl,
   clearPasswordRecovery,
   finalizePasswordRecovery,
+  isInAppPasswordRecoveryActive,
   isPasswordRecoveryActive,
+  isStandalonePasswordRecoveryActive,
   resetPasswordRecoveryState,
 }
 
@@ -418,6 +428,8 @@ export async function completePasswordRecovery(
 
 
 export async function logout(): Promise<void> {
+
+  clearAllPaymentClientState()
 
   if (shouldUseLocalAuth()) {
 

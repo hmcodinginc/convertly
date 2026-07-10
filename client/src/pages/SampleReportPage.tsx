@@ -132,6 +132,7 @@ function SampleReportContent({ audit }: { audit: AuditDetail }) {
           <AuditRecommendationsSection
             recommendations={audit.recommendations}
             pages={audit.pageFindings}
+            domain={audit.domain}
           />
           <AuditMetadataSection audit={audit} />
         </div>

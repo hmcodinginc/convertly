@@ -205,6 +205,87 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
   "login-missing-form": (c) =>
     `Ensure ${pagePath(c)} includes a login form with clear fields and a recovery path for forgotten credentials.`,
 
+  "hero-missing-subheadline": (c) =>
+    `Add a supporting subheadline beneath the H1 on ${pagePath(c)} that explains the outcome or audience in one sentence.`,
+
+  "nav-missing-logo-link": (c) =>
+    `Link the header logo on ${pagePath(c)} to the homepage so visitors can re-orient from any page.`,
+
+  "footer-missing-navigation": (c) =>
+    `Add core footer links on ${pagePath(c)} (services, about, contact, legal) to support wayfinding and SEO.`,
+
+  "layout-missing-main-landmark": (c) =>
+    `Wrap primary page content on ${pagePath(c)} in a <main> landmark for accessibility and screen reader navigation.`,
+
+  "a11y-missing-alt-text": (c) =>
+    `Add descriptive alt text to content images on ${pagePath(c)}; use alt="" only for decorative images.`,
+
+  "a11y-empty-button-labels": (c) =>
+    `Ensure every button on ${pagePath(c)} has visible text or an aria-label so actions are understandable.`,
+
+  "form-missing-labels": (c) =>
+    `Associate visible labels with every form field on ${pagePath(c)} using <label for> or aria-label.`,
+
+  "form-excessive-fields": (c) =>
+    `Reduce visible fields on ${pagePath(c)} to the minimum needed for the first conversion step.`,
+
+  "form-no-privacy-consent": (c) =>
+    `Add a privacy policy link or consent note near the lead form on ${pagePath(c)} before email capture.`,
+
+  "trust-missing-guarantee": (c) =>
+    `State a guarantee, refund policy, or risk reversal on ${pagePath(c)} near the primary purchase or signup action.`,
+
+  "trust-missing-security-signals": (c) =>
+    `Add security reassurance on ${pagePath(c)} (SSL, encryption, compliance) near forms or payment CTAs.`,
+
+  "seo-missing-canonical": (c) =>
+    `Set a canonical URL on ${pagePath(c)} to consolidate duplicate URLs and clarify the preferred page for search engines.`,
+
+  "seo-missing-og-tags": (c) =>
+    `Add Open Graph title and description tags on ${pagePath(c)} for better link previews on social and messaging apps.`,
+
+  "seo-missing-lang": (c) =>
+    `Set lang on the html element for ${pagePath(c)} so browsers and assistive tech use the correct language.`,
+
+  "tech-missing-lazy-images": (c) =>
+    `Add loading="lazy" to below-the-fold images on ${pagePath(c)} to improve initial page load on mobile.`,
+
+  "tech-missing-favicon": (c) =>
+    `Add a favicon on ${pagePath(c)} via link rel="icon" in the document head for brand recognition in tabs and bookmarks.`,
+
+  "copy-jargon-heavy": (c) =>
+    `Replace buzzwords on ${pagePath(c)} with plain language that states who you help and the outcome they get.`,
+
+  "pricing-no-faq": (c) =>
+    `Add a pricing FAQ on ${pagePath(c)} covering billing, cancellation, and plan differences to reduce sales friction.`,
+
+  "pricing-missing-comparison": (c) =>
+    `Present plan tiers on ${pagePath(c)} in a scannable comparison table or structured feature list.`,
+
+  "blog-missing-author": (c) =>
+    `Add author name and credentials on ${pagePath(c)} to build trust for long-form content.`,
+
+  "blog-missing-cta": (c) =>
+    `Add a contextual CTA at the end of ${pagePath(c)} tying the article topic to your product or newsletter.`,
+
+  "signup-missing-privacy-link": (c) =>
+    `Link to your privacy policy from the signup form on ${pagePath(c)} before users submit personal data.`,
+
+  "login-missing-recovery-link": (c) =>
+    `Add a “Forgot password?” link on ${pagePath(c)} so returning users can recover access without support tickets.`,
+
+  "contact-missing-phone": (c) =>
+    `Publish a phone number or tel: link on ${pagePath(c)} for visitors who prefer calling over forms.`,
+
+  "about-missing-values": (c) =>
+    `Add a values or principles section on ${pagePath(c)} explaining what the company stands for beyond the product.`,
+
+  "services-missing-process": (c) =>
+    `Explain your delivery process on ${pagePath(c)} with 3–5 steps so prospects know what engagement looks like.`,
+
+  "projects-missing-metrics": (c) =>
+    `Quantify results on ${pagePath(c)} with percentages, timelines, or revenue impact to make case studies credible.`,
+
   "trust-missing-contact-page": (c) =>
     `Publish a dedicated contact page on ${domain(c)} and link it from the main navigation and footer.`,
 
@@ -228,6 +309,12 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
 
   "site-missing-services-link": (c) =>
     `Ensure services or solutions are discoverable from the main navigation on ${domain(c)}.`,
+
+  "site-missing-pricing-link": (c) =>
+    `Add a pricing or plans page on ${domain(c)} and link it from the main navigation for high-intent visitors.`,
+
+  "site-missing-blog-link": (c) =>
+    `Surface blog or resources content on ${domain(c)} via navigation or footer links to support SEO and nurture.`,
 }
 
 export function getRuleRecommendation(ruleId: string, context: RecContext): string {

@@ -120,14 +120,13 @@ function ProfileEditForm({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9"
           onClick={onCancel}
           disabled={isSubmitting}
         >
           {saveSuccess ? "Close" : "Cancel"}
         </Button>
         {!saveSuccess ? (
-          <Button type="submit" size="sm" className="h-9" disabled={isSubmitting}>
+          <Button type="submit" size="sm" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
