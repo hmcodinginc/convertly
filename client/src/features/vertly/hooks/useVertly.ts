@@ -12,15 +12,16 @@ function useVertly() {
 }
 
 function useVertlyPageContext(context: Partial<VertlyPageContext> | null) {
-  const { registerPageContext } = useVertly()
+  const vertly = useContext(VertlyContext)
   const contextKey = context
     ? `${context.surface ?? ""}:${JSON.stringify(context.metadata ?? {})}:${context.title ?? ""}`
     : "null"
 
   useEffect(() => {
-    registerPageContext(context)
-    return () => registerPageContext(null)
-  }, [context, contextKey, registerPageContext])
+    if (!vertly) return
+    vertly.registerPageContext(context)
+    return () => vertly.registerPageContext(null)
+  }, [context, contextKey, vertly])
 }
 
 export { useVertly, useVertlyPageContext }
