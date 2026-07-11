@@ -96,11 +96,10 @@ function getPhaseContent(phase: PaymentVerificationPhase, planName: string): Pha
       }
     case "timedOut":
       return {
-        title: "Still verifying your subscription",
+        title: "Still confirming your subscription",
         description:
-          "We're still confirming your subscription with our payment provider. Verification can take a little longer while updates propagate.",
-        reassurance:
-          "If your plan already shows as upgraded on Billing, you can return there safely. Otherwise, retry verification or contact support if you were charged.",
+          "We haven't received payment confirmation yet. Your plan was not changed — you can retry verification or return to Billing.",
+        reassurance: "If you were charged, contact support and we'll resolve it quickly.",
         tone: "warning",
       }
     case "cancelled":

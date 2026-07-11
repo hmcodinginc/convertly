@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { PendingCheckout } from "@/lib/checkoutPersistence"
-import {
-  getCheckoutVerificationDeadline,
-  markCheckoutVerificationStarted,
-  readCheckoutVerificationStartedAt,
-} from "@/lib/checkoutPersistence"
+import { CHECKOUT_VERIFICATION_WINDOW_MS } from "@/lib/checkoutPersistence"
 import { getPlanEntitlement } from "@/lib/billingPlans"
 import { isCheckoutVerificationComplete } from "@/lib/paymentActivation"
 import * as billingService from "@/services/billingService"
@@ -37,7 +33,7 @@ type UsePaymentVerificationResult = {
   isPolling: boolean
 }
 
-const POLL_INTERVAL_MS = 1_500
+const POLL_INTERVAL_MS = 2_000
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -64,14 +60,6 @@ function resolvePhaseFromElapsed(elapsedMs: number): PaymentVerificationPhase {
   return "waiting"
 }
 
-async function fetchBillingSnapshot(userId: string): Promise<BillingSnapshot | null> {
-  try {
-    return await billingService.getBilling(userId)
-  } catch {
-    return null
-  }
-}
-
 function usePaymentVerification({
   userId,
   pending,
@@ -88,9 +76,9 @@ function usePaymentVerification({
   onSuccessRef.current = onSuccess
   onTerminalRef.current = onTerminal
 
-  const planName =
-    billing?.plan.name ??
-    (pending ? getPlanEntitlement(pending.planId).name : "Premium")
+  const planName = pending
+    ? getPlanEntitlement(pending.planId).name
+    : billing?.plan.name ?? "Premium"
 
   useEffect(() => {
     if (!active) {
@@ -104,51 +92,38 @@ function usePaymentVerification({
       return
     }
 
-    markCheckoutVerificationStarted()
-
     const abortController = new AbortController()
+    const deadline =
+      (pending?.startedAt ?? Date.now()) + CHECKOUT_VERIFICATION_WINDOW_MS
     let disposed = false
-
-    async function resolveSuccess(snapshot: BillingSnapshot): Promise<void> {
-      setBilling(snapshot)
-      setPhase("success")
-      onSuccessRef.current?.(snapshot)
-    }
 
     async function poll(): Promise<void> {
       setPhase("processing")
 
       while (!disposed && !abortController.signal.aborted) {
-        const verificationStartedAt = readCheckoutVerificationStartedAt() ?? Date.now()
-        const deadline = getCheckoutVerificationDeadline()
-
-        if (Date.now() >= deadline) {
-          const finalSnapshot = await fetchBillingSnapshot(userId)
-          if (disposed || abortController.signal.aborted) return
-
-          if (finalSnapshot && isCheckoutVerificationComplete(finalSnapshot, pending)) {
-            await resolveSuccess(finalSnapshot)
-            return
-          }
-
+        const remainingMs = deadline - Date.now()
+        if (remainingMs <= 0) {
           setPhase("timedOut")
           onTerminalRef.current?.()
           return
         }
 
-        const elapsed = Date.now() - verificationStartedAt
+        const elapsed = CHECKOUT_VERIFICATION_WINDOW_MS - remainingMs
         setPhase(resolvePhaseFromElapsed(elapsed))
 
-        const snapshot = await fetchBillingSnapshot(userId)
-        if (disposed || abortController.signal.aborted) return
+        try {
+          const snapshot = await billingService.getBilling(userId)
+          if (disposed || abortController.signal.aborted) return
 
-        if (snapshot) {
           setBilling(snapshot)
 
           if (isCheckoutVerificationComplete(snapshot, pending)) {
-            await resolveSuccess(snapshot)
+            setPhase("success")
+            onSuccessRef.current?.(snapshot)
             return
           }
+        } catch {
+          /* webhook may still be in flight */
         }
 
         await sleep(POLL_INTERVAL_MS, abortController.signal)
@@ -164,7 +139,6 @@ function usePaymentVerification({
   }, [active, attempt, pending, userId])
 
   const retry = useCallback(() => {
-    markCheckoutVerificationStarted()
     setBilling(null)
     setPhase("processing")
     setAttempt((value) => value + 1)
