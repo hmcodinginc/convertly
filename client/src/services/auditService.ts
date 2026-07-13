@@ -38,7 +38,7 @@ import { getCachedAuthSession } from "@/lib/authSessionCache"
 import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
 import { applyScoreDeltaFromHistory } from "@/services/audit/utils/auditScoreHistory"
 import { shouldUseSupabaseAudits } from "@/lib/env"
-import { getDefaultAuditTemplateId, isAuditTemplateId } from "@/lib/auditTypes"
+import { resolveStoredAuditType } from "@/lib/auditTypes"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
 import { AuditLimitError } from "@/types/billing"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
@@ -144,10 +144,7 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
     throw new Error(validation.errors[0] ?? "Invalid audit URL")
   }
 
-  const auditType =
-    input.auditType && isAuditTemplateId(input.auditType)
-      ? input.auditType
-      : getDefaultAuditTemplateId()
+  const auditType = resolveStoredAuditType(input.auditType)
 
   let workspaceId: string | undefined
 
@@ -209,7 +206,7 @@ export async function saveAuditDraft(input: SaveAuditDraftInput): Promise<AuditD
     throw new Error(validation.errors[0] ?? "Enter a valid website URL")
   }
 
-  const auditType = isAuditTemplateId(input.auditType) ? input.auditType : getDefaultAuditTemplateId()
+  const auditType = resolveStoredAuditType(input.auditType)
 
   if (!shouldUseSupabaseAudits()) {
     throw new Error("Draft audits require Supabase.")
@@ -253,9 +250,7 @@ export async function getAuditDrafts(): Promise<AuditDraft[]> {
 }
 
 function mapSessionToDraft(session: AuditSession): AuditDraft {
-  const auditType = isAuditTemplateId(session.auditType)
-    ? session.auditType
-    : getDefaultAuditTemplateId()
+  const auditType = resolveStoredAuditType(session.auditType)
 
   return {
     id: session.id,

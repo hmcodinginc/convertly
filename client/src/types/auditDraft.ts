@@ -1,15 +1,15 @@
-import type { AuditTemplateId } from "@/lib/auditTypes"
+import type { SelectableAuditTemplateId } from "@/lib/auditTypes"
 
 export type AuditDraft = {
   id: string
   websiteUrl: string
-  auditType: AuditTemplateId
+  auditType: SelectableAuditTemplateId
   createdAt: string
   updatedAt: string
 }
 
 export type SaveAuditDraftInput = {
   url: string
-  auditType: AuditTemplateId
+  auditType: SelectableAuditTemplateId
   draftId?: string
 }

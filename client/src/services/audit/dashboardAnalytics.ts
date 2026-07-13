@@ -7,7 +7,7 @@ import {
   getDraftSessionsByUserId,
   getFindingsWithPagePathsForUser,
 } from "@/services/repositories/audit/provider"
-import { getDefaultAuditTemplateId, isAuditTemplateId } from "@/lib/auditTypes"
+import { resolveStoredAuditType } from "@/lib/auditTypes"
 import type { AuditDraft } from "@/types/auditDraft"
 import type { Audit, Recommendation } from "@/types/audit"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
@@ -24,9 +24,7 @@ type WorkspaceData = {
 }
 
 function mapDraftSession(session: Awaited<ReturnType<typeof getDraftSessionsByUserId>>[number]): AuditDraft {
-  const auditType = isAuditTemplateId(session.auditType)
-    ? session.auditType
-    : getDefaultAuditTemplateId()
+  const auditType = resolveStoredAuditType(session.auditType)
 
   return {
     id: session.id,

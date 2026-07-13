@@ -1,5 +1,5 @@
 import { COMMON_PAGE_DEFINITIONS } from "@/services/audit/constants"
-import { discoverPages } from "@/services/audit/pageDiscovery"
+import { discoverPages, resolvePageDiscoveryProvider } from "@/services/audit/pageDiscovery"
 import { fetchPageContentSnapshots } from "@/services/audit/pageContentService"
 import { resolvePageDisplayTitle } from "@/services/audit/pageTitleResolver"
 import { createAuditFetchContext } from "@/services/audit/fetch/types"
@@ -52,13 +52,15 @@ function getPageTitle(
 
 async function mapDiscoveredPages(
   auditId: string,
-  baseUrl: string,
+  targetUrl: string,
+  auditType: string,
   fetchContext: ReturnType<typeof createAuditFetchContext>
 ): Promise<{
   pages: AuditPage[]
   crawlDiagnostics: import("@/services/audit/intelligence/diagnostics/crawlDiagnostics").CrawlDiagnostics
 }> {
-  const discovery = await discoverPages(baseUrl, undefined, fetchContext)
+  const provider = resolvePageDiscoveryProvider(auditType)
+  const discovery = await discoverPages(targetUrl, provider, fetchContext)
 
   const pages = discovery.pages.map((candidate) => ({
     id: crypto.randomUUID(),
@@ -152,13 +154,20 @@ export async function runAuditEngine(auditId: string): Promise<void> {
   if (!session || session.status === "draft") return
 
   try {
-    await recordPhase(session, "crawling", "Discovering public pages")
+    const isPageSpecific = session.auditType === "page-specific"
+
+    await recordPhase(
+      session,
+      "crawling",
+      isPageSpecific ? "Auditing target page" : "Discovering public pages"
+    )
     await delay(PHASE_DELAYS_MS.crawling)
 
     const fetchContext = createAuditFetchContext()
     const { pages: discovered, crawlDiagnostics } = await mapDiscoveredPages(
       auditId,
       session.websiteUrl,
+      session.auditType,
       fetchContext
     )
 
@@ -178,7 +187,9 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await createHistoryEvent(
       auditId,
       "analyzing",
-      `Discovered ${savedPages.length} verified pages on ${parseDomainFromUrl(session.websiteUrl)}`
+      isPageSpecific
+        ? `Analyzing target page on ${parseDomainFromUrl(session.websiteUrl)}`
+        : `Discovered ${savedPages.length} verified pages on ${parseDomainFromUrl(session.websiteUrl)}`
     )
 
     await delay(PHASE_DELAYS_MS.analyzing)

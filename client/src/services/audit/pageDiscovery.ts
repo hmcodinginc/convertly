@@ -269,6 +269,78 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
   },
 }
 
+/** Audits only the exact URL entered — no link crawl or multi-page discovery. */
+export const singleUrlPageDiscoveryProvider: PageDiscoveryProvider = {
+  async discover(
+    targetUrl: string,
+    context: AuditFetchContext = createAuditFetchContext()
+  ): Promise<PageDiscoveryResult> {
+    const diagnostics = createEmptyCrawlDiagnostics()
+
+    const pageFetch = await hybridPageAcquire(targetUrl, context, { isHomepage: true })
+
+    if (!pageFetch.ok || !pageFetch.html || !pageFetch.contentHash) {
+      const classified = classifyFetchFailure({
+        error: pageFetch.error,
+        status: pageFetch.status,
+        html: pageFetch.html,
+        finalUrl: pageFetch.finalUrl,
+      })
+
+      if (pageFetch.acquisitionDiagnostics) {
+        mergeAcquisitionIntoCrawlDiagnostics(diagnostics, pageFetch.acquisitionDiagnostics)
+      }
+
+      diagnostics.crawlStoppedReason = crawlStopReasonFromFailureKind(classified.kind)
+      diagnostics.crawlStage = crawlStageFromFailureKind(classified.kind)
+      diagnostics.crawlStoppedDetail = describeCrawlStopReason({
+        ...diagnostics,
+        crawlStoppedReason: crawlStopReasonFromFailureKind(classified.kind),
+        crawlError: pageFetch.error ?? classified.userMessage,
+      })
+      diagnostics.failureKind = classified.kind
+      diagnostics.crawlError = pageFetch.error ?? classified.userMessage
+
+      throw new Error(diagnostics.crawlStoppedDetail)
+    }
+
+    if (pageFetch.acquisitionDiagnostics) {
+      mergeAcquisitionIntoCrawlDiagnostics(diagnostics, pageFetch.acquisitionDiagnostics)
+    }
+
+    if (pageFetch.finalUrl !== targetUrl) {
+      diagnostics.redirectCount += 1
+    }
+
+    const path = normalizePath(new URL(pageFetch.finalUrl).pathname)
+
+    diagnostics.pagesVerified = 1
+    diagnostics.pagesDiscovered = 1
+    diagnostics.crawlStoppedReason = "completed"
+
+    return {
+      pages: [
+        {
+          pageType: inferPageTypeFromPath(path),
+          path,
+          url: pageFetch.finalUrl,
+          discoveryStatus: "reachable",
+          title: extractPageTitle(pageFetch.html, "Page"),
+        },
+      ],
+      diagnostics,
+    }
+  },
+}
+
+export function resolvePageDiscoveryProvider(auditType: string): PageDiscoveryProvider {
+  if (auditType === "page-specific") {
+    return singleUrlPageDiscoveryProvider
+  }
+
+  return linkBasedPageDiscoveryProvider
+}
+
 export async function discoverPages(
   baseUrl: string,
   provider: PageDiscoveryProvider = linkBasedPageDiscoveryProvider,

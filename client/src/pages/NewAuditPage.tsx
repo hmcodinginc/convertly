@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
+import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import { AuditAllowanceBadge } from "@/components/audit/AuditAllowanceBadge"
 import { AuditLimitReachedCard } from "@/components/audit/AuditLimitReachedCard"
 import { AuditExecutionView } from "@/components/audit/execution/AuditExecutionView"
@@ -18,8 +19,8 @@ import type { NewAuditLocationState } from "@/lib/auditNavigation"
 import {
   AUDIT_TYPE_OPTIONS,
   getDefaultAuditTemplateId,
-  isAuditTemplateId,
-  type AuditTemplateId,
+  normalizeSelectableAuditType,
+  type SelectableAuditTemplateId,
 } from "@/lib/auditTypes"
 import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { auditDetailPath, ROUTES } from "@/lib/routes"
@@ -38,7 +39,9 @@ function NewAuditPage() {
   const resumeStateConsumed = useRef(false)
   const [url, setUrl] = useState("")
   const [draftId, setDraftId] = useState<string | undefined>()
-  const [selectedType, setSelectedType] = useState<AuditTemplateId>(getDefaultAuditTemplateId())
+  const [selectedType, setSelectedType] = useState<SelectableAuditTemplateId>(
+    getDefaultAuditTemplateId()
+  )
   const [urlError, setUrlError] = useState<string | null>(null)
   const [urlWarning, setUrlWarning] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -65,8 +68,8 @@ function NewAuditPage() {
 
     if (state.url) setUrl(state.url)
     if (state.draftId) setDraftId(state.draftId)
-    if (state.auditType && isAuditTemplateId(state.auditType)) {
-      setSelectedType(state.auditType)
+    if (state.auditType) {
+      setSelectedType(normalizeSelectableAuditType(state.auditType))
     }
 
     navigate(location.pathname, { replace: true, state: null })
@@ -153,8 +156,8 @@ function NewAuditPage() {
 
     autoStartConsumed.current = true
     setUrl(state.url)
-    if (state.auditType && isAuditTemplateId(state.auditType)) {
-      setSelectedType(state.auditType)
+    if (state.auditType) {
+      setSelectedType(normalizeSelectableAuditType(state.auditType))
     }
     if (state.draftId) setDraftId(state.draftId)
     navigate(location.pathname, { replace: true, state: null })
@@ -303,35 +306,63 @@ function NewAuditPage() {
             description="Select the scope that matches your current growth initiative."
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {AUDIT_TYPE_OPTIONS.map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  disabled={isRunning || isSavingDraft}
-                  onClick={() => setSelectedType(type.id)}
-                  className="h-full text-left disabled:opacity-60"
-                >
-                  <Card
-                    className={cn(
-                      "app-card-metric flex h-full min-h-[11.5rem] flex-col gap-4 transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:translate-y-0 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_55%,transparent)]",
-                      selectedType === type.id &&
-                        "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
-                    )}
+              {AUDIT_TYPE_OPTIONS.map((type) =>
+                type.comingSoon ? (
+                  <div
+                    key={type.id}
+                    aria-disabled
+                    className="h-full cursor-not-allowed select-none"
                   >
-                    <div className="space-y-2">
-                      <h3 className="text-base font-semibold tracking-tight text-foreground">
-                        {type.title}
-                      </h3>
+                    <Card className="app-card-metric flex h-full min-h-[11.5rem] flex-col gap-4 opacity-70 hover:translate-y-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-base font-semibold tracking-tight text-foreground">
+                          {type.title}
+                        </h3>
+                        <StatusBadge label="Coming Soon" variant="neutral" />
+                      </div>
+                      <Text size="sm" className="max-w-none font-medium text-foreground/90">
+                        Coming Soon
+                      </Text>
                       <Text variant="muted" size="sm" className="max-w-none leading-6">
                         {type.description}
                       </Text>
-                    </div>
-                    <Text variant="muted" size="sm" className="max-w-none text-xs">
-                      Est. {type.duration}
-                    </Text>
-                  </Card>
-                </button>
-              ))}
+                      {"launchNote" in type && type.launchNote ? (
+                        <Text variant="muted" size="sm" className="max-w-none text-xs">
+                          {type.launchNote}
+                        </Text>
+                      ) : null}
+                    </Card>
+                  </div>
+                ) : (
+                  <button
+                    key={type.id}
+                    type="button"
+                    disabled={isRunning || isSavingDraft}
+                    onClick={() => setSelectedType(type.id)}
+                    className="h-full text-left disabled:opacity-60"
+                  >
+                    <Card
+                      className={cn(
+                        "app-card-metric flex h-full min-h-[11.5rem] flex-col gap-4 transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:translate-y-0 hover:border-[color-mix(in_srgb,var(--accent)_22%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_55%,transparent)]",
+                        selectedType === type.id &&
+                          "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
+                      )}
+                    >
+                      <div className="space-y-2">
+                        <h3 className="text-base font-semibold tracking-tight text-foreground">
+                          {type.title}
+                        </h3>
+                        <Text variant="muted" size="sm" className="max-w-none leading-6">
+                          {type.description}
+                        </Text>
+                      </div>
+                      <Text variant="muted" size="sm" className="max-w-none text-xs">
+                        Est. {type.duration}
+                      </Text>
+                    </Card>
+                  </button>
+                )
+              )}
             </div>
           </AppPageSection>
 
