@@ -1,13 +1,11 @@
 import { inferPageTypeFromPath } from "@/services/audit/constants"
 import { MAX_RENDERED_PAGES } from "@/services/audit/fetch/constants"
-import { logDiscovery } from "@/services/audit/fetch/auditPipelineLogger"
 import { classifyFetchFailure } from "@/services/audit/fetch/fetchErrorClassifier"
 import { createAuditFetchContext, type AuditFetchContext } from "@/services/audit/fetch/types"
 import { hybridPageAcquire } from "@/services/audit/fetch/hybridPageAcquire"
 import {
   extractDiscoveryLinksForCrawl,
   extractPageTitle,
-  logLinkExtractionDiagnostics,
   MAX_CRAWL_DEPTH,
   MAX_DISCOVERED_PAGES,
   type ExtractedLink,
@@ -118,13 +116,6 @@ async function verifyCandidate(
 }> {
   const forceRender = context.spaMode && context.renderedPageCount < MAX_RENDERED_PAGES
 
-  logDiscovery("Verifying candidate", {
-    path: candidate.path,
-    url: candidate.url,
-    depth: candidate.depth,
-    forceRender,
-  })
-
   const pageFetch = await hybridPageAcquire(candidate.url, context, { forceRender })
 
   if (!pageFetch.ok || pageFetch.status !== 200 || !pageFetch.html || !pageFetch.contentHash) {
@@ -188,14 +179,6 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
     const diagnostics = createEmptyCrawlDiagnostics()
     const origin = normalizeBaseUrl(baseUrl)
 
-    logDiscovery("Starting BFS page discovery", {
-      baseUrl,
-      origin,
-      maxPages: MAX_DISCOVERED_PAGES,
-      maxDepth: MAX_CRAWL_DEPTH,
-      robots: "not-checked",
-    })
-
     const homepageUrl = buildPageUrl(origin, "/")
     const homepageFetch = await hybridPageAcquire(homepageUrl, context, { isHomepage: true })
 
@@ -210,14 +193,6 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
       if (homepageFetch.acquisitionDiagnostics) {
         mergeAcquisitionIntoCrawlDiagnostics(diagnostics, homepageFetch.acquisitionDiagnostics)
       }
-
-      logDiscovery("Homepage unreachable — discovery aborted", {
-        url: homepageUrl,
-        ok: homepageFetch.ok,
-        status: homepageFetch.status,
-        error: homepageFetch.error,
-        failureKind: classified.kind,
-      })
 
       diagnostics.crawlStoppedReason = crawlStopReasonFromFailureKind(classified.kind)
       diagnostics.crawlStage = crawlStageFromFailureKind(classified.kind)
@@ -258,16 +233,6 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
     const queue: CrawlQueueItem[] = []
 
     const homepageLinks = extractDiscoveryLinksForCrawl(homepageFetch.finalUrl, homepageFetch.html)
-    logLinkExtractionDiagnostics(homepageFetch.finalUrl, {
-      source: "all-anchors",
-      selector: "a[href]",
-      anchorCount: homepageLinks.length,
-      buttonNavCount: 0,
-      extracted: homepageLinks,
-      rejected: [],
-      capped: homepageLinks.length >= MAX_DISCOVERED_PAGES,
-    })
-
     enqueueLinks(queue, visited, queued, homepageLinks, 1)
 
     while (queue.length > 0 && verified.length < MAX_DISCOVERED_PAGES) {
@@ -280,24 +245,11 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
       const result = await verifyCandidate(candidate, context, homepagePath, diagnostics)
 
       if (!result.accepted || !result.candidate) {
-        logDiscovery("Candidate rejected", {
-          path: candidate.path,
-          url: candidate.url,
-          depth: candidate.depth,
-          reason: result.reason ?? "unknown",
-        })
         continue
       }
 
       verified.push(result.candidate)
       diagnostics.pagesVerified += 1
-
-      logDiscovery("URL verified", {
-        path: result.candidate.path,
-        url: result.candidate.url,
-        pageType: result.candidate.pageType,
-        depth: candidate.depth,
-      })
 
       if (candidate.depth < MAX_CRAWL_DEPTH) {
         enqueueLinks(queue, visited, queued, result.links, candidate.depth + 1)
@@ -312,13 +264,6 @@ export const linkBasedPageDiscoveryProvider: PageDiscoveryProvider = {
     }
 
     diagnostics.pagesDiscovered += verified.length
-
-    logDiscovery("Discovery complete", {
-      baseUrl,
-      verifiedPageCount: verified.length,
-      paths: verified.map((page) => page.path).join(","),
-      diagnostics,
-    })
 
     return { pages: verified, diagnostics }
   },

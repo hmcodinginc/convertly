@@ -10,7 +10,6 @@ import {
 } from "@/services/audit/scoring/calculateAuditScore"
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import { delay } from "@/services/internal/delay"
-import { isAuditDiagnosticsEnabled } from "@/services/audit/intelligence/diagnostics/auditDiagnostics"
 import {
   serializeIntelligenceSnapshot,
   type IntelligenceSnapshot,
@@ -299,14 +298,6 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     }
 
     await createHistoryEvent(auditId, "analyzing", serializeIntelligenceSnapshot(intelligenceSnapshot))
-
-    if (isAuditDiagnosticsEnabled() && execution.scoreExplanation) {
-      await createHistoryEvent(
-        auditId,
-        "analyzing",
-        `Score explainability: growth ${execution.scoreExplanation.growthScore}, recoverable ${execution.scoreExplanation.recoverablePoints}, rules passed ${execution.scoreExplanation.rulesPassed}, skipped ${execution.scoreExplanation.rulesSkipped}`
-      )
-    }
 
     const ceilingNote =
       scoring.appliedBlockers.length > 0

@@ -20,10 +20,6 @@ import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSect
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
 import { SiteWideFindingsSection } from "@/features/audits/sections/SiteWideFindingsSection"
 import { ScoreBreakdownSection } from "@/features/audits/sections/ScoreBreakdownSection"
-import {
-  resetNetworkTrace,
-  setNetworkTraceRoute,
-} from "@/diagnostics/networkTrace"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
 import { isAuditInProgress } from "@/lib/auditStatus"
@@ -64,13 +60,6 @@ function AuditDetailPage() {
   )
 
   useVertlyPageContext(vertlyContext)
-
-  useEffect(() => {
-    if (import.meta.env.VITE_NETWORK_TRACE === "true" && id) {
-      resetNetworkTrace()
-      setNetworkTraceRoute(`/audits/${id}`)
-    }
-  }, [id])
 
   useEffect(() => {
     if (!id || !inProgress) return

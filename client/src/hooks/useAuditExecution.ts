@@ -11,15 +11,12 @@ import type { AuditDetail } from "@/types/audit"
 import type { AuditExecutionState } from "@/types/auditExecution"
 import type { AuditSessionData } from "@/types/auditEngine"
 
-export const AUDIT_EXECUTION_TIMEOUT_MS = 150_000
-
 type AuditExecutionFailureOutcome = "bot_protection" | "generic" | null
 
 type UseAuditExecutionOptions = {
   auditId: string
   pollIntervalMs?: number
   enabled?: boolean
-  executionTimeoutMs?: number
   onCompleted?: (detail: AuditDetail) => void
   onFailed?: (errorMessage?: string) => void
 }
@@ -40,7 +37,6 @@ function useAuditExecution({
   auditId,
   pollIntervalMs = 1000,
   enabled = true,
-  executionTimeoutMs = AUDIT_EXECUTION_TIMEOUT_MS,
   onCompleted,
   onFailed,
 }: UseAuditExecutionOptions): UseAuditExecutionResult {
@@ -101,35 +97,6 @@ function useAuditExecution({
 
     return () => window.clearInterval(interval)
   }, [enabled])
-
-  useEffect(() => {
-    if (!enabled || !sessionData || completionHandledRef.current) return
-    if (!isExecutionRunning(sessionData)) return
-
-    const startedAt = Date.parse(sessionData.session.createdAt)
-    if (Number.isNaN(startedAt)) return
-
-    const remainingMs = executionTimeoutMs - (Date.now() - startedAt)
-    if (remainingMs <= 0) {
-      completionHandledRef.current = true
-      const message = "The audit took too long to complete. The site may be slow or blocking automated access."
-      setFailureOutcome("generic")
-      setFailureMessage(message)
-      onFailedRef.current?.(message)
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      if (completionHandledRef.current) return
-      completionHandledRef.current = true
-      const message = "The audit took too long to complete. The site may be slow or blocking automated access."
-      setFailureOutcome("generic")
-      setFailureMessage(message)
-      onFailedRef.current?.(message)
-    }, remainingMs)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [enabled, executionTimeoutMs, sessionData])
 
   const state = useMemo(() => {
     if (!sessionData) return null

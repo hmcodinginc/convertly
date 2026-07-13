@@ -47,12 +47,7 @@ export {
 } from "@/services/audit/intelligence/rules/ruleApplicability"
 export { RuleExecutionTracker } from "@/services/audit/intelligence/execution/ruleExecutionTracker"
 export {
-  isAuditDiagnosticsEnabled,
-  logAuditDiagnostics,
-} from "@/services/audit/intelligence/diagnostics/auditDiagnostics"
-export {
   buildEngineDiagnostics,
-  logEngineDiagnostics,
 } from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
 export type { EngineDiagnostics } from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
 export {

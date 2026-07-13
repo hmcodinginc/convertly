@@ -1,11 +1,5 @@
 import { MAX_RENDERED_PAGES } from "@/services/audit/fetch/constants"
 import { hashContent } from "@/services/audit/fetch/contentHash"
-import {
-  logPipeline,
-  logPlaywright,
-  logQuality,
-  logStatic,
-} from "@/services/audit/fetch/auditPipelineLogger"
 import { classifyFetchFailure } from "@/services/audit/fetch/fetchErrorClassifier"
 import { assessHtmlQuality } from "@/services/audit/fetch/htmlQualityGate"
 import { renderPageRemote } from "@/services/audit/fetch/renderPageRemote"
@@ -121,11 +115,6 @@ async function renderToAcquired(url: string): Promise<AcquiredPageContent> {
 
   const contentHash = rendered.contentHash ?? (await hashContent(rendered.html))
 
-  logPlaywright("Extracted links", {
-    url: rendered.finalUrl,
-    count: rendered.links.length,
-  })
-
   return {
     ok: true,
     status: rendered.acquisitionDiagnostics?.httpStatus ?? 200,
@@ -158,12 +147,6 @@ export async function hybridPageAcquire(
   }
 
   const { result: staticResult, trace: staticTrace } = await fetchStaticWithRetry(url)
-  logStatic("Fetch complete", {
-    url: staticResult.finalUrl,
-    ok: staticResult.ok,
-    bytes: staticResult.html?.length ?? 0,
-    retries: staticTrace.retryAttempts,
-  })
 
   if (!staticResult.ok || !staticResult.html) {
     const staticFailureKind = classifyFetchFailure({
@@ -185,12 +168,6 @@ export async function hybridPageAcquire(
         staticFailureKind === "connection_refused")
 
     if (shouldTryRenderOnStaticFailure) {
-      logPipeline("Static fetch failed, attempting render fallback", {
-        url,
-        failureKind: staticFailureKind,
-        error: staticResult.error,
-      })
-
       context.renderedPageCount += 1
       if (options.isHomepage) {
         context.spaMode = true
@@ -199,7 +176,6 @@ export async function hybridPageAcquire(
       const rendered = await renderToAcquired(url)
 
       if (rendered.ok && rendered.html) {
-        logPipeline("Render fallback succeeded", { url: rendered.finalUrl })
         context.cache.set(key, rendered)
 
         if (options.isHomepage) {
@@ -208,12 +184,6 @@ export async function hybridPageAcquire(
 
         return rendered
       }
-
-      logPipeline("Render fallback failed", {
-        url,
-        staticError: staticResult.error,
-        renderError: rendered.error,
-      })
 
       const failed = staticToAcquired(staticResult, {
         ...staticTrace,
@@ -232,26 +202,6 @@ export async function hybridPageAcquire(
   }
 
   const quality = assessHtmlQuality(staticResult.finalUrl, staticResult.html)
-
-  if (quality.reasons.length > 0) {
-    const spaDetected = quality.reasons.some(
-      (reason) => reason === "spa-root-detected" || reason === "framework-detected"
-    )
-
-    if (spaDetected) {
-      logQuality("SPA detected", {
-        url: staticResult.finalUrl,
-        confidence: quality.confidence,
-        reasons: quality.reasons,
-      })
-    } else {
-      logQuality("Assessment complete", {
-        url: staticResult.finalUrl,
-        confidence: quality.confidence,
-        reasons: quality.reasons,
-      })
-    }
-  }
 
   const shouldAttemptRender =
     options.forceRender ||
@@ -273,17 +223,10 @@ export async function hybridPageAcquire(
   }
 
   if (context.renderedPageCount >= MAX_RENDERED_PAGES) {
-    logPipeline("Render budget exhausted, using static", { url })
     const acquired = staticToAcquired(staticResult, staticTrace)
     context.cache.set(key, acquired)
     return acquired
   }
-
-  logQuality("Rendering required", {
-    url: staticResult.finalUrl,
-    confidence: quality.confidence,
-    reasons: quality.reasons,
-  })
 
   context.renderedPageCount += 1
 
@@ -294,7 +237,6 @@ export async function hybridPageAcquire(
   const rendered = await renderToAcquired(url)
 
   if (rendered.ok && rendered.html) {
-    logPipeline("Using rendered content", { url: rendered.finalUrl })
     context.cache.set(key, rendered)
 
     if (options.isHomepage) {
@@ -303,11 +245,6 @@ export async function hybridPageAcquire(
 
     return rendered
   }
-
-  logPipeline("Render failed, using static fallback", {
-    url: staticResult.finalUrl,
-    error: rendered.error,
-  })
 
   const fallback = staticToAcquired(staticResult, {
     ...staticTrace,

@@ -205,13 +205,10 @@ export async function waitForAuditCompletion(
   id: string,
   options?: {
     intervalMs?: number
-    timeoutMs?: number
     onStatus?: (status: AuditSessionStatus) => void
   }
 ): Promise<AuditSessionStatus> {
   const intervalMs = options?.intervalMs ?? 750
-  const timeoutMs = options?.timeoutMs ?? 150_000
-  const startedAt = Date.now()
 
   return new Promise((resolve, reject) => {
     const poll = async () => {
@@ -233,11 +230,6 @@ export async function waitForAuditCompletion(
 
       if (session.status === "completed" || session.status === "failed") {
         resolve(session.status)
-        return
-      }
-
-      if (Date.now() - startedAt >= timeoutMs) {
-        reject(new Error("Audit timed out"))
         return
       }
 

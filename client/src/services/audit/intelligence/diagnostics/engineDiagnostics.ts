@@ -1,4 +1,3 @@
-import { createLogger, isAuditDebugEnabled } from "@/lib/logger"
 import type { DetectedWebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
 import type {
   AppliedRuleRecord,
@@ -14,8 +13,6 @@ import { getRuleMetadata } from "@/services/audit/intelligence/rules/ruleMetadat
 import { evaluateRuleExecutionApplicability } from "@/services/audit/intelligence/applicability/applicabilityEngine"
 import type { WebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
 import type { PageIntent } from "@/services/audit/intelligence/pageIntentTypes"
-
-const engineLogger = createLogger("engine")
 
 const PAGE_INTENT_SKIP_REASONS = new Set([
   "excluded_page_type",
@@ -191,13 +188,6 @@ export function buildEngineDiagnostics(input: {
     pageIntents: input.pageIntents,
   })
 
-  const violations = applicabilityDiagnostics.filter(
-    (record) => record.executionPrevented && (record.findingCreated || record.recommendationCreated)
-  )
-  if (violations.length > 0 && isAuditDebugEnabled()) {
-    engineLogger.warn("Applicability violations detected", { violations })
-  }
-
   return {
     websiteIntent: input.websiteIntent.websiteIntent,
     confidence: input.websiteIntent.confidence,
@@ -247,31 +237,6 @@ export function buildEngineDiagnostics(input: {
     },
     crawlDiagnostics: input.crawlDiagnostics,
   }
-}
-
-export function logEngineDiagnostics(diagnostics: EngineDiagnostics): void {
-  if (!isAuditDebugEnabled()) return
-
-  const violations = diagnostics.applicabilityDiagnostics.filter(
-    (record) => record.executionPrevented && (record.findingCreated || record.recommendationCreated)
-  )
-
-  engineLogger.debug("Engine diagnostics", {
-    websiteIntent: diagnostics.websiteIntent,
-    confidence: diagnostics.confidence,
-    rulesRegistered: diagnostics.rulesRegistered,
-    rulesSelected: diagnostics.rulesSelected,
-    rulesExecuted: diagnostics.rulesExecuted,
-    skippedByIntent: diagnostics.skippedByIntent,
-    skippedByPageIntent: diagnostics.skippedByPageIntent,
-    skippedByReliability: diagnostics.skippedByReliability,
-    skippedByRender: diagnostics.skippedByRender,
-    findingsProduced: diagnostics.findingsProduced,
-    recommendationsProduced: diagnostics.recommendationsProduced,
-    blockerCeiling: diagnostics.blockerCeiling,
-    blockersApplied: diagnostics.blockersApplied,
-    violations,
-  })
 }
 
 /** Verification table row for intent/pack audit */

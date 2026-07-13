@@ -1,5 +1,4 @@
 import { shouldUseSupabaseAudits } from "@/lib/env"
-import { traceNetworkCall } from "@/diagnostics/networkTrace"
 import * as localFinding from "@/services/repositories/audit/auditFindingRepository"
 import * as localHistory from "@/services/repositories/audit/auditHistoryRepository"
 import * as localPage from "@/services/repositories/audit/auditPageRepository"
@@ -227,9 +226,8 @@ export async function getAuditSessionData(auditId: string): Promise<AuditSession
     const inflight = inflightSessionData.get(auditId)
     if (inflight) return inflight
 
-    const request = traceNetworkCall(`getAuditSessionData:${auditId}`, () =>
-      supabaseSessionData.getAuditSessionDataById(auditId)
-    )
+    const request = supabaseSessionData
+      .getAuditSessionDataById(auditId)
       .then((data) => {
         if (
           data &&

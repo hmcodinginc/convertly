@@ -1,5 +1,4 @@
 import { parseHtmlDocument } from "@/services/audit/pageContentService"
-import { logDiscovery } from "@/services/audit/fetch/auditPipelineLogger"
 
 export const MAX_DISCOVERED_PAGES = 24
 
@@ -213,39 +212,4 @@ export function extractPageTitle(html: string, fallback = "Page"): string {
 
   const h1 = document.querySelector("h1")?.textContent?.trim()
   return h1 || fallback
-}
-
-export function logLinkExtractionDiagnostics(baseUrl: string, result: LinkExtractionResult): void {
-  logDiscovery("Homepage link extraction", {
-    baseUrl,
-    source: result.source,
-    anchorCount: result.anchorCount,
-    buttonNavCount: result.buttonNavCount,
-    extractedCount: result.extracted.length,
-    rejectedCount: result.rejected.length,
-    capped: result.capped,
-    robots: "not-checked",
-  })
-
-  for (const link of result.extracted) {
-    logDiscovery("Link extracted", {
-      href: link.href,
-      path: link.path,
-      url: link.url,
-    })
-  }
-
-  for (const rejection of result.rejected) {
-    logDiscovery("Link rejected", {
-      href: rejection.href,
-      reason: rejection.reason,
-    })
-  }
-
-  if (result.buttonNavCount > 0 && result.extracted.length === 0) {
-    logDiscovery("JS-rendered navigation suspected", {
-      buttonNavCount: result.buttonNavCount,
-      hint: "nav uses buttons without href — not crawlable as anchors",
-    })
-  }
 }
