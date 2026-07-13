@@ -14,9 +14,30 @@ import { Button } from "@/components/ui/button"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { buildWorkspaceAuditUsageBreakdown } from "@/lib/workspaceAuditUsage"
 import { ROUTES } from "@/lib/routes"
+import * as auditService from "@/services/auditService"
 import * as workspaceService from "@/services/workspaceService"
 import { formatAuditDateTime } from "@/lib/formatAuditDateTime"
+
+import type { WorkspaceSnapshot } from "@/types/workspace"
+import type { WorkspaceAuditUsageBreakdown } from "@/types/workspaceUsageBreakdown"
+
+type WorkspacePageData = WorkspaceSnapshot & {
+  usageBreakdown: WorkspaceAuditUsageBreakdown
+}
+
+async function loadWorkspacePage(userId: string): Promise<WorkspacePageData> {
+  const [workspace, sessions] = await Promise.all([
+    workspaceService.getWorkspace(userId),
+    auditService.getAuditLedgerSourceSessions(),
+  ])
+
+  return {
+    ...workspace,
+    usageBreakdown: buildWorkspaceAuditUsageBreakdown(sessions, workspace.usage),
+  }
+}
 
 function WorkspacePage() {
   const { session } = useAuthSession()
@@ -24,7 +45,7 @@ function WorkspacePage() {
   const [domainDialogOpen, setDomainDialogOpen] = useState(false)
 
   const { data, isLoading, isError, error, reload } = useAsyncData(
-    () => workspaceService.getWorkspace(userId),
+    () => loadWorkspacePage(userId),
     [userId],
     { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
   )
@@ -78,7 +99,11 @@ function WorkspacePage() {
 
   return (
     <AppPageShell header={header} sectionsClassName="gap-6">
-      <WorkspaceOverviewCard workspaceName={data.name} usage={data.usage} />
+      <WorkspaceOverviewCard
+        workspaceName={data.name}
+        usage={data.usage}
+        usageBreakdown={data.usageBreakdown}
+      />
 
       <Card className="app-card-table hover:translate-y-0">
         <div className="app-card-table-header">

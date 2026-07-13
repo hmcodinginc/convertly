@@ -6,6 +6,7 @@ import {
   buildAuditListEntryFromSession,
   buildAuditListEntryFromSummary,
 } from "@/services/audit/auditDetailBuilder"
+import { resolveStoredAuditType } from "@/lib/auditTypes"
 import {
   buildDashboardBundle,
   buildDashboardMetrics,
@@ -38,7 +39,6 @@ import { getCachedAuthSession } from "@/lib/authSessionCache"
 import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
 import { applyScoreDeltaFromHistory } from "@/services/audit/utils/auditScoreHistory"
 import { shouldUseSupabaseAudits } from "@/lib/env"
-import { resolveStoredAuditType } from "@/lib/auditTypes"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
 import { AuditLimitError } from "@/types/billing"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
@@ -46,6 +46,7 @@ import {
   assertCanRunAudit,
 } from "@/services/entitlementService"
 import { recordAuditForDomain } from "@/services/workspaceService"
+import { isAuditSessionStatus } from "@/lib/auditStatus"
 import type {
   Audit,
   AuditDetail,
@@ -56,6 +57,7 @@ import type {
 import type { AuditDraft, SaveAuditDraftInput } from "@/types/auditDraft"
 import type { AuditSession, AuditSessionData, AuditSessionStatus } from "@/types/auditEngine"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
+import type { AuditLedgerSourceSession } from "@/types/workspaceUsageBreakdown"
 
 const SAMPLE_AUDIT_ID = "audit-1"
 
@@ -373,6 +375,38 @@ export async function isValidAuditUrl(url: string): Promise<boolean> {
 
 export async function validateAuditUrlInput(url: string) {
   return validateAuditUrl(url)
+}
+
+export async function getAuditLedgerSourceSessions(): Promise<AuditLedgerSourceSession[]> {
+  await delay()
+  const userId = await resolveUserId()
+
+  if (shouldUseSupabaseAudits()) {
+    const listItems = await getAuditListForUser(userId)
+    return listItems.map((item) => ({
+      id: item.session.id,
+      websiteUrl: item.session.websiteUrl,
+      auditType: resolveStoredAuditType(item.session.auditType),
+      createdAt: item.session.createdAt,
+      status: item.session.status,
+    }))
+  }
+
+  const audits = await auditListRepository.getAllAudits()
+  return audits.map((audit) => ({
+    id: audit.id,
+    websiteUrl: audit.websiteUrl ?? audit.domain,
+    auditType: resolveStoredAuditType("full-funnel"),
+    createdAt: audit.completedAt,
+    status: mapLocalAuditStatus(audit.status),
+  }))
+}
+
+function mapLocalAuditStatus(status: Audit["status"]): AuditSessionStatus {
+  if (isAuditSessionStatus(status)) return status
+  if (status === "Completed") return "completed"
+  if (status === "Running") return "analyzing"
+  return "pending"
 }
 
 export async function getDashboardData() {

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 
 import { AuditAllowanceBadge } from "@/components/audit/AuditAllowanceBadge"
+import { AuditLimitInfoCard } from "@/components/audit/AuditLimitInfoCard"
 import { PendingPlanResumeBanner } from "@/components/billing/PendingPlanResumeBanner"
 import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
 import { PremiumWelcomeCard } from "@/components/billing/PremiumWelcomeCard"
@@ -297,7 +298,13 @@ function DashboardPage() {
         ) : null}
       </AnimatePresence>
 
-      {data.showOnboarding ? <OnboardingCard /> : null}
+      {entitlement?.blockedByLimit ? (
+        <AuditLimitInfoCard entitlement={entitlement} />
+      ) : null}
+
+      {data.showOnboarding && entitlement ? (
+        <OnboardingCard entitlement={entitlement} />
+      ) : null}
 
       {data.audits.length > 0 ? (
         <CurrentAuditSelector

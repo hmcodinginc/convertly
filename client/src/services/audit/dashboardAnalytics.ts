@@ -200,7 +200,7 @@ export async function buildDashboardBundle(userId: string): Promise<DashboardBun
     recommendations: buildRecommendationsFromWorkspace(workspace),
     audits: workspace.audits,
     drafts: workspace.drafts,
-    showOnboarding: workspace.sessionCount === 0 && workspace.drafts.length === 0,
+    showOnboarding: workspace.completedSessionCount === 0,
   }
 }
 
