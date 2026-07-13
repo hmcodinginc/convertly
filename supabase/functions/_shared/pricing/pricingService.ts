@@ -33,6 +33,28 @@ export function assertPaidPlan(planId: string): PaidPlanId {
   return resolved
 }
 
+const PLAN_RANK: Record<ConvertlyPlanId, number> = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+  scale: 3,
+}
+
+export type PlanChangeDirection = "upgrade" | "downgrade" | "same"
+
+export function comparePlanRank(a: ConvertlyPlanId, b: ConvertlyPlanId): number {
+  return PLAN_RANK[a] - PLAN_RANK[b]
+}
+
+export function resolvePlanChangeDirection(
+  currentPlan: ConvertlyPlanId,
+  targetPlan: PaidPlanId
+): PlanChangeDirection {
+  const delta = comparePlanRank(currentPlan, targetPlan)
+  if (delta === 0) return "same"
+  return delta < 0 ? "upgrade" : "downgrade"
+}
+
 export function getPlanDefinition(planId: ConvertlyPlanId, _region: PricingRegion = "default") {
   return CONVERTLY_PLANS[planId]
 }
@@ -96,12 +118,16 @@ export function mapFromProviderPlanId(
 /** Prefer validated Convertly plan notes; fall back to provider plan ID mapping. */
 export function resolvePaidPlanFromSubscription(
   notePlanId: string | undefined,
-  providerPlanId: string,
+  providerPlanId: string | undefined,
   provider: PaymentProviderId,
   region: PricingRegion = "default"
 ): PaidPlanId | null {
   if (notePlanId && isPaidPlan(notePlanId)) {
     return notePlanId
+  }
+
+  if (!providerPlanId) {
+    return null
   }
 
   const mapped = mapFromProviderPlanId(providerPlanId, provider, region)

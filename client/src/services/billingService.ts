@@ -4,8 +4,21 @@ import {
   type EffectivePlanId,
   type SubscriptionPlanId,
 } from "@/lib/billingPlans"
-import { setPendingCheckout, markCheckoutExternalNavigation } from "@/lib/checkoutPersistence"
-import { clearPaymentNotice } from "@/lib/paymentNoticePersistence"
+import {
+  isPaidEffectivePlan,
+} from "@/lib/planRank"
+import {
+  clearAllPaymentClientState,
+  markCheckoutExternalNavigation,
+  setPendingCheckout,
+} from "@/lib/checkoutPersistence"
+import { clearPaymentNotice, persistPaymentNotice } from "@/lib/paymentNoticePersistence"
+import { dispatchPaymentNoticeRefresh } from "@/lib/paymentNoticeSync"
+import { clearPendingPlanBannerDismissal } from "@/lib/pendingPlanBannerPersistence"
+import {
+  hasActivePaidRazorpaySubscription,
+  shouldOfferPendingPlanCheckout,
+} from "@/lib/subscriptionHelpers"
 import { assertBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { env } from "@/lib/env"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
@@ -21,8 +34,11 @@ import * as workspaceRepository from "@/services/repositories/business/workspace
 import type {
   BillingPlanOption,
   BillingSnapshot,
+  ChangePlanResult,
   CheckoutSessionResult,
+  PendingPlanChange,
   PortalSessionResult,
+  ScheduledPlanChange,
 } from "@/types/billing"
 
 function formatRenewalDate(iso: string | null): string | null {
@@ -34,11 +50,30 @@ function formatRenewalDate(iso: string | null): string | null {
   })
 }
 
-function formatStatus(status: string): string {
-  return status
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
+function buildScheduledPlanChange(
+  subscription: Awaited<ReturnType<typeof workspaceRepository.getSubscriptionByWorkspaceId>>
+): ScheduledPlanChange | null {
+  if (!subscription?.scheduled_plan) return null
+
+  const plan = pricingService.getPlanPricing(subscription.scheduled_plan)
+  return {
+    planId: subscription.scheduled_plan,
+    planName: plan.name,
+    changeAt: subscription.scheduled_change_at,
+    changeAtFormatted: formatRenewalDate(subscription.scheduled_change_at),
+  }
+}
+
+function buildPendingPlanChange(
+  subscription: Awaited<ReturnType<typeof workspaceRepository.getSubscriptionByWorkspaceId>>
+): PendingPlanChange | null {
+  if (!subscription?.pending_plan || subscription.pending_plan === "free") return null
+
+  const plan = pricingService.getPlanPricing(subscription.pending_plan)
+  return {
+    planId: subscription.pending_plan,
+    planName: plan.name,
+  }
 }
 
 function buildPlanOptions(currentPlanId: EffectivePlanId): BillingPlanOption[] {
@@ -69,6 +104,8 @@ export async function getBilling(userId: string): Promise<BillingSnapshot> {
   const resolved = await resolvePlanForUser(userId)
   const usage = buildPlanUsage(subscription, resolved)
   const entitlement = getEffectivePlanEntitlement(usage.effectivePlanId)
+  const pendingPlanChange = buildPendingPlanChange(subscription)
+  const hasActiveRazorpaySubscription = hasActivePaidRazorpaySubscription(subscription)
 
   return {
     plan: {
@@ -103,6 +140,13 @@ export async function getBilling(userId: string): Promise<BillingSnapshot> {
     plans: buildPlanOptions(usage.effectivePlanId),
     canUpgrade: !resolved.hasPlanOverride && (usage.effectivePlanId === "free" || usage.auditsRemaining === 0),
     paymentsConfigured: true,
+    scheduledPlanChange: resolved.hasPlanOverride ? null : buildScheduledPlanChange(subscription),
+    pendingPlanChange,
+    hasActiveRazorpaySubscription,
+    showPendingPlanCheckout: shouldOfferPendingPlanCheckout(
+      subscription,
+      pendingPlanChange?.planId ?? subscription.pending_plan
+    ),
   }
 }
 
@@ -128,6 +172,71 @@ export async function cancelSubscriptionAtPeriodEnd(userId: string): Promise<voi
   assertBusinessFoundationEnabled()
   await ensureBusinessFoundation(userId)
   await paymentClient.invokeCancelSubscription(true)
+}
+
+export async function setPendingPlan(
+  userId: string,
+  planId: SubscriptionPlanId | null
+): Promise<void> {
+  assertBusinessFoundationEnabled()
+  await ensureBusinessFoundation(userId)
+  await workspaceRepository.setPendingPlan(planId)
+  if (planId) {
+    clearPendingPlanBannerDismissal(userId)
+  }
+}
+
+export async function schedulePendingPlanChange(
+  userId: string,
+  planId: SubscriptionPlanId
+): Promise<void> {
+  assertBusinessFoundationEnabled()
+  await ensureBusinessFoundation(userId)
+
+  const workspaceId = await ensureBusinessFoundation(userId)
+  const subscription = await workspaceRepository.getSubscriptionByWorkspaceId(workspaceId)
+  const paidPlan = pricingService.assertPaidCheckoutPlan(planId)
+
+  if (subscription?.cancel_at_period_end) {
+    await setPendingPlan(userId, paidPlan)
+    return
+  }
+
+  if (!hasActivePaidRazorpaySubscription(subscription)) {
+    throw new Error("No active subscription to update.")
+  }
+
+  clearPaymentNotice()
+  await cancelSubscriptionAtPeriodEnd(userId)
+  await setPendingPlan(userId, paidPlan)
+}
+
+/** Checkout.js modal dismiss — clears client checkout state and surfaces billing notice. */
+function handleModalCheckoutDismissed(userId: string): void {
+  clearAllPaymentClientState()
+  persistPaymentNotice(userId, "checkout_cancelled")
+  dispatchPaymentNoticeRefresh()
+}
+
+export async function cancelScheduledPlanChange(userId: string): Promise<ChangePlanResult> {
+  assertBusinessFoundationEnabled()
+  await ensureBusinessFoundation(userId)
+
+  const result = await paymentClient.invokeChangePlan(undefined, { cancelScheduled: true })
+  persistPaymentNotice(userId, "plan_change_cancelled")
+  dispatchPaymentNoticeRefresh()
+  return result
+}
+
+export async function requestPlanChange(
+  userId: string,
+  planId: SubscriptionPlanId,
+  options?: {
+    onCheckoutDismissed?: () => void
+    onCheckoutSuccess?: () => void
+  }
+): Promise<"modal" | "redirect"> {
+  return redirectToCheckout(userId, planId, options)
 }
 
 export async function redirectToCheckout(
@@ -163,8 +272,12 @@ export async function redirectToCheckout(
       customerName: authSession
         ? `${authSession.firstName} ${authSession.lastName}`.trim() || undefined
         : undefined,
-      onDismiss: options?.onCheckoutDismissed,
-      onSuccess: () => {
+      onDismiss: () => {
+        handleModalCheckoutDismissed(userId)
+        options?.onCheckoutDismissed?.()
+      },
+      onSuccess: async () => {
+        await setPendingPlan(userId, null)
         options?.onCheckoutSuccess?.()
       },
     })
@@ -186,4 +299,15 @@ export async function redirectToCheckout(
 export async function redirectToBillingPortal(userId: string): Promise<void> {
   const session = await createPortalSession(userId)
   window.location.assign(session.url)
+}
+
+export function shouldUsePendingPlanFlow(billing: BillingSnapshot): boolean {
+  return billing.hasActiveRazorpaySubscription
+}
+
+export function isPaidPlanSelectionBlocked(
+  billing: BillingSnapshot,
+  planId: SubscriptionPlanId
+): boolean {
+  return billing.plan.planId === planId && isPaidEffectivePlan(billing.plan.planId)
 }

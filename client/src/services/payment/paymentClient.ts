@@ -1,8 +1,9 @@
 import type { PaidPlanId } from "@/services/pricingService"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
-import type { CheckoutSessionResult, PortalSessionResult } from "@/types/billing"
+import type { CheckoutSessionResult, ChangePlanResult, PortalSessionResult } from "@/types/billing"
 
 const CHECKOUT_FUNCTION = "payment-checkout"
+const CHANGE_PLAN_FUNCTION = "payment-change-plan"
 const PORTAL_FUNCTION = "payment-portal"
 const CANCEL_FUNCTION = "payment-cancel"
 
@@ -50,6 +51,30 @@ export async function invokePortal(returnUrl: string): Promise<PortalSessionResu
 
   if (!data?.url) {
     throw new Error("Billing portal session could not be created.")
+  }
+
+  return data
+}
+
+export async function invokeChangePlan(
+  planId?: PaidPlanId,
+  options?: { cancelScheduled?: boolean }
+): Promise<ChangePlanResult> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.functions.invoke<ChangePlanResult>(
+    CHANGE_PLAN_FUNCTION,
+    {
+      method: "POST",
+      body: options?.cancelScheduled ? { cancelScheduled: true } : { planId },
+    }
+  )
+
+  if (error) {
+    throw new Error(error.message || "Unable to change plan.")
+  }
+
+  if (!data?.direction) {
+    throw new Error("Plan change could not be completed.")
   }
 
   return data

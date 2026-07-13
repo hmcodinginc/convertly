@@ -338,6 +338,9 @@ export type Database = {
           current_period_start: string | null
           current_period_end: string | null
           cancel_at_period_end: boolean
+          scheduled_plan: SubscriptionPlanId | null
+          scheduled_change_at: string | null
+          pending_plan: SubscriptionPlanId | null
           lifetime_audits_used: number
           period_audits_used: number
           created_at: string
@@ -356,6 +359,9 @@ export type Database = {
           current_period_start?: string | null
           current_period_end?: string | null
           cancel_at_period_end?: boolean
+          scheduled_plan?: SubscriptionPlanId | null
+          scheduled_change_at?: string | null
+          pending_plan?: SubscriptionPlanId | null
           lifetime_audits_used?: number
           period_audits_used?: number
           created_at?: string
@@ -371,6 +377,9 @@ export type Database = {
           current_period_start?: string | null
           current_period_end?: string | null
           cancel_at_period_end?: boolean
+          scheduled_plan?: SubscriptionPlanId | null
+          scheduled_change_at?: string | null
+          pending_plan?: SubscriptionPlanId | null
           lifetime_audits_used?: number
           period_audits_used?: number
           updated_at?: string
@@ -472,6 +481,10 @@ export type Database = {
       get_active_plan_override: {
         Args: { p_user_id: string }
         Returns: "starter" | "growth" | "scale" | "internal" | null
+      }
+      set_subscription_pending_plan: {
+        Args: { p_pending_plan: SubscriptionPlanId | null }
+        Returns: undefined
       }
     }
     Enums: {

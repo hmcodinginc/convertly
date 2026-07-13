@@ -1,7 +1,8 @@
 import { AnimatePresence } from "framer-motion"
-import { Link, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 
+import { PendingPlanResumeBanner } from "@/components/billing/PendingPlanResumeBanner"
 import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
 import { PremiumWelcomeCard } from "@/components/billing/PremiumWelcomeCard"
 import { OnboardingCard } from "@/components/feedback/OnboardingCard"
@@ -25,8 +26,15 @@ import {
 } from "@/features/dashboard/utils/auditDashboardView"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { type SubscriptionPlanId } from "@/lib/billingPlans"
+import {
+  dismissPendingPlanBanner,
+  isPendingPlanBannerDismissed,
+} from "@/lib/pendingPlanBannerPersistence"
+import { showErrorToast } from "@/lib/toast"
 import { isKnownPlan } from "@/services/pricingService"
+import * as billingService from "@/services/billingService"
 import {
   dismissPremiumWelcome,
   peekPremiumActivation,
@@ -76,6 +84,7 @@ function resolveActivationContext(
 function DashboardPage() {
   const { session } = useAuthSession()
   const userId = session?.userId ?? ""
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activationContext, setActivationContext] = useState<PremiumActivationContext | null>(
     null
@@ -85,6 +94,18 @@ function DashboardPage() {
   const { data, isLoading, isError, error, reload } = useAsyncData(loadDashboard, [])
   const [userSelectedAuditId, setUserSelectedAuditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Audit | null>(null)
+  const [pendingPlanCheckoutLoading, setPendingPlanCheckoutLoading] = useState(false)
+  const [dismissedBannerUserId, setDismissedBannerUserId] = useState<string | null>(null)
+  const pendingPlanBannerDismissed =
+    !userId ||
+    dismissedBannerUserId === userId ||
+    isPendingPlanBannerDismissed(userId)
+
+  const { data: billing } = useAsyncData(
+    () => billingService.getBilling(userId),
+    [userId],
+    { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
+  )
 
   useEffect(() => {
     const activated = searchParams.get("activated")
@@ -193,6 +214,37 @@ function DashboardPage() {
     )
   }
 
+  async function handlePendingPlanSubscribe() {
+    if (!billing?.pendingPlanChange) return
+    setPendingPlanCheckoutLoading(true)
+    try {
+      const mode = await billingService.redirectToCheckout(
+        userId,
+        billing.pendingPlanChange.planId,
+        {
+          onCheckoutDismissed: () => setPendingPlanCheckoutLoading(false),
+          onCheckoutSuccess: () => {
+            navigate(`${ROUTES.billingReturn}?checkout=success`, { replace: true })
+          },
+        }
+      )
+      if (mode === "modal") {
+        setPendingPlanCheckoutLoading(false)
+      }
+    } catch (checkoutError) {
+      showErrorToast(
+        "Checkout failed",
+        checkoutError instanceof Error ? checkoutError : new Error("Unable to start checkout")
+      )
+      setPendingPlanCheckoutLoading(false)
+    }
+  }
+
+  function handleDismissPendingPlanBanner() {
+    dismissPendingPlanBanner(userId)
+    setDismissedBannerUserId(userId)
+  }
+
   async function handleConfirmDelete() {
     if (!deleteTarget) return
     await auditService.deleteAudit(deleteTarget.id)
@@ -207,6 +259,17 @@ function DashboardPage() {
     <AppPageShell header={header}>
       {showCelebration && !showWelcomeCard ? (
         <PremiumCelebrationBanner planName={celebrationPlanName} />
+      ) : null}
+
+      {billing?.showPendingPlanCheckout &&
+      billing.pendingPlanChange &&
+      !pendingPlanBannerDismissed ? (
+        <PendingPlanResumeBanner
+          pendingPlan={billing.pendingPlanChange}
+          isLoading={pendingPlanCheckoutLoading}
+          onSubscribe={() => void handlePendingPlanSubscribe()}
+          onDismiss={handleDismissPendingPlanBanner}
+        />
       ) : null}
 
       <AnimatePresence>

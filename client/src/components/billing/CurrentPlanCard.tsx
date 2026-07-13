@@ -5,15 +5,19 @@ import { SectionHeader } from "@/components/layout/SectionHeader"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { cn } from "@/lib/utils"
-import type { BillingPlanSummary } from "@/types/billing"
+import type { BillingPlanSummary, PendingPlanChange, ScheduledPlanChange } from "@/types/billing"
 
 type CurrentPlanCardProps = {
   plan: BillingPlanSummary
+  scheduledPlanChange?: ScheduledPlanChange | null
+  pendingPlanChange?: PendingPlanChange | null
   onManage?: () => void
   onCancel?: () => void
+  onCancelScheduledChange?: () => void
   onUpgrade?: () => void
   isManaging?: boolean
   isCancelling?: boolean
+  isCancellingScheduledChange?: boolean
   showUpgrade?: boolean
   justActivated?: boolean
   animateBadgeOnce?: boolean
@@ -38,11 +42,15 @@ function isPaidPlan(planId: BillingPlanSummary["planId"]): boolean {
 
 function CurrentPlanCard({
   plan,
+  scheduledPlanChange,
+  pendingPlanChange,
   onManage,
   onCancel,
+  onCancelScheduledChange,
   onUpgrade,
   isManaging,
   isCancelling,
+  isCancellingScheduledChange,
   showUpgrade,
   justActivated,
   animateBadgeOnce = false,
@@ -51,6 +59,26 @@ function CurrentPlanCard({
   const isPremium = isPaidPlan(plan.planId)
   const statusVariant =
     plan.status === "active" || plan.status === "trialing" ? "success" : "warning"
+
+  const description = isInternalAccount
+    ? "Internal workspace access"
+    : plan.cancelAtPeriodEnd && plan.renewalDate
+      ? `Cancels on ${plan.renewalDate}`
+      : scheduledPlanChange?.changeAtFormatted
+        ? `Changes to ${scheduledPlanChange.planName} on ${scheduledPlanChange.changeAtFormatted}`
+        : plan.renewalDate
+          ? `Renews ${plan.renewalDate}`
+          : plan.planId === "free"
+            ? "Free lifetime allowance"
+            : "Billing period"
+
+  const statusLabel = plan.cancelAtPeriodEnd
+    ? plan.renewalDate
+      ? `Cancels on ${plan.renewalDate}`
+      : "Cancels at period end"
+    : isInternalAccount
+      ? "Internal"
+      : plan.status.replace("_", " ")
 
   return (
     <Card
@@ -65,15 +93,7 @@ function CurrentPlanCard({
           variant="app"
           className="!space-y-1"
           title="Current plan"
-          description={
-            isInternalAccount
-              ? "Internal workspace access"
-              : plan.renewalDate
-                ? `Renews ${plan.renewalDate}`
-                : plan.planId === "free"
-                  ? "Free lifetime allowance"
-                  : "Billing period"
-          }
+          description={description}
         />
         <div className="flex flex-wrap items-center gap-2">
           {isPremium ? (
@@ -83,9 +103,15 @@ function CurrentPlanCard({
               animateOnce={animateBadgeOnce || justActivated}
             />
           ) : null}
+          {scheduledPlanChange ? (
+            <StatusBadge
+              label={`Downgrade to ${scheduledPlanChange.planName}`}
+              variant="warning"
+            />
+          ) : null}
           <AnimatedStatusBadge
-            label={isInternalAccount ? "Internal" : plan.status.replace("_", " ")}
-            variant={statusVariant}
+            label={statusLabel}
+            variant={plan.cancelAtPeriodEnd ? "warning" : statusVariant}
             animateOnce={animateBadgeOnce && isPremium}
           />
         </div>
@@ -100,8 +126,27 @@ function CurrentPlanCard({
       </div>
       <Text size="sm" className="max-w-none font-medium text-foreground/90">
         {plan.name} plan
-        {plan.cancelAtPeriodEnd ? " · Cancels at period end" : ""}
+        {scheduledPlanChange
+          ? ` · ${scheduledPlanChange.planName} starts ${
+              scheduledPlanChange.changeAtFormatted ?? "at period end"
+            }`
+          : ""}
       </Text>
+
+      {pendingPlanChange ? (
+        <div className="rounded-xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-4 py-3.5">
+          <Text size="sm" className="max-w-none font-medium text-foreground">
+            Next plan
+          </Text>
+          <Text size="sm" className="mt-1 max-w-none text-foreground/90">
+            {pendingPlanChange.planName}
+          </Text>
+          <Text variant="muted" size="sm" className="mt-1 max-w-none">
+            Waiting for activation after current subscription ends.
+          </Text>
+        </div>
+      ) : null}
+
       {isInternalAccount ? (
         <InternalAccountBadge />
       ) : (
@@ -124,6 +169,16 @@ function CurrentPlanCard({
               onClick={() => void onCancel()}
             >
               {isCancelling ? "Cancelling…" : "Cancel subscription"}
+            </Button>
+          ) : null}
+          {scheduledPlanChange && onCancelScheduledChange ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isManaging || isCancelling || isCancellingScheduledChange}
+              onClick={() => void onCancelScheduledChange()}
+            >
+              {isCancellingScheduledChange ? "Cancelling…" : "Cancel scheduled downgrade"}
             </Button>
           ) : null}
           {showUpgrade && onUpgrade ? (

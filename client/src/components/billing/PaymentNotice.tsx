@@ -25,13 +25,16 @@ function NoticeIcon({ kind }: { kind: PaymentNoticeContent["kind"] }) {
     case "redirecting_to_razorpay":
     case "waiting_for_payment_approval":
     case "waiting_for_webhook_verification":
+    case "plan_upgrade_processing":
       return <Loader2 className="payment-notice__icon animate-spin" aria-hidden />
+    case "checkout_cancelled":
     case "payment_cancelled":
     case "verification_delayed":
       return <AlertTriangle className="payment-notice__icon" aria-hidden />
     case "payment_received":
       return <CreditCard className="payment-notice__icon" aria-hidden />
     case "subscription_activated":
+    case "plan_change_cancelled":
       return <CheckCircle2 className="payment-notice__icon" aria-hidden />
     case "verification_failed":
     case "payment_service_unavailable":

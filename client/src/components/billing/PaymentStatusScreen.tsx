@@ -30,6 +30,8 @@ type PaymentStatusScreenProps = {
   phase: PaymentVerificationPhase
   planName: string
   planId?: SubscriptionPlanId
+  /** Plan upgrade may already be applied while provider status is still propagating. */
+  upgradeLikelyApplied?: boolean
   onRetry?: () => void
   isRetrying?: boolean
   onDismiss?: () => void
@@ -51,7 +53,11 @@ const LOADING_PHASES: PaymentVerificationPhase[] = [
   "waiting",
 ]
 
-function getPhaseContent(phase: PaymentVerificationPhase, planName: string): PhaseContent {
+function getPhaseContent(
+  phase: PaymentVerificationPhase,
+  planName: string,
+  upgradeLikelyApplied = false
+): PhaseContent {
   switch (phase) {
     case "processing":
       return {
@@ -95,13 +101,21 @@ function getPhaseContent(phase: PaymentVerificationPhase, planName: string): Pha
         tone: "warning",
       }
     case "timedOut":
-      return {
-        title: "Still confirming your subscription",
-        description:
-          "We haven't received payment confirmation yet. Your plan was not changed — you can retry verification or return to Billing.",
-        reassurance: "If you were charged, contact support and we'll resolve it quickly.",
-        tone: "warning",
-      }
+      return upgradeLikelyApplied
+        ? {
+            title: "Still confirming your subscription",
+            description: `Your ${planName} upgrade may already be active. We're still waiting for final confirmation from our payment provider.`,
+            reassurance:
+              "Return to Billing to check your plan, or retry verification here if it hasn't updated yet.",
+            tone: "warning",
+          }
+        : {
+            title: "Still confirming your subscription",
+            description:
+              "We haven't received final payment confirmation yet. You can retry verification or return to Billing.",
+            reassurance: "If you were charged, contact support and we'll resolve it quickly.",
+            tone: "warning",
+          }
     case "cancelled":
       return {
         title: "Subscription was cancelled",
@@ -190,12 +204,13 @@ function PaymentStatusScreen({
   phase,
   planName,
   planId = "starter",
+  upgradeLikelyApplied = false,
   onRetry,
   isRetrying,
   onDismiss,
 }: PaymentStatusScreenProps) {
   const shouldReduceMotion = useReducedMotion()
-  const content = getPhaseContent(phase, planName)
+  const content = getPhaseContent(phase, planName, upgradeLikelyApplied)
   const unlockBenefits = getPremiumUnlockBenefits(planId)
   const isSuccess = phase === "success"
   const isFailure = phase === "failure" || phase === "timedOut"

@@ -8,6 +8,7 @@ export {
 
 export {
   assertPaidPlan,
+  comparePlanRank,
   getPlanDefinition,
   isKnownPlan,
   isPaidPlan,
@@ -15,5 +16,7 @@ export {
   mapToProviderPlanId,
   resolvePaidPlanFromSubscription,
   resolvePlan,
+  resolvePlanChangeDirection,
+  type PlanChangeDirection,
   type PricingRegion,
 } from "./pricingService.ts"

@@ -14,9 +14,11 @@ import {
 import { navigateToBillingWithPaymentNotice } from "@/lib/paymentNoticeNavigation"
 import { persistPaymentNotice } from "@/lib/paymentNoticePersistence"
 import { markPremiumActivated } from "@/lib/premiumWelcomePersistence"
+import { billingReflectsPurchasedUpgrade } from "@/lib/paymentActivation"
 import { resolvePaymentReturnEntry } from "@/lib/paymentSession"
 import { ROUTES } from "@/lib/routes"
 import type { SubscriptionPlanId } from "@/lib/billingPlans"
+import * as billingService from "@/services/billingService"
 
 function resolveCheckoutParam(
   checkoutParam: string | null
@@ -78,6 +80,7 @@ function PaymentReturnPage() {
     pending: entry.pending,
     active: verifyActive,
     onSuccess: (billing) => {
+      void billingService.setPendingPlan(userId, null)
       const planId = (entry.pending?.planId ?? billing.plan.planId) as SubscriptionPlanId
       markPremiumActivated({
         planId,
@@ -166,12 +169,19 @@ function PaymentReturnPage() {
   }
 
   if (phase === "timedOut") {
+    const upgradeLikelyApplied = Boolean(
+      billing &&
+        entry.pending &&
+        billingReflectsPurchasedUpgrade(billing, entry.pending)
+    )
+
     return (
       <AppPageShell header={header}>
         <PaymentStatusScreen
           phase="timedOut"
           planName={planName}
           planId={entry.pending?.planId}
+          upgradeLikelyApplied={upgradeLikelyApplied}
           onRetry={() => {
             setForceVerify(true)
             retry()
@@ -182,7 +192,7 @@ function PaymentReturnPage() {
             navigateToBillingWithPaymentNotice(
               navigate,
               userId,
-              "verification_delayed",
+              upgradeLikelyApplied ? "subscription_activated" : "verification_delayed",
               planName
             )
           }}

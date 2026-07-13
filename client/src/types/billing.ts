@@ -12,6 +12,13 @@ export type BillingPlanSummary = {
   cancelAtPeriodEnd: boolean
 }
 
+export type ScheduledPlanChange = {
+  planId: SubscriptionPlanId
+  planName: string
+  changeAt: string | null
+  changeAtFormatted: string | null
+}
+
 export type BillingUsage = {
   auditsUsed: number
   auditsIncluded: number
@@ -31,12 +38,31 @@ export type BillingPlanOption = {
   highlight: boolean
 }
 
+export type PendingPlanChange = {
+  planId: SubscriptionPlanId
+  planName: string
+}
+
 export type BillingSnapshot = {
   plan: BillingPlanSummary
   usage: BillingUsage
   plans: BillingPlanOption[]
   canUpgrade: boolean
   paymentsConfigured: boolean
+  scheduledPlanChange: ScheduledPlanChange | null
+  pendingPlanChange: PendingPlanChange | null
+  hasActiveRazorpaySubscription: boolean
+  showPendingPlanCheckout: boolean
+}
+
+export type ChangePlanResult = {
+  direction: "upgrade" | "downgrade" | "cancel_scheduled"
+  scheduleChangeAt?: "cycle_end"
+  targetPlanId?: SubscriptionPlanId
+  externalSubscriptionId?: string
+  hasScheduledChanges?: boolean
+  changeScheduledAt?: string | null
+  message: string
 }
 
 export type CheckoutSessionResult = {
