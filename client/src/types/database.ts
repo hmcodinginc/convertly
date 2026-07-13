@@ -9,6 +9,7 @@ export type Json =
   | Json[]
 
 export type AuditSessionStatus =
+  | "draft"
   | "pending"
   | "crawling"
   | "analyzing"
@@ -63,6 +64,7 @@ export type Database = {
           id: string
           user_id: string
           website_url: string
+          audit_type: string
           status: AuditSessionStatus
           error_message: string | null
           workspace_id: string | null
@@ -73,6 +75,7 @@ export type Database = {
           id?: string
           user_id: string
           website_url: string
+          audit_type?: string
           status?: AuditSessionStatus
           error_message?: string | null
           workspace_id?: string | null
@@ -83,6 +86,7 @@ export type Database = {
           id?: string
           user_id?: string
           website_url?: string
+          audit_type?: string
           status?: AuditSessionStatus
           error_message?: string | null
           workspace_id?: string | null

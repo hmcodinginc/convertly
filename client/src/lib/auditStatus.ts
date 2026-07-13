@@ -3,6 +3,7 @@ import type { AuditSessionStatus } from "@/types/auditEngine"
 import type { AuditStatus } from "@/types/audit"
 
 const SESSION_STATUS_LABELS: Record<AuditSessionStatus, string> = {
+  draft: "Draft",
   pending: "Pending",
   crawling: "Crawling",
   analyzing: "Analyzing",
@@ -11,6 +12,7 @@ const SESSION_STATUS_LABELS: Record<AuditSessionStatus, string> = {
 }
 
 const SESSION_STATUS_VARIANTS: Record<AuditSessionStatus, StatusBadgeVariant> = {
+  draft: "neutral",
   pending: "neutral",
   crawling: "accent",
   analyzing: "accent",

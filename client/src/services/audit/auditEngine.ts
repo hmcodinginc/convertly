@@ -10,6 +10,8 @@ import {
 } from "@/services/audit/scoring/calculateAuditScore"
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import { delay } from "@/services/internal/delay"
+import { shouldUseSupabaseAudits } from "@/lib/env"
+import { consumeAuditEntitlement } from "@/services/entitlementService"
 import {
   serializeIntelligenceSnapshot,
   type IntelligenceSnapshot,
@@ -147,7 +149,7 @@ function buildComputedScores(
 
 export async function runAuditEngine(auditId: string): Promise<void> {
   const session = await getSessionById(auditId)
-  if (!session) return
+  if (!session || session.status === "draft") return
 
   try {
     await recordPhase(session, "crawling", "Discovering public pages")
@@ -312,6 +314,13 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       `Audit completed with Growth Score ${growthScore}${ceilingNote} across ${scoredFindings.length} findings`
     )
     await updateSessionStatus(auditId, "completed")
+    if (shouldUseSupabaseAudits()) {
+      try {
+        await consumeAuditEntitlement(analyzingSession.userId)
+      } catch {
+        // Allow completion even if allowance sync fails at the edge.
+      }
+    }
     await auditListRepository.syncAuditFromSession(auditId)
   } catch (error) {
     const message =

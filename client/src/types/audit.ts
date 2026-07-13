@@ -217,4 +217,6 @@ export type AuditDetail = {
 
 export type CreateAuditInput = {
   url: string
+  auditType?: string
+  draftId?: string
 }

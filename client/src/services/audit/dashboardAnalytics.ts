@@ -4,19 +4,37 @@ import {
 } from "@/services/audit/auditDetailBuilder"
 import {
   getAuditListForUser,
+  getDraftSessionsByUserId,
   getFindingsWithPagePathsForUser,
 } from "@/services/repositories/audit/provider"
+import { getDefaultAuditTemplateId, isAuditTemplateId } from "@/lib/auditTypes"
+import type { AuditDraft } from "@/types/auditDraft"
 import type { Audit, Recommendation } from "@/types/audit"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
 import type { AuditFinding } from "@/types/auditEngine"
 
 type WorkspaceData = {
   audits: Audit[]
+  drafts: AuditDraft[]
   findings: AuditFinding[]
   pagePathByPageId: Map<string, string>
   completedGrowthScores: number[]
   sessionCount: number
   completedSessionCount: number
+}
+
+function mapDraftSession(session: Awaited<ReturnType<typeof getDraftSessionsByUserId>>[number]): AuditDraft {
+  const auditType = isAuditTemplateId(session.auditType)
+    ? session.auditType
+    : getDefaultAuditTemplateId()
+
+  return {
+    id: session.id,
+    websiteUrl: session.websiteUrl,
+    auditType,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+  }
 }
 
 function severityToImpact(severity: AuditFinding["severity"]): OpportunityItem["impact"] {
@@ -44,10 +62,13 @@ async function loadWorkspaceData(userId: string): Promise<WorkspaceData> {
 const inflightWorkspace = new Map<string, Promise<WorkspaceData>>()
 
 async function fetchWorkspaceData(userId: string): Promise<WorkspaceData> {
-  const [listItems, findingsWithPaths] = await Promise.all([
+  const [listItems, findingsWithPaths, draftSessions] = await Promise.all([
     getAuditListForUser(userId),
     getFindingsWithPagePathsForUser(userId),
+    getDraftSessionsByUserId(userId),
   ])
+
+  const activeListItems = listItems.filter((item) => item.session.status !== "draft")
 
   const pagePathByPageId = new Map<string, string>()
   const findings: AuditFinding[] = []
@@ -59,23 +80,24 @@ async function fetchWorkspaceData(userId: string): Promise<WorkspaceData> {
     }
   }
 
-  const completedGrowthScores = listItems
+  const completedGrowthScores = activeListItems
     .filter((item) => item.session.status === "completed")
     .map((item) => resolveGrowthScoreFromScores(item.scores))
     .filter((score) => score > 0)
 
-  const completedSessionCount = listItems.filter(
+  const completedSessionCount = activeListItems.filter(
     (item) => item.session.status === "completed"
   ).length
 
   return {
-    audits: listItems.map((item) =>
+    audits: activeListItems.map((item) =>
       buildAuditListEntryFromSummary(item.session, item.pageCount, item.scores)
     ),
+    drafts: draftSessions.map(mapDraftSession),
     findings,
     pagePathByPageId,
     completedGrowthScores,
-    sessionCount: listItems.length,
+    sessionCount: activeListItems.length,
     completedSessionCount,
   }
 }
@@ -167,6 +189,7 @@ export type DashboardBundle = {
   opportunities: OpportunityItem[]
   recommendations: Recommendation[]
   audits: Audit[]
+  drafts: AuditDraft[]
   showOnboarding: boolean
 }
 
@@ -178,7 +201,8 @@ export async function buildDashboardBundle(userId: string): Promise<DashboardBun
     opportunities: buildOpportunitiesFromWorkspace(workspace),
     recommendations: buildRecommendationsFromWorkspace(workspace),
     audits: workspace.audits,
-    showOnboarding: workspace.sessionCount === 0,
+    drafts: workspace.drafts,
+    showOnboarding: workspace.sessionCount === 0 && workspace.drafts.length === 0,
   }
 }
 
@@ -189,7 +213,7 @@ export async function getUserAudits(userId: string): Promise<Audit[]> {
 
 export async function userHasAudits(userId: string): Promise<boolean> {
   const listItems = await getAuditListForUser(userId)
-  return listItems.length > 0
+  return listItems.some((item) => item.session.status !== "draft")
 }
 
 export async function buildDashboardMetrics(userId: string): Promise<DashboardMetric[]> {

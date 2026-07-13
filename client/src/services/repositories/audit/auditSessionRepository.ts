@@ -25,6 +25,7 @@ function createSession(userId: string, websiteUrl: string): AuditSession {
     id: createId(),
     userId,
     websiteUrl,
+    auditType: "full-funnel",
     createdAt: now,
     updatedAt: now,
     status: "pending",

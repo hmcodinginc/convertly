@@ -6,6 +6,7 @@ import type { AuditSessionStatus } from "@/types/auditEngine"
 const SAMPLE_AUDIT_IDS = new Set(["audit-1", "audit-2", "audit-3", "audit-4"])
 
 const SESSION_STATUS_OPTIONS: AuditSessionStatus[] = [
+  "draft",
   "pending",
   "crawling",
   "analyzing",

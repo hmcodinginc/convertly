@@ -2,6 +2,7 @@ import { AnimatePresence } from "framer-motion"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 
+import { AuditAllowanceBadge } from "@/components/audit/AuditAllowanceBadge"
 import { PendingPlanResumeBanner } from "@/components/billing/PendingPlanResumeBanner"
 import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
 import { PremiumWelcomeCard } from "@/components/billing/PremiumWelcomeCard"
@@ -15,6 +16,7 @@ import { AiRecommendationsSection } from "@/features/dashboard/sections/AiRecomm
 import { DashboardPriorityInsights } from "@/features/dashboard/sections/DashboardPriorityInsights"
 import { MetricsOverviewSection } from "@/features/dashboard/sections/MetricsOverviewSection"
 import { OpportunityQueueSection } from "@/features/dashboard/sections/OpportunityQueueSection"
+import { DraftAuditsSection } from "@/features/dashboard/sections/DraftAuditsSection"
 import { RecentAuditsSection } from "@/features/dashboard/sections/RecentAuditsSection"
 import { DeleteAuditModal } from "@/features/audits/components/DeleteAuditModal"
 import {
@@ -42,13 +44,16 @@ import {
   type PremiumActivationContext,
 } from "@/lib/premiumWelcomePersistence"
 import { ROUTES } from "@/lib/routes"
+import { getAuditEntitlement } from "@/services/entitlementService"
 import * as auditService from "@/services/auditService"
 import type { Audit, Recommendation } from "@/types/audit"
+import type { AuditDraft } from "@/types/auditDraft"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
 
 type DashboardData = {
   metrics: DashboardMetric[]
   audits: Audit[]
+  drafts: AuditDraft[]
   showOnboarding: boolean
 }
 
@@ -58,6 +63,7 @@ async function loadDashboard(): Promise<DashboardData> {
   return {
     metrics: bundle.metrics,
     audits: sortAuditsNewestFirst(bundle.audits),
+    drafts: bundle.drafts,
     showOnboarding: bundle.showOnboarding,
   }
 }
@@ -103,6 +109,12 @@ function DashboardPage() {
 
   const { data: billing } = useAsyncData(
     () => billingService.getBilling(userId),
+    [userId],
+    { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
+  )
+
+  const { data: entitlement } = useAsyncData(
+    () => getAuditEntitlement(userId),
     [userId],
     { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
   )
@@ -191,9 +203,12 @@ function DashboardPage() {
       title="Audit dashboard"
       description="Monitor conversion health, prioritize fixes, and track audit outcomes across your funnel."
       actions={
-        <Button size="sm" asChild>
-          <Link to={ROUTES.auditNew}>{heroCtaLabel}</Link>
-        </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          {entitlement ? <AuditAllowanceBadge entitlement={entitlement} /> : null}
+          <Button size="sm" asChild>
+            <Link to={ROUTES.auditNew}>{heroCtaLabel}</Link>
+          </Button>
+        </div>
       }
     />
   )
@@ -316,6 +331,8 @@ function DashboardPage() {
           />
         </>
       )}
+
+      <DraftAuditsSection drafts={data.drafts} onChanged={reload} />
 
       <RecentAuditsSection audits={data.audits} onDeleteRequest={setDeleteTarget} />
 

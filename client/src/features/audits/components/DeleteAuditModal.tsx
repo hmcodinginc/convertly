@@ -12,9 +12,20 @@ type DeleteAuditModalProps = {
   audit: Audit | null
   onClose: () => void
   onConfirmDelete: () => Promise<void>
+  title?: string
+  description?: string
+  confirmLabel?: string
 }
 
-function DeleteAuditModal({ open, audit, onClose, onConfirmDelete }: DeleteAuditModalProps) {
+function DeleteAuditModal({
+  open,
+  audit,
+  onClose,
+  onConfirmDelete,
+  title = "Delete audit",
+  description = "This permanently removes the audit and all related data.",
+  confirmLabel = "Delete audit",
+}: DeleteAuditModalProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,8 +64,8 @@ function DeleteAuditModal({ open, audit, onClose, onConfirmDelete }: DeleteAudit
     <Modal
       open={open}
       onClose={handleClose}
-      title="Delete audit"
-      description="This permanently removes the audit and all related data."
+      title={title}
+      description={description}
       panelClassName="max-w-md border-[color-mix(in_srgb,#ef4444_42%,var(--border))] shadow-[0_28px_64px_-24px_rgba(239,68,68,0.35),var(--shadow-medium)]"
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -85,7 +96,7 @@ function DeleteAuditModal({ open, audit, onClose, onConfirmDelete }: DeleteAudit
                   Deleting…
                 </>
               ) : (
-                "Delete audit"
+                confirmLabel
               )}
             </Button>
           </div>

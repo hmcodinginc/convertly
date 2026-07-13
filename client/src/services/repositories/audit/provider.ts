@@ -25,10 +25,17 @@ import type {
 export async function createSession(
   userId: string,
   websiteUrl: string,
-  workspaceId?: string
+  workspaceId?: string,
+  options?: { status?: AuditSessionStatus; auditType?: string }
 ): Promise<AuditSession> {
   if (shouldUseSupabaseAudits()) {
-    return supabaseSession.createSession(userId, websiteUrl, workspaceId)
+    return supabaseSession.createSession({
+      userId,
+      websiteUrl,
+      workspaceId,
+      status: options?.status,
+      auditType: options?.auditType,
+    })
   }
   return localSession.createSession(userId, websiteUrl)
 }
@@ -56,6 +63,30 @@ export async function updateSessionStatus(
     return supabaseSession.updateSessionStatus(id, status, errorMessage)
   }
   return localSession.updateSessionStatus(id, status, errorMessage)
+}
+
+export async function updateSessionFields(
+  id: string,
+  patch: {
+    websiteUrl?: string
+    auditType?: string
+    status?: AuditSessionStatus
+    errorMessage?: string | null
+  }
+): Promise<AuditSession | null> {
+  if (shouldUseSupabaseAudits()) {
+    return supabaseSession.updateSessionFields(id, patch)
+  }
+  return null
+}
+
+export async function getDraftSessionsByUserId(userId: string): Promise<AuditSession[]> {
+  if (shouldUseSupabaseAudits()) {
+    return supabaseSession.getDraftSessionsByUserId(userId)
+  }
+  return Promise.resolve(
+    localSession.getSessionsByUserId(userId).filter((session) => session.status === "draft")
+  )
 }
 
 export async function createPages(pages: AuditPage[]): Promise<AuditPage[]> {
