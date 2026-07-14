@@ -1,7 +1,6 @@
-import { useState } from "react"
 import { Check } from "lucide-react"
 import { motion } from "framer-motion"
-
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Section } from "@/components/layout/Section"
 import { SectionHeader } from "@/components/layout/SectionHeader"
@@ -9,64 +8,59 @@ import { Card } from "@/components/surfaces/Card"
 import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
 import { useAppAuthNavigate } from "@/hooks/useAppAuthNavigate"
+import { useAuthSession } from "@/hooks/useAuthSession"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 const pricingPlans = [
   {
-    name: "Starter",
+    name: "Free",
     priceMonthly: 0,
-    priceYearly: 0,
-    description: "Essential audit features for side projects and indie hackers.",
+    description: "Sign In Today for 2 lifetime audits to explore Convertly",
     features: [
-      "1 website crawl / month",
-      "Standard HTML analysis",
-      "Basic scoring engine checks",
-      "Online report preview",
+      "2 lifetime audits",
     ],
     ctaText: "Get Started Free",
     ctaRoute: ROUTES.signup,
     highlighted: false,
   },
   {
-    name: "Growth Pro",
-    priceMonthly: 49,
-    priceYearly: 39,
-    description: "Advanced conversion intelligence for high-converting teams.",
+    name: "Starter",
+    priceMonthly: 29,
+    description: "For solo operators running regular conversion checks.",
     features: [
-      "5 website crawls / month",
-      "V4 Engine (intent & cluster scoring)",
-      "High-fidelity JS rendering bot",
-      "Priority Opportunity Queue",
-      "Actionable recommendations",
-      "Unlimited PDF report exports",
+      "10 audits per month",
     ],
-    ctaText: "Upgrade to Pro",
+    ctaText: "Upgrade to Starter",
     ctaRoute: ROUTES.signup,
     highlighted: true,
   },
   {
-    name: "Enterprise",
-    priceMonthly: "Custom",
-    priceYearly: "Custom",
-    description: "Bespoke crawl limit & custom rule packs for agencies and large organizations.",
+    name: "Growth",
+    priceMonthly: 100,
+    description: "For growth teams scaling audit volume",
     features: [
-      "Unlimited audits & crawls",
-      "Custom brand rule packs",
-      "Dedicated render proxy IPs",
-      "Multi-user team workspaces",
-      "Custom SLA & account support",
-      "Dedicated account manager",
+      "30 audits per month",
     ],
-    ctaText: "Contact Sales",
+    ctaText: "Upgarde to growth",
     ctaRoute: ROUTES.signup,
     highlighted: false,
   },
 ]
 
 function PricingSection() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly")
   const { navigateWithSession } = useAppAuthNavigate()
+  const { isAuthenticated } = useAuthSession()
+  const navigate = useNavigate()
+
+  const handlePlanClick = (planCtaRoute: string) => {
+    if (isAuthenticated) {
+      // Logged in: go straight to billing, bypassing any default dashboard redirect
+      navigate(ROUTES.billing)
+    } else {
+      void navigateWithSession(planCtaRoute)
+    }
+  }
 
   return (
     <Section aria-labelledby="pricing-title" containerClassName="marketing-container">
@@ -75,50 +69,14 @@ function PricingSection() {
           eyebrow="Pricing"
           title="Simple, performance-driven plans"
           titleId="pricing-title"
-          description="Find a plan matching your site growth strategy. Save 20% when you pay yearly."
+          description="Find a plan matching your site growth strategy."
         />
-
-        {/* Toggle Switch */}
-        <div className="flex justify-center mt-2">
-          <div className="relative flex rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-1">
-            <button
-              type="button"
-              onClick={() => setBillingPeriod("monthly")}
-              className={cn(
-                "relative z-10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors duration-300 rounded-full",
-                billingPeriod === "monthly" ? "text-foreground" : "text-foreground/60 hover:text-foreground"
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingPeriod("yearly")}
-              className={cn(
-                "relative z-10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors duration-300 rounded-full",
-                billingPeriod === "yearly" ? "text-foreground" : "text-foreground/60 hover:text-foreground"
-              )}
-            >
-              Yearly
-            </button>
-            <motion.div
-              layoutId="pricing-billing-bg"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              className="absolute inset-y-1 rounded-full bg-[var(--accent)] shadow-[0_0_12px_rgba(124,108,255,0.4)]"
-              style={{
-                width: "50%",
-                left: billingPeriod === "monthly" ? "4px" : "calc(50% - 4px)",
-              }}
-            />
-          </div>
-        </div>
 
         {/* Cards Grid */}
         <div className="grid gap-6 md:grid-cols-3 items-stretch mt-4">
           {pricingPlans.map((plan) => {
             const isCustom = typeof plan.priceMonthly === "string"
-            const currentPrice = billingPeriod === "monthly" ? plan.priceMonthly : plan.priceYearly
-            
+
             return (
               <Card
                 key={plan.name}
@@ -142,7 +100,7 @@ function PricingSection() {
 
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-extrabold tracking-tight text-foreground">
-                    {isCustom ? currentPrice : `$${currentPrice}`}
+                    {isCustom ? plan.priceMonthly : `$${plan.priceMonthly}`}
                   </span>
                   {!isCustom && (
                     <Text variant="muted" size="sm" className="max-w-none">
@@ -152,7 +110,7 @@ function PricingSection() {
                 </div>
 
                 <Button
-                  onClick={() => void navigateWithSession(plan.ctaRoute)}
+                  onClick={() => handlePlanClick(plan.ctaRoute)}
                   className={cn(
                     "w-full h-11 transition-all duration-300",
                     plan.highlighted
