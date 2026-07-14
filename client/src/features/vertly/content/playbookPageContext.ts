@@ -1,5 +1,5 @@
 import type { Recommendation, RecommendationPlaybook } from "@/types/audit"
-import type { VertlyPageContext, VertlySuggestion } from "@/features/vertly/types"
+import type { VertlyAuditSnapshot, VertlyPageContext, VertlySuggestion } from "@/features/vertly/types"
 
 function buildPlaybookSuggestions(
   playbook: RecommendationPlaybook,
@@ -70,16 +70,55 @@ function buildPlaybookRelatedSuggestions(
 function buildPlaybookVertlyContext(
   playbook: RecommendationPlaybook,
   recommendation: Recommendation,
-  domain?: string
+  domain?: string,
+  auditContext?: VertlyAuditSnapshot | null
 ): Partial<VertlyPageContext> {
   const hasExampleCode = Boolean(playbook.exampleCode)
+
+  const enrichedAuditContext: VertlyAuditSnapshot | undefined = auditContext
+    ? {
+        ...auditContext,
+        selectedRecommendation: {
+          id: recommendation.id,
+          title: recommendation.title,
+          category: recommendation.category,
+          priority: recommendation.priority,
+        },
+      }
+    : {
+        auditId: "playbook",
+        website: domain ?? "your site",
+        status: "completed",
+        criticalFindings: 0,
+        highFindings: 0,
+        mediumFindings: 0,
+        lowFindings: 0,
+        pagesScanned: 0,
+        topRecommendations: [
+          {
+            id: recommendation.id,
+            title: recommendation.title,
+            priority: recommendation.priority,
+            category: recommendation.category,
+            estimatedLift: recommendation.estimatedLift,
+            summary: recommendation.summary,
+          },
+        ],
+        topIssues: [],
+        selectedRecommendation: {
+          id: recommendation.id,
+          title: recommendation.title,
+          category: recommendation.category,
+          priority: recommendation.priority,
+        },
+      }
 
   return {
     surface: "recommendation-playbook",
     title: playbook.title,
     description: `Reviewing ${recommendation.category} recommendation`,
+    auditContext: enrichedAuditContext,
     suggestions: buildPlaybookSuggestions(playbook, hasExampleCode),
-    quickActions: [],
     metadata: {
       ruleId: playbook.ruleId,
       severity: playbook.priority,

@@ -1,252 +1,136 @@
 import type { VertlyPageContext, VertlySuggestion, VertlySurface } from "@/features/vertly/types"
 import { buildPlaybookRelatedFromContext } from "@/features/vertly/content/playbookPageContext"
 
-type RelatedRule = {
+type SurfaceRelatedRule = {
   match: RegExp
   suggestions: VertlySuggestion[]
 }
 
-const SCORE_CHAIN: VertlySuggestion[] = [
-  {
-    id: "rel-improve-score",
-    label: "How do I improve it?",
-    prompt: "How do I improve my audit score?",
-  },
-  {
-    id: "rel-pages-score",
-    label: "What pages affect it?",
-    prompt: "Which pages most affect my overall score?",
-  },
-  {
-    id: "rel-score-examples",
-    label: "Show examples",
-    prompt: "Show me examples of high-impact fixes for my score.",
-  },
-]
-
-const ISSUE_CHAIN: VertlySuggestion[] = [
-  {
-    id: "rel-fix-first",
-    label: "What should I fix first?",
-    prompt: "What should I fix first in this audit?",
-  },
-  {
-    id: "rel-issue-impact",
-    label: "Estimated impact",
-    prompt: "How should I interpret estimated lift on recommendations?",
-  },
-  {
-    id: "rel-issue-examples",
-    label: "Show examples",
-    prompt: "Show me examples of similar fixes that worked.",
-  },
-]
-
-const PLAN_CHAIN: VertlySuggestion[] = [
-  {
-    id: "rel-compare-plans",
-    label: "Compare plans",
-    prompt: "Help me compare Convertly plans.",
-  },
-  {
-    id: "rel-when-upgrade",
-    label: "When to upgrade?",
-    prompt: "When should I upgrade my plan?",
-  },
-  {
-    id: "rel-usage-limits",
-    label: "Audit allowance",
-    prompt: "How does audit allowance work on my plan?",
-  },
-]
-
-const AUDIT_RUN_CHAIN: VertlySuggestion[] = [
-  {
-    id: "rel-audit-url",
-    label: "Which URL first?",
-    prompt: "Which URL should I audit first?",
-  },
-  {
-    id: "rel-audit-time",
-    label: "How long does it take?",
-    prompt: "How long does a Convertly audit take?",
-  },
-  {
-    id: "rel-audit-pages",
-    label: "What gets scanned?",
-    prompt: "What pages does Convertly scan during an audit?",
-  },
-]
-
-const GLOBAL_RULES: RelatedRule[] = [
-  { match: /\bscore\b|\boverall\b|\brating\b|\bgrade\b/, suggestions: SCORE_CHAIN },
-  {
-    match: /\bimprove\b|\bbetter\b|\bincrease\b|\blift\b|\boptimize\b/,
-    suggestions: [
-      {
-        id: "rel-prioritize",
-        label: "Prioritize fixes",
-        prompt: "How do I prioritize conversion fixes?",
-      },
-      {
-        id: "rel-quick-wins",
-        label: "Quick wins",
-        prompt: "What are quick wins I can implement today?",
-      },
-      {
-        id: "rel-measure",
-        label: "Measure results",
-        prompt: "How do I measure whether my changes worked?",
-      },
-    ],
-  },
-  {
-    match: /\bfix\b|\bissue\b|\brecommendation\b|\bproblem\b/,
-    suggestions: ISSUE_CHAIN,
-  },
-  {
-    match: /\bplan\b|\bbilling\b|\bupgrade\b|\bsubscription\b|\blimit\b/,
-    suggestions: PLAN_CHAIN,
-  },
-  {
-    match: /\baudit\b|\bscan\b|\brun\b|\bdomain\b|\burl\b/,
-    suggestions: AUDIT_RUN_CHAIN,
-  },
-  {
-    match: /\bdashboard\b|\bmetric\b|\boverview\b/,
-    suggestions: [
-      {
-        id: "rel-dash-read",
-        label: "Explain metrics",
-        prompt: "Explain the dashboard metrics.",
-      },
-      {
-        id: "rel-dash-prioritize",
-        label: "Prioritize opportunities",
-        prompt: "How do I prioritize conversion opportunities?",
-      },
-      {
-        id: "rel-dash-audit",
-        label: "Run an audit",
-        prompt: "How do I run my first audit?",
-      },
-    ],
-  },
-  {
-    match: /\bworkspace\b|\bdomain\b|\borganization\b|\bteam\b/,
-    suggestions: [
-      {
-        id: "rel-ws-domain",
-        label: "Add a domain",
-        prompt: "How do I add a website domain to my workspace?",
-      },
-      {
-        id: "rel-ws-primary",
-        label: "Primary domain",
-        prompt: "What is a primary domain in Convertly?",
-      },
-      {
-        id: "rel-ws-audit",
-        label: "Run an audit",
-        prompt: "How do I run an audit from my workspace?",
-      },
-    ],
-  },
-  {
-    match: /\bsetting\b|\bprofile\b|\bpassword\b|\bnotification\b/,
-    suggestions: [
-      {
-        id: "rel-settings-nav",
-        label: "Navigate settings",
-        prompt: "What can I manage in Settings?",
-      },
-      {
-        id: "rel-settings-security",
-        label: "Security options",
-        prompt: "How do I manage account security?",
-      },
-      {
-        id: "rel-settings-notify",
-        label: "Notification prefs",
-        prompt: "How do I control audit notification emails?",
-      },
-    ],
-  },
-]
-
-const SURFACE_DEFAULTS: Partial<Record<VertlySurface, VertlySuggestion[]>> = {
-  signup: [
-    {
-      id: "rel-signup-first",
-      label: "What should I do first?",
-      prompt: "What should I do after signing up?",
-    },
-    {
-      id: "rel-signup-audit",
-      label: "How do audits work?",
-      prompt: "How do website audits work in Convertly?",
-    },
-  ],
+const SURFACE_RELATED: Partial<Record<VertlySurface, VertlySuggestion[]>> = {
   dashboard: [
-    {
-      id: "rel-dash-first-audit",
-      label: "Run my first audit",
-      prompt: "How do I run my first audit?",
-    },
-    {
-      id: "rel-dash-read",
-      label: "Read the dashboard",
-      prompt: "How should I read the audit dashboard?",
-    },
+    { id: "rel-dash-explain", label: "Explain metrics", prompt: "Explain this dashboard." },
+    { id: "rel-dash-fix", label: "What to fix first", prompt: "Which issue should I fix first?" },
+    { id: "rel-dash-audit", label: "Run an audit", prompt: "How do I run my first audit?" },
   ],
-  "audit-new": AUDIT_RUN_CHAIN,
-  audits: [
-    {
-      id: "rel-hist-compare",
-      label: "Compare past audits",
-      prompt: "How do I compare past audits?",
-    },
-    {
-      id: "rel-hist-rerun",
-      label: "When to re-run",
-      prompt: "When should I re-run an audit?",
-    },
+  "audit-detail": [
+    { id: "rel-detail-explain", label: "Explain this audit", prompt: "Explain this audit." },
+    { id: "rel-detail-score", label: "Why this score?", prompt: "Why is my score low?" },
+    { id: "rel-detail-fix", label: "Fix first", prompt: "Which issue should I fix first?" },
   ],
-  "audit-detail": ISSUE_CHAIN,
   "recommendation-playbook": [],
-  workspace: [
-    {
-      id: "rel-ws-add",
-      label: "Add a domain",
-      prompt: "How do I add a website domain to my workspace?",
-    },
-    {
-      id: "rel-ws-setup",
-      label: "Workspace setup",
-      prompt: "How does workspace setup affect audits?",
-    },
+  "audit-new": [
+    { id: "rel-new-url", label: "Which URL first?", prompt: "Which URL should I audit first?" },
+    { id: "rel-new-time", label: "How long?", prompt: "How long do audits take?" },
+    { id: "rel-new-types", label: "Audit types", prompt: "Explain Full Funnel Audit." },
   ],
-  billing: PLAN_CHAIN,
-  "billing-return": PLAN_CHAIN,
+  audits: [
+    { id: "rel-hist-counted", label: "Why counted?", prompt: "Why was this audit counted?" },
+    { id: "rel-hist-compare", label: "Compare audits", prompt: "How do I compare past audits?" },
+    { id: "rel-hist-rerun", label: "When to re-run", prompt: "When should I re-run an audit?" },
+  ],
+  workspace: [
+    { id: "rel-ws-counted", label: "Why counted?", prompt: "Why was this audit counted?" },
+    { id: "rel-ws-ledger", label: "Audit ledger", prompt: "Explain the audit ledger in workspace." },
+    { id: "rel-ws-usage", label: "Usage breakdown", prompt: "How do I read workspace usage?" },
+  ],
+  billing: [
+    { id: "rel-bill-plans", label: "Compare plans", prompt: "What plans does Convertly offer?" },
+    { id: "rel-bill-limit", label: "Can't run audit?", prompt: "Why can't I run another audit?" },
+    { id: "rel-bill-usage", label: "My allowance", prompt: "How many audits do I have left?" },
+  ],
+  "billing-return": [
+    { id: "rel-bill-return", label: "Checkout status", prompt: "How does billing work?" },
+    { id: "rel-bill-plans", label: "Compare plans", prompt: "What plans does Convertly offer?" },
+    { id: "rel-bill-usage", label: "My allowance", prompt: "How many audits do I have left?" },
+  ],
   settings: [
-    {
-      id: "rel-settings-overview",
-      label: "Settings overview",
-      prompt: "What can I manage in Settings?",
-    },
+    { id: "rel-set-overview", label: "Settings overview", prompt: "What can I manage in Settings?" },
+    { id: "rel-set-profile", label: "Update profile", prompt: "How do I update my profile?" },
+    { id: "rel-set-security", label: "Security", prompt: "How do I manage account security?" },
+  ],
+  "settings-profile": [
+    { id: "rel-prof-edit", label: "Update profile", prompt: "How do I update my profile?" },
+    { id: "rel-prof-who", label: "Who am I?", prompt: "Who am I?" },
+  ],
+  "settings-preferences": [
+    { id: "rel-pref-defaults", label: "Default settings", prompt: "What preferences should I configure first?" },
+  ],
+  "settings-notifications": [
+    { id: "rel-notif-audit", label: "Audit alerts", prompt: "When do audit complete emails send?" },
+    { id: "rel-notif-digest", label: "Weekly digest", prompt: "What is the weekly digest notification?" },
+  ],
+  "settings-security": [
+    { id: "rel-sec-password", label: "Change password", prompt: "How do I change my password?" },
+  ],
+  "settings-danger": [
+    { id: "rel-danger-data", label: "Data removal", prompt: "What happens if I delete my account?" },
+  ],
+  signup: [
+    { id: "rel-signup-first", label: "What to do first", prompt: "What should I do after signing up?" },
+    { id: "rel-signup-audit", label: "How audits work", prompt: "How do audits work?" },
   ],
   generic: [
+    { id: "rel-gen-audit", label: "Run an audit", prompt: "How do I run a conversion audit?" },
+    { id: "rel-gen-plans", label: "Plans", prompt: "What plans does Convertly offer?" },
+  ],
+}
+
+const SURFACE_REFINEMENTS: Partial<Record<VertlySurface, SurfaceRelatedRule[]>> = {
+  dashboard: [
     {
-      id: "rel-gen-audit",
-      label: "Run an audit",
-      prompt: "How do I run a conversion audit?",
-    },
-    {
-      id: "rel-gen-billing",
-      label: "Plans & billing",
-      prompt: "Explain Convertly plans and billing.",
+      match: /\bscore\b|\bmetric\b/,
+      suggestions: [
+        { id: "rel-dash-score", label: "Explain metrics", prompt: "Explain this dashboard." },
+        { id: "rel-dash-fix", label: "What to fix first", prompt: "Which issue should I fix first?" },
+      ],
     },
   ],
+  "audit-detail": [
+    {
+      match: /\bscore\b/,
+      suggestions: [
+        { id: "rel-detail-score", label: "Why this score?", prompt: "Why is my score low?" },
+        { id: "rel-detail-fix", label: "Fix first", prompt: "Which issue should I fix first?" },
+      ],
+    },
+    {
+      match: /\brecommendation\b|\bfinding\b/,
+      suggestions: [
+        { id: "rel-detail-rec", label: "Explain recommendation", prompt: "What does this recommendation mean?" },
+        { id: "rel-detail-finding", label: "Explain finding", prompt: "Explain this finding." },
+      ],
+    },
+  ],
+  billing: [
+    {
+      match: /\blimit\b|\bcan'?t run\b/,
+      suggestions: [
+        { id: "rel-bill-limit", label: "Can't run audit?", prompt: "Why can't I run another audit?" },
+        { id: "rel-bill-usage", label: "My allowance", prompt: "How many audits do I have left?" },
+      ],
+    },
+  ],
+  workspace: [
+    {
+      match: /\bcounted\b|\bledger\b/,
+      suggestions: [
+        { id: "rel-ws-counted", label: "Why counted?", prompt: "Why was this audit counted?" },
+        { id: "rel-ws-ledger", label: "Audit ledger", prompt: "Explain the audit ledger in workspace." },
+      ],
+    },
+  ],
+}
+
+function resolveSurfaceRelated(surface: VertlySurface): VertlySuggestion[] {
+  if (SURFACE_RELATED[surface]?.length) {
+    return SURFACE_RELATED[surface]!
+  }
+
+  if (surface.startsWith("settings-")) {
+    return SURFACE_RELATED[surface] ?? SURFACE_RELATED.settings ?? SURFACE_RELATED.generic ?? []
+  }
+
+  return SURFACE_RELATED.generic ?? []
 }
 
 function dedupeSuggestions(suggestions: VertlySuggestion[]): VertlySuggestion[] {
@@ -267,41 +151,24 @@ export function buildRelatedSuggestions(
   }
 
   const normalized = message.trim().toLowerCase()
+  const refinements = SURFACE_REFINEMENTS[context.surface] ?? []
 
-  for (const rule of GLOBAL_RULES) {
-    if (rule.match.test(normalized)) {
-      return dedupeSuggestions(rule.suggestions).slice(0, 4)
+  if (normalized) {
+    for (const rule of refinements) {
+      if (rule.match.test(normalized)) {
+        return dedupeSuggestions(rule.suggestions).slice(0, 4)
+      }
     }
   }
 
-  const surfaceDefaults = SURFACE_DEFAULTS[context.surface] ?? SURFACE_DEFAULTS.generic ?? []
-  return dedupeSuggestions(surfaceDefaults).slice(0, 3)
-}
-
-export function getLatestRelatedSuggestions(messages: { role: string; content: string; suggestions?: VertlySuggestion[] }[]): VertlySuggestion[] {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
-    if (
-      message.role === "assistant" &&
-      message.content.trim() &&
-      message.suggestions &&
-      message.suggestions.length > 0
-    ) {
-      return message.suggestions
-    }
-  }
-  return []
+  return dedupeSuggestions(resolveSurfaceRelated(context.surface)).slice(0, 4)
 }
 
 export function resolveRelatedSuggestions(
   messages: { role: string; content: string; suggestions?: VertlySuggestion[] }[],
   pageContext: VertlyPageContext,
-  isTyping: boolean
+  _isTyping: boolean
 ): VertlySuggestion[] {
-  const latest = getLatestRelatedSuggestions(messages)
-  if (isTyping && latest.length > 0) return latest
-  if (latest.length > 0) return latest
-
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]
     if (message.role === "user" && message.content.trim()) {

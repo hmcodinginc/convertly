@@ -14,8 +14,10 @@ import { resolveRouteContext, SIGNUP_CONTEXT } from "@/features/vertly/content/p
 import { useVertlyLifeEngine } from "@/features/vertly/hooks/useVertlyLifeEngine"
 import {
   getSignupWelcomeMessage,
+  getPanelWelcomeMessage,
   requestVertlyResponse,
 } from "@/features/vertly/services/vertlyConversationService"
+import { buildVertlyEnrichedContext } from "@/features/vertly/routing/vertlyContextBuilder"
 import {
   dismissProactive,
   getVertlyUserKey,
@@ -64,8 +66,15 @@ function mergePageContext(
     ...base,
     ...override,
     metadata: { ...base.metadata, ...override.metadata },
-    suggestions: override.suggestions ?? base.suggestions,
-    quickActions: override.quickActions ?? base.quickActions,
+    auditContext: override.auditContext ?? base.auditContext,
+    suggestions:
+      override.suggestions && override.suggestions.length > 0
+        ? override.suggestions
+        : base.suggestions,
+    quickActions:
+      override.quickActions && override.quickActions.length > 0
+        ? override.quickActions
+        : base.quickActions,
     proactive: override.proactive ?? base.proactive,
   }
 }
@@ -209,8 +218,16 @@ function VertlyProvider({
       setMessages((current) => [...current, { ...createMessage("assistant", ""), id: assistantId }])
 
       try {
+        const enrichedContext = await buildVertlyEnrichedContext(userId)
+
         const response = await requestVertlyResponse(
-          { message: trimmed, context: pageContext, history: historySnapshot, userId },
+          {
+            message: trimmed,
+            context: pageContext,
+            history: historySnapshot,
+            userId,
+            enrichedContext,
+          },
           (chunk) => {
             setMessages((current) =>
               current.map((message) =>
