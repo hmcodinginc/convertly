@@ -69,6 +69,16 @@ const SURFACE_RELATED: Partial<Record<VertlySurface, VertlySuggestion[]>> = {
     { id: "rel-signup-first", label: "What to do first", prompt: "What should I do after signing up?" },
     { id: "rel-signup-audit", label: "How audits work", prompt: "How do audits work?" },
   ],
+  marketing: [
+    { id: "rel-m-what", label: "What is Convertly?", prompt: "What is Convertly?" },
+    { id: "rel-m-audit", label: "How audits work", prompt: "How do Convertly audits work?" },
+    { id: "rel-m-plans", label: "Plans & pricing", prompt: "What plans does Convertly offer?" },
+  ],
+  "sample-report": [
+    { id: "rel-sr-explain", label: "Explain report", prompt: "Explain this report." },
+    { id: "rel-sr-fix", label: "What to fix first", prompt: "Which issue should I fix first?" },
+    { id: "rel-sr-score", label: "Why this score?", prompt: "Why is my score low?" },
+  ],
   generic: [
     { id: "rel-gen-audit", label: "Run an audit", prompt: "How do I run a conversion audit?" },
     { id: "rel-gen-plans", label: "Plans", prompt: "What plans does Convertly offer?" },

@@ -59,6 +59,14 @@ export function getPanelWelcomeMessage(
     )
   }
 
+  if (variant === "marketing") {
+    return (
+      "Hi — I'm Vertly, Convertly's AI Product Specialist.\n\n" +
+      "Ask me how audits work, what a report includes, or how to get started — " +
+      "no account needed on the marketing site."
+    )
+  }
+
   return (
     "Hey — I'm Vertly, Convertly's AI Product Specialist.\n\n" +
     "I know audits, reports, your plan, billing, and workspace inside out. Ask me anything about Convertly."

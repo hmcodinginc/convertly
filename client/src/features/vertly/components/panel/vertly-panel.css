@@ -20,13 +20,13 @@
   position: fixed;
   z-index: 122;
   width: min(24rem, calc(100vw - 1.5rem));
-  max-height: min(34rem, calc(100vh - 6rem));
+  max-height: min(34rem, calc(100dvh - 6rem));
   pointer-events: auto;
 }
 
 .vertly-panel {
   display: flex;
-  height: min(34rem, calc(100vh - 6rem));
+  height: min(34rem, calc(100dvh - 6rem));
   flex-direction: column;
   border-radius: calc(var(--radius-lg) + 2px);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));

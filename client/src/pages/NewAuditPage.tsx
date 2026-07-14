@@ -187,7 +187,11 @@ function NewAuditPage() {
 
   if (isRunning && runningAuditId) {
     return (
-      <AppPageShell header={null} sectionsClassName="gap-0">
+      <AppPageShell
+        header={null}
+        className="app-page--execution"
+        sectionsClassName="app-page-sections--execution gap-0"
+      >
         <AuditExecutionView
           auditId={runningAuditId}
           onComplete={(detail: AuditDetail) => {

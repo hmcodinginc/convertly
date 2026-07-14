@@ -50,27 +50,6 @@ function AuditDetailPage() {
     })
   }, [id])
 
-  const vertlyContext = useMemo(
-    () =>
-      audit
-        ? {
-            surface: "audit-detail" as const,
-            title: audit.domain,
-            description: `Reviewing ${audit.domain}`,
-            auditContext: buildVertlyAuditSnapshotFromDetail(audit, { auditType }),
-            metadata: {
-              auditId: audit.id,
-              domain: audit.domain,
-              score: audit.overallScore,
-              status: audit.status,
-            },
-          }
-        : null,
-    [audit, auditType]
-  )
-
-  useVertlyPageContext(vertlyContext)
-
   useEffect(() => {
     if (!id || !inProgress) return
 
@@ -144,14 +123,16 @@ function AuditDetailPage() {
     )
   }
 
-  return <AuditDetailContent audit={audit} onReload={reload} />
+  return <AuditDetailContent audit={audit} auditType={auditType} onReload={reload} />
 }
 
 function AuditDetailContent({
   audit,
+  auditType,
   onReload,
 }: {
   audit: AuditDetail
+  auditType?: string
   onReload: (options?: { silent?: boolean }) => void
 }) {
   const navigate = useNavigate()
@@ -166,7 +147,11 @@ function AuditDetailContent({
 
   if (running && showExecution) {
     return (
-      <AppPageShell header={null} sectionsClassName="gap-0">
+      <AppPageShell
+        header={null}
+        className="app-page--execution"
+        sectionsClassName="app-page-sections--execution gap-0"
+      >
         <AuditExecutionView
           auditId={audit.id}
           vertlySurface="audit-detail"
@@ -192,12 +177,36 @@ function AuditDetailContent({
     )
   }
 
-  return <AuditDetailReport audit={audit} />
+  return <AuditDetailReport audit={audit} auditType={auditType} />
 }
 
-function AuditDetailReport({ audit }: { audit: AuditDetail }) {
+function AuditDetailReport({
+  audit,
+  auditType,
+}: {
+  audit: AuditDetail
+  auditType?: string
+}) {
   const failed = audit.status === "failed"
   const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
+
+  const vertlyContext = useMemo(
+    () => ({
+      surface: "audit-detail" as const,
+      title: audit.domain,
+      description: `Reviewing ${audit.domain}`,
+      auditContext: buildVertlyAuditSnapshotFromDetail(audit, { auditType }),
+      metadata: {
+        auditId: audit.id,
+        domain: audit.domain,
+        score: audit.overallScore,
+        status: audit.status,
+      },
+    }),
+    [audit, auditType]
+  )
+
+  useVertlyPageContext(vertlyContext)
 
   return (
     <AppPageShell sectionsClassName="audit-report-sections" header={null}>

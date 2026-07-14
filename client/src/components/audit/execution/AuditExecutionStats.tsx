@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 
 import type { AuditExecutionMetrics } from "@/types/auditExecution"
@@ -15,22 +15,28 @@ type StatItem = {
 function AnimatedStat({ label, value }: StatItem) {
   const shouldReduceMotion = useReducedMotion()
   const [display, setDisplay] = useState(value)
+  const displayRef = useRef(display)
 
   useEffect(() => {
-    if (shouldReduceMotion || value === display) {
+    displayRef.current = display
+  }, [display])
+
+  useEffect(() => {
+    if (shouldReduceMotion || value === displayRef.current) {
       setDisplay(value)
       return
     }
 
-    const start = display
+    const start = displayRef.current
     const end = value
     const startedAt = performance.now()
-    const duration = 360
+    const duration = 400
     let frame = 0
 
     const tick = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / duration)
-      setDisplay(Math.round(start + (end - start) * progress))
+      const eased = 1 - (1 - progress) ** 2
+      setDisplay(Math.round(start + (end - start) * eased))
       if (progress < 1) frame = requestAnimationFrame(tick)
     }
 

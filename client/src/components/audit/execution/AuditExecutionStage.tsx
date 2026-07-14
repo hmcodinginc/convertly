@@ -1,4 +1,5 @@
 import { memo } from "react"
+import type { RefObject } from "react"
 import { Check, Circle, Loader2, X } from "lucide-react"
 import { motion, useReducedMotion } from "framer-motion"
 
@@ -8,29 +9,32 @@ import { cn } from "@/lib/utils"
 type AuditExecutionStageProps = {
   stage: AuditExecutionStageModel
   index: number
+  isActive?: boolean
+  activeRef?: RefObject<HTMLLIElement | null>
 }
 
 const AuditExecutionStage = memo(function AuditExecutionStage({
   stage,
   index,
+  isActive = stage.status === "active",
+  activeRef,
 }: AuditExecutionStageProps) {
   const shouldReduceMotion = useReducedMotion()
-  const isActive = stage.status === "active"
   const isComplete = stage.status === "completed"
   const isFailed = stage.status === "failed"
 
   return (
     <motion.li
-      layout={!shouldReduceMotion}
+      ref={activeRef}
       className={cn(
         "audit-exec-stage",
         isActive && "audit-exec-stage--active",
         isComplete && "audit-exec-stage--completed",
         isFailed && "audit-exec-stage--failed"
       )}
-      initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, delay: index * 0.02, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.24, delay: index * 0.015, ease: [0.22, 1, 0.36, 1] }}
     >
       <span className="audit-exec-stage__icon" aria-hidden>
         {isComplete ? (

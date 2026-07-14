@@ -46,8 +46,25 @@ function AuditExecutionView({
         ? {
             surface: vertlySurface,
             title: state.domain,
-            description: `Running audit on ${state.domain}`,
+            description: `Running audit on ${state.domain} — ${displayPercentage}% complete`,
             auditContext: buildVertlyAuditSnapshotFromExecution(state, displayPercentage),
+            suggestions: [
+              {
+                id: "run-progress",
+                label: "Audit progress",
+                prompt: "What is my current audit doing?",
+              },
+              {
+                id: "run-time",
+                label: "Time remaining",
+                prompt: "How long will this audit take?",
+              },
+              {
+                id: "run-score",
+                label: "Explain score",
+                prompt: "Why is my score low?",
+              },
+            ],
             metadata: {
               auditId: state.auditId,
               domain: state.domain,

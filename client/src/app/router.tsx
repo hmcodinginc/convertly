@@ -4,6 +4,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout"
 import { AuthSessionProvider } from "@/components/auth/AuthSessionProvider"
 import { GuestRoute } from "@/components/auth/GuestRoute"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { SettingsLayout } from "@/components/settings/SettingsLayout"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { ROUTES } from "@/lib/routes"
@@ -31,8 +32,10 @@ function AppRouter() {
     <BrowserRouter>
       <AuthSessionProvider>
         <Routes>
-        <Route path={ROUTES.home} element={<HomePage />} />
-        <Route path={ROUTES.sampleReport} element={<SampleReportPage />} />
+        <Route element={<MarketingLayout />}>
+          <Route path={ROUTES.home} element={<HomePage />} />
+          <Route path={ROUTES.sampleReport} element={<SampleReportPage />} />
+        </Route>
 
         <Route element={<AuthLayout />}>
           <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />

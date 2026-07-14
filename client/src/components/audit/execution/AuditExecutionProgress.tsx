@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 
 type AuditExecutionProgressProps = {
@@ -21,6 +21,11 @@ const AuditExecutionProgress = memo(function AuditExecutionProgress({
 }: AuditExecutionProgressProps) {
   const shouldReduceMotion = useReducedMotion()
   const [displayValue, setDisplayValue] = useState(percentage)
+  const displayRef = useRef(displayValue)
+
+  useEffect(() => {
+    displayRef.current = displayValue
+  }, [displayValue])
 
   useEffect(() => {
     if (shouldReduceMotion) {
@@ -28,12 +33,12 @@ const AuditExecutionProgress = memo(function AuditExecutionProgress({
       return
     }
 
-    const start = displayValue
+    const start = displayRef.current
     const end = percentage
     if (start === end) return
 
     const startedAt = performance.now()
-    const duration = 420
+    const duration = 520
 
     let frame = 0
     const tick = (now: number) => {

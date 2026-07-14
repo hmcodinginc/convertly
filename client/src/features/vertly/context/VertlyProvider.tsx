@@ -10,6 +10,7 @@ import { useLocation } from "react-router-dom"
 
 import { VertlyContext } from "@/features/vertly/context/vertlyContext"
 import { resolveGuestAuthContext } from "@/features/vertly/content/authPageContexts"
+import { resolveMarketingContext } from "@/features/vertly/content/marketingPageContexts"
 import { resolveRouteContext, SIGNUP_CONTEXT } from "@/features/vertly/content/pageContexts"
 import { useVertlyLifeEngine } from "@/features/vertly/hooks/useVertlyLifeEngine"
 import {
@@ -90,6 +91,7 @@ function VertlyProvider({
   const routeContext = useMemo(() => {
     if (variant === "signup") return SIGNUP_CONTEXT
     if (variant === "guest-auth") return resolveGuestAuthContext(location.pathname)
+    if (variant === "marketing") return resolveMarketingContext(location.pathname)
     return resolveRouteContext(location.pathname)
   }, [location.pathname, variant])
 

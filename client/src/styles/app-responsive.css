@@ -255,6 +255,40 @@
   }
 }
 
+/* Running audit — tighter shell, less dead space */
+.app-page--execution {
+  padding-block: clamp(0.65rem, 1.2vw, 1rem);
+}
+
+.app-page-sections--execution {
+  margin-top: 0;
+}
+
+@media (max-height: 760px) {
+  .app-page--execution {
+    padding-block: 0.5rem;
+  }
+}
+
+/* Vertly panel — dynamic viewport on mobile */
+@media (max-width: 640px) {
+  .vertly-panel-wrap {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px) + 4.5rem);
+  }
+
+  .vertly-panel {
+    height: calc(100dvh - 1.5rem - 4.5rem - env(safe-area-inset-bottom, 0px));
+    max-height: none;
+  }
+}
+
+/* Vertly launcher — keep above mobile browser chrome */
+@media (max-width: 640px) {
+  .vertly-launcher-anchor {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Compact page padding on very small phones */
 @media (max-width: 399px) {
   .app-page {

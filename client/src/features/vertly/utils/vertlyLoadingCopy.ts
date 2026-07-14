@@ -32,6 +32,7 @@ function resolveVertlyLoadingPhrases(pageContext: VertlyPageContext): string[] {
     case "recommendation-playbook":
       return PLAYBOOK_LOADING
     case "audit-detail":
+    case "sample-report":
       return AUDIT_DETAIL_LOADING
     case "dashboard":
       return DASHBOARD_LOADING

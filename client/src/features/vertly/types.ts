@@ -17,6 +17,8 @@ export type VertlySurface =
   | "settings-notifications"
   | "settings-security"
   | "settings-danger"
+  | "marketing"
+  | "sample-report"
   | "generic"
 
 export type VertlyMessageRole = "user" | "assistant" | "system"
@@ -227,7 +229,7 @@ export type VertlyPosition = {
   y: number
 }
 
-export type VertlyVariant = "authenticated" | "signup" | "guest-auth"
+export type VertlyVariant = "authenticated" | "signup" | "guest-auth" | "marketing"
 
 export type VertlyLifeAction =
   | "idle"
