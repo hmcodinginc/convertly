@@ -129,27 +129,13 @@ function VertlyLauncher({
   }
 
   return (
-    <motion.button
-      ref={launcherRef}
-      type="button"
+    <div
       className={cn(
-        "vertly-launcher",
-        isOpen && "vertly-launcher--open",
-        isDragging && "vertly-launcher--dragging",
-        isHovered && !isDragging && "vertly-launcher--hover",
-        speechBubble && "vertly-launcher--speaking",
-        interaction === "opening" && "vertly-launcher--opening",
-        interaction === "closing" && "vertly-launcher--closing"
+        "vertly-launcher-anchor",
+        isOpen && "vertly-launcher-anchor--open",
+        speechBubble && "vertly-launcher-anchor--speaking"
       )}
       style={{ left: position.x, top: position.y }}
-      onClick={handleClick}
-      onPointerDown={handlePointerDown}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
-      aria-label={isOpen ? "Close Vertly assistant" : "Open Vertly assistant"}
-      aria-expanded={isOpen}
-      whileTap={shouldReduceMotion || isDragging ? undefined : VERTLY_LAUNCHER_TAP}
     >
       <VertlySpeechBubbleView
         bubble={speechBubble}
@@ -157,16 +143,36 @@ function VertlyLauncher({
         onActivate={onSpeechBubbleActivate}
       />
 
-      <VertlyCompanionCharacter
-        bodyMode={bodyMode}
-        isDragging={isDragging}
-        lifeAction={displayLifeAction}
-        eyeState={eyeState}
-        gazeX={gaze.x}
-        gazeY={gaze.y}
-        pose={pose}
-      />
-    </motion.button>
+      <motion.button
+        ref={launcherRef}
+        type="button"
+        className={cn(
+          "vertly-launcher",
+          isDragging && "vertly-launcher--dragging",
+          isHovered && !isDragging && "vertly-launcher--hover",
+          interaction === "opening" && "vertly-launcher--opening",
+          interaction === "closing" && "vertly-launcher--closing"
+        )}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onMouseMove={handleMouseMove}
+        aria-label={isOpen ? "Close Vertly assistant" : "Open Vertly assistant"}
+        aria-expanded={isOpen}
+        whileTap={shouldReduceMotion || isDragging ? undefined : VERTLY_LAUNCHER_TAP}
+      >
+        <VertlyCompanionCharacter
+          bodyMode={bodyMode}
+          isDragging={isDragging}
+          lifeAction={displayLifeAction}
+          eyeState={eyeState}
+          gazeX={gaze.x}
+          gazeY={gaze.y}
+          pose={pose}
+        />
+      </motion.button>
+    </div>
   )
 }
 

@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import type { BillingPlanOption } from "@/types/billing"
+import { resolvePlanChangeDirection } from "@/lib/planRank"
+import type { EffectivePlanId, SubscriptionPlanId } from "@/lib/billingPlans"
 import { cn } from "@/lib/utils"
 
 type PlanCardProps = {
   plan: BillingPlanOption
+  currentPlanId: EffectivePlanId
+  pendingPlanId?: SubscriptionPlanId | null
   onSelect: (planId: BillingPlanOption["id"]) => void
   isLoading?: boolean
   loadingPlanId?: string | null
@@ -19,6 +23,8 @@ type PlanCardProps = {
 
 function PlanCard({
   plan,
+  currentPlanId,
+  pendingPlanId = null,
   onSelect,
   isLoading,
   loadingPlanId,
@@ -26,13 +32,35 @@ function PlanCard({
 }: PlanCardProps) {
   const shouldReduceMotion = useReducedMotion()
   const isCurrent = plan.highlight
+  const isSelected = !isCurrent && pendingPlanId === plan.id
   const isBusy = isLoading && loadingPlanId === plan.id
+  const changeDirection =
+    plan.priceUsd > 0 && !isCurrent && !isSelected
+      ? resolvePlanChangeDirection(currentPlanId, plan.id)
+      : "same"
+
+  const actionLabel = isCurrent
+    ? "Current plan"
+    : isSelected
+      ? "Selected"
+      : plan.priceUsd === 0
+        ? "Included"
+        : changeDirection === "downgrade"
+          ? `Downgrade to ${plan.name}`
+          : `Upgrade to ${plan.name}`
+
+  const busyLabel =
+    changeDirection === "downgrade"
+      ? "Saving…"
+      : currentPlanId === "free"
+        ? "Redirecting…"
+        : "Processing…"
 
   return (
     <Card
       className={cn(
         "app-card-body flex h-full min-h-0 flex-col gap-5 sm:min-h-[18rem] hover:translate-y-0",
-        plan.highlight &&
+        (plan.highlight || isSelected) &&
           "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_20%,transparent)]",
         animateCurrentBadge &&
           isCurrent &&
@@ -50,6 +78,8 @@ function PlanCard({
           ) : (
             <StatusBadge label="Current" variant="accent" />
           )
+        ) : isSelected ? (
+          <StatusBadge label="Selected" variant="success" />
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-4">
@@ -71,23 +101,19 @@ function PlanCard({
         </Text>
       </div>
       <Button
-        variant={isCurrent ? "outline" : "default"}
+        variant={isCurrent || isSelected ? "outline" : "default"}
         size="sm"
         className="mt-auto w-full shrink-0"
-        disabled={isCurrent || isLoading}
+        disabled={isCurrent || isSelected || isLoading}
         onClick={() => onSelect(plan.id)}
       >
         {isBusy ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden />
-            Redirecting…
+            {busyLabel}
           </>
-        ) : isCurrent ? (
-          "Current plan"
-        ) : plan.priceUsd === 0 ? (
-          "Included"
         ) : (
-          `Upgrade to ${plan.name}`
+          actionLabel
         )}
       </Button>
     </Card>

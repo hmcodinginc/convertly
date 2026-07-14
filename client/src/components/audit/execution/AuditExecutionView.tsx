@@ -4,10 +4,13 @@ import { AuditExecutionBotProtection } from "@/components/audit/execution/AuditE
 import { AuditExecutionScreen } from "@/components/audit/execution/AuditExecutionScreen"
 import { useAuditExecution } from "@/hooks/useAuditExecution"
 import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
+import { buildVertlyAuditSnapshotFromExecution } from "@/features/vertly/routing/buildVertlyAuditSnapshot"
+import type { VertlySurface } from "@/features/vertly/types"
 import type { AuditDetail } from "@/types/audit"
 
 type AuditExecutionViewProps = {
   auditId: string
+  vertlySurface?: VertlySurface
   onComplete?: (detail: AuditDetail) => void
   onFailed?: (errorMessage?: string) => void
   onBackToNewAudit?: () => void
@@ -17,6 +20,7 @@ type AuditExecutionViewProps = {
 
 function AuditExecutionView({
   auditId,
+  vertlySurface = "audit-new",
   onComplete,
   onFailed,
   onBackToNewAudit,
@@ -40,9 +44,27 @@ function AuditExecutionView({
     () =>
       state && failureOutcome !== "bot_protection"
         ? {
-            surface: "audit-new" as const,
+            surface: vertlySurface,
             title: state.domain,
-            description: `Running audit on ${state.domain}`,
+            description: `Running audit on ${state.domain} — ${displayPercentage}% complete`,
+            auditContext: buildVertlyAuditSnapshotFromExecution(state, displayPercentage),
+            suggestions: [
+              {
+                id: "run-progress",
+                label: "Audit progress",
+                prompt: "What is my current audit doing?",
+              },
+              {
+                id: "run-time",
+                label: "Time remaining",
+                prompt: "How long will this audit take?",
+              },
+              {
+                id: "run-score",
+                label: "Explain score",
+                prompt: "Why is my score low?",
+              },
+            ],
             metadata: {
               auditId: state.auditId,
               domain: state.domain,
@@ -52,7 +74,7 @@ function AuditExecutionView({
             },
           }
         : null,
-    [state, displayPercentage, failureOutcome]
+    [state, displayPercentage, failureOutcome, vertlySurface]
   )
 
   useVertlyPageContext(vertlyContext)

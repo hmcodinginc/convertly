@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 
 import { useAuthSession } from "@/hooks/useAuthSession"
 import {
-  readPendingCheckoutForUser,
   reconcilePendingCheckout,
 } from "@/lib/checkoutPersistence"
 import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"

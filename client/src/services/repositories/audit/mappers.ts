@@ -29,10 +29,12 @@ export function mapAuditRowToSession(row: AuditRow): AuditSession {
     id: row.id,
     userId: row.user_id,
     websiteUrl: row.website_url,
+    auditType: row.audit_type ?? "full-funnel",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     status: row.status,
     errorMessage: row.error_message ?? undefined,
+    workspaceId: row.workspace_id,
   }
 }
 

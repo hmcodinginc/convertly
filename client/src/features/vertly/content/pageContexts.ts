@@ -37,9 +37,9 @@ export function resolveRouteContext(pathname: string): VertlyPageContext {
   if (pathname === ROUTES.dashboard) {
     return ctx("dashboard", "Dashboard", "Monitoring your workspace", {
       suggestions: [
-        { id: "dash-read", label: "How do I read this dashboard?", prompt: "How should I read the audit dashboard?" },
+        { id: "dash-read", label: "Explain this dashboard", prompt: "Explain this dashboard." },
         { id: "dash-first", label: "Run my first audit", prompt: "How do I run my first audit?" },
-        { id: "dash-prioritize", label: "Prioritize opportunities", prompt: "How do I prioritize conversion opportunities?" },
+        { id: "dash-prioritize", label: "What to fix first", prompt: "Which issue should I fix first?" },
       ],
       quickActions: mergeQuickActions(
         [VERTLY_NAV_ACTIONS.audit, VERTLY_NAV_ACTIONS.history],
@@ -89,9 +89,9 @@ export function resolveRouteContext(pathname: string): VertlyPageContext {
       "Reviewing your website",
       {
         suggestions: [
-          { id: "detail-score", label: "What does this score mean?", prompt: "What does this audit score mean?" },
-          { id: "detail-fix", label: "What should I fix first?", prompt: "What should I fix first in this audit?" },
-          { id: "detail-impact", label: "Estimated impact", prompt: "How should I interpret estimated lift on recommendations?" },
+          { id: "detail-explain", label: "Explain this audit", prompt: "Explain this audit." },
+          { id: "detail-fix", label: "What should I fix first?", prompt: "Which issue should I fix first?" },
+          { id: "detail-score", label: "Why is my score low?", prompt: "Why is my score low?" },
         ],
         quickActions: mergeQuickActions(
           [VERTLY_NAV_ACTIONS.audit, VERTLY_NAV_ACTIONS.history],
@@ -104,9 +104,9 @@ export function resolveRouteContext(pathname: string): VertlyPageContext {
   if (pathname === ROUTES.workspace) {
     return ctx("workspace", "Workspace", "Organization settings", {
       suggestions: [
-        { id: "ws-domain", label: "Add a domain", prompt: "How do I add a website domain to my workspace?" },
-        { id: "ws-primary", label: "Primary domain", prompt: "What is a primary domain in Convertly?" },
-        { id: "ws-team", label: "Team usage", prompt: "How does workspace setup affect audits?" },
+        { id: "ws-counted", label: "Why was this counted?", prompt: "Why was this audit counted?" },
+        { id: "ws-ledger", label: "Audit ledger", prompt: "Explain the audit ledger in workspace." },
+        { id: "ws-usage", label: "My usage breakdown", prompt: "How do I read workspace usage?" },
       ],
       quickActions: mergeQuickActions(
         [VERTLY_NAV_ACTIONS.audit, VERTLY_NAV_ACTIONS.settings],
@@ -127,9 +127,9 @@ export function resolveRouteContext(pathname: string): VertlyPageContext {
       "Managing subscription",
       {
         suggestions: [
-          { id: "bill-plans", label: "Compare plans", prompt: "Help me compare Convertly plans." },
-          { id: "bill-usage", label: "Audit allowance", prompt: "How does audit allowance work on my plan?" },
-          { id: "bill-upgrade", label: "When to upgrade", prompt: "When should I upgrade my plan?" },
+          { id: "bill-plans", label: "Compare plans", prompt: "What plans does Convertly offer?" },
+          { id: "bill-limit", label: "Why can't I run another audit?", prompt: "Why can't I run another audit?" },
+          { id: "bill-usage", label: "My audit allowance", prompt: "How many audits do I have left?" },
         ],
         quickActions: mergeQuickActions(
           [VERTLY_NAV_ACTIONS.upgrade, VERTLY_NAV_ACTIONS.audit],
@@ -149,8 +149,8 @@ export function resolveRouteContext(pathname: string): VertlyPageContext {
     const settingsMap: Record<string, VertlyPageContext> = {
       [ROUTES.settingsProfile]: ctx("settings-profile", "Profile", "Account identity", {
         suggestions: [
-          { id: "prof-edit", label: "Update profile", prompt: "How do I update my profile?" },
-          { id: "prof-email", label: "Email settings", prompt: "Where do I manage email-related settings?" },
+          { id: "prof-edit", label: "Update my profile", prompt: "How do I update my profile?" },
+          { id: "prof-who", label: "Who am I?", prompt: "Who am I?" },
         ],
         quickActions: mergeQuickActions(
           [VERTLY_NAV_ACTIONS.settings],

@@ -6,9 +6,13 @@ import type { BillingSnapshot } from "@/types/billing"
 
 const PENDING_CHECKOUT_KEY = "convertly:checkout-pending"
 const CHECKOUT_LEFT_KEY = "convertly:checkout-left-app"
+const VERIFICATION_STARTED_KEY = "convertly:checkout-verification-started"
 
-/** Poll window after returning from the payment provider. */
+/** Poll window after the user lands on PaymentReturnPage (not checkout start). */
 export const CHECKOUT_VERIFICATION_WINDOW_MS = 90_000
+
+/** How long a pending checkout session remains resumable after initiating checkout. */
+export const CHECKOUT_PENDING_SESSION_MS = 30 * 60 * 1000
 
 export type PendingCheckout = {
   planId: SubscriptionPlanId
@@ -58,10 +62,32 @@ export function clearCheckoutExternalNavigationMarker(): void {
   removeItem(CHECKOUT_LEFT_KEY)
 }
 
+/** Starts (or restarts) the verification poll window when PaymentReturnPage begins polling. */
+export function markCheckoutVerificationStarted(): void {
+  setItem(VERIFICATION_STARTED_KEY, String(Date.now()))
+}
+
+export function readCheckoutVerificationStartedAt(): number | null {
+  const raw = getItem(VERIFICATION_STARTED_KEY)
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+export function clearCheckoutVerificationStarted(): void {
+  removeItem(VERIFICATION_STARTED_KEY)
+}
+
+export function getCheckoutVerificationDeadline(): number {
+  const startedAt = readCheckoutVerificationStartedAt() ?? Date.now()
+  return startedAt + CHECKOUT_VERIFICATION_WINDOW_MS
+}
+
 /** Removes all ephemeral payment client state. Backend subscription is the only durable truth. */
 export function clearAllPaymentClientState(): void {
   clearPendingCheckout()
   clearCheckoutExternalNavigationMarker()
+  clearCheckoutVerificationStarted()
   clearPremiumActivationSession()
 }
 
@@ -72,8 +98,9 @@ export function hasPendingCheckout(userId?: string): boolean {
   return true
 }
 
+/** Whether the checkout session is still recent enough to resume on the return page. */
 export function isPendingCheckoutVerifiable(pending: PendingCheckout): boolean {
-  return Date.now() - pending.startedAt <= CHECKOUT_VERIFICATION_WINDOW_MS
+  return Date.now() - pending.startedAt <= CHECKOUT_PENDING_SESSION_MS
 }
 
 /** Pending checkout for another signed-in user must never influence routing. */
@@ -102,16 +129,7 @@ export function reconcilePendingCheckout(
   }
 }
 
-export function disposePaymentSession(_outcome: PaymentTerminalOutcome): void {
+export function disposePaymentSession(outcome: PaymentTerminalOutcome): void {
+  void outcome
   clearAllPaymentClientState()
-}
-
-/** @deprecated Use readPendingCheckoutForUser */
-export function getPendingCheckoutForUser(userId: string): PendingCheckout | null {
-  return readPendingCheckoutForUser(userId)
-}
-
-/** @deprecated Use readPendingCheckout */
-export function getPendingCheckout(): PendingCheckout | null {
-  return readPendingCheckout()
 }

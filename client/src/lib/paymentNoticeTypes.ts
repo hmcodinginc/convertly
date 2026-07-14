@@ -1,4 +1,5 @@
 export type PaymentNoticeKind =
+  | "checkout_cancelled"
   | "payment_cancelled"
   | "redirecting_to_razorpay"
   | "waiting_for_payment_approval"
@@ -8,6 +9,10 @@ export type PaymentNoticeKind =
   | "subscription_activated"
   | "verification_failed"
   | "payment_service_unavailable"
+  | "plan_upgrade_processing"
+  | "plan_upgrade_delayed"
+  | "plan_downgrade_scheduled"
+  | "plan_change_cancelled"
 
 export type PaymentNoticeTone = "yellow" | "blue" | "purple" | "green" | "red" | "orange"
 
@@ -21,12 +26,16 @@ export type PaymentNoticeContent = {
 }
 
 export const TERMINAL_PAYMENT_NOTICE_KINDS = new Set<PaymentNoticeKind>([
+  "checkout_cancelled",
   "payment_cancelled",
   "payment_received",
   "verification_delayed",
   "subscription_activated",
   "verification_failed",
   "payment_service_unavailable",
+  "plan_upgrade_delayed",
+  "plan_downgrade_scheduled",
+  "plan_change_cancelled",
 ])
 
 export function isTerminalPaymentNotice(kind: PaymentNoticeKind): boolean {
@@ -38,6 +47,15 @@ export function buildPaymentNoticeContent(
   planName?: string
 ): PaymentNoticeContent {
   switch (kind) {
+    case "checkout_cancelled":
+      return {
+        kind,
+        title: "Checkout cancelled",
+        description: "No changes were made.",
+        tone: "yellow",
+        dismissible: true,
+        terminal: true,
+      }
     case "payment_cancelled":
       return {
         kind,
@@ -126,6 +144,48 @@ export function buildPaymentNoticeContent(
         description:
           "Checkout is temporarily unavailable. Refresh this page or try again in a few minutes.",
         tone: "red",
+        dismissible: true,
+        terminal: true,
+      }
+    case "plan_upgrade_processing":
+      return {
+        kind,
+        title: "Processing upgrade",
+        description: planName
+          ? `Confirming your upgrade to ${planName}. This usually takes less than a minute.`
+          : "Confirming your plan upgrade with our payment provider.",
+        tone: "purple",
+        dismissible: false,
+        terminal: false,
+      }
+    case "plan_upgrade_delayed":
+      return {
+        kind,
+        title: "Upgrade confirmation delayed",
+        description: planName
+          ? `Your upgrade to ${planName} is still processing. Your plan will update automatically once confirmed.`
+          : "Your upgrade is still processing. Your plan will update automatically once confirmed.",
+        tone: "orange",
+        dismissible: true,
+        terminal: true,
+      }
+    case "plan_downgrade_scheduled":
+      return {
+        kind,
+        title: "Downgrade scheduled",
+        description: planName
+          ? `Your plan will change to ${planName} at the end of the current billing period. Current limits stay active until then.`
+          : "Your plan will change at the end of the current billing period.",
+        tone: "blue",
+        dismissible: true,
+        terminal: true,
+      }
+    case "plan_change_cancelled":
+      return {
+        kind,
+        title: "Scheduled change cancelled",
+        description: "Your scheduled plan change was cancelled. Your current plan continues unchanged.",
+        tone: "green",
         dismissible: true,
         terminal: true,
       }

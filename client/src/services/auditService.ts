@@ -6,6 +6,7 @@ import {
   buildAuditListEntryFromSession,
   buildAuditListEntryFromSummary,
 } from "@/services/audit/auditDetailBuilder"
+import { resolveStoredAuditType } from "@/lib/auditTypes"
 import {
   buildDashboardBundle,
   buildDashboardMetrics,
@@ -25,7 +26,9 @@ import {
   deleteAudit as deleteAuditRecord,
   getAuditListForUser,
   getAuditSessionData,
+  getDraftSessionsByUserId,
   getSessionById,
+  updateSessionFields,
 } from "@/services/repositories/audit/provider"
 import {
   clearCompletedAuditDetail,
@@ -41,9 +44,9 @@ import { AuditLimitError } from "@/types/billing"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import {
   assertCanRunAudit,
-  consumeAuditEntitlement,
 } from "@/services/entitlementService"
 import { recordAuditForDomain } from "@/services/workspaceService"
+import { isAuditSessionStatus } from "@/lib/auditStatus"
 import type {
   Audit,
   AuditDetail,
@@ -51,8 +54,10 @@ import type {
   Recommendation,
   RecommendationPlaybook,
 } from "@/types/audit"
+import type { AuditDraft, SaveAuditDraftInput } from "@/types/auditDraft"
 import type { AuditSession, AuditSessionData, AuditSessionStatus } from "@/types/auditEngine"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
+import type { AuditLedgerSourceSession } from "@/types/workspaceUsageBreakdown"
 
 const SAMPLE_AUDIT_ID = "audit-1"
 
@@ -141,15 +146,43 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
     throw new Error(validation.errors[0] ?? "Invalid audit URL")
   }
 
+  const auditType = resolveStoredAuditType(input.auditType)
+
   let workspaceId: string | undefined
 
   if (shouldUseSupabaseAudits()) {
     await assertCanRunAudit(userId)
     workspaceId = await ensureBusinessFoundation(userId)
-    await consumeAuditEntitlement(userId)
   }
 
-  const auditSession = await createSession(userId, validation.sanitizedUrl, workspaceId)
+  let auditSession: AuditSession
+
+  if (input.draftId) {
+    const existing = await getSessionById(input.draftId)
+    if (!existing || existing.status !== "draft" || existing.userId !== userId) {
+      throw new Error("Draft not found.")
+    }
+
+    const updated = await updateSessionFields(input.draftId, {
+      websiteUrl: validation.sanitizedUrl,
+      auditType,
+      status: "pending",
+      errorMessage: null,
+    })
+
+    if (!updated) {
+      throw new Error("Unable to start audit from draft.")
+    }
+
+    auditSession = updated
+  } else {
+    auditSession = await createSession(
+      userId,
+      validation.sanitizedUrl,
+      workspaceId,
+      { auditType }
+    )
+  }
 
   if (shouldUseSupabaseAudits()) {
     void recordAuditForDomain(userId, validation.sanitizedUrl)
@@ -166,6 +199,68 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
   startAuditEngine(auditSession.id)
 
   return listEntry
+}
+
+export async function saveAuditDraft(input: SaveAuditDraftInput): Promise<AuditDraft> {
+  const userId = await resolveUserId()
+  const validation = await validateAuditUrl(input.url)
+  if (!validation.valid) {
+    throw new Error(validation.errors[0] ?? "Enter a valid website URL")
+  }
+
+  const auditType = resolveStoredAuditType(input.auditType)
+
+  if (!shouldUseSupabaseAudits()) {
+    throw new Error("Draft audits require Supabase.")
+  }
+
+  const workspaceId = await ensureBusinessFoundation(userId)
+
+  if (input.draftId) {
+    const existing = await getSessionById(input.draftId)
+    if (!existing || existing.status !== "draft" || existing.userId !== userId) {
+      throw new Error("Draft not found.")
+    }
+
+    const updated = await updateSessionFields(input.draftId, {
+      websiteUrl: validation.sanitizedUrl,
+      auditType,
+      status: "draft",
+    })
+
+    if (!updated) {
+      throw new Error("Unable to update draft.")
+    }
+
+    return mapSessionToDraft(updated)
+  }
+
+  const draftSession = await createSession(userId, validation.sanitizedUrl, workspaceId, {
+    status: "draft",
+    auditType,
+  })
+
+  await createHistoryEvent(draftSession.id, "draft", "Audit draft saved")
+
+  return mapSessionToDraft(draftSession)
+}
+
+export async function getAuditDrafts(): Promise<AuditDraft[]> {
+  const userId = await resolveUserId()
+  const drafts = await getDraftSessionsByUserId(userId)
+  return drafts.map(mapSessionToDraft)
+}
+
+function mapSessionToDraft(session: AuditSession): AuditDraft {
+  const auditType = resolveStoredAuditType(session.auditType)
+
+  return {
+    id: session.id,
+    websiteUrl: session.websiteUrl,
+    auditType,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+  }
 }
 
 /**
@@ -205,13 +300,10 @@ export async function waitForAuditCompletion(
   id: string,
   options?: {
     intervalMs?: number
-    timeoutMs?: number
     onStatus?: (status: AuditSessionStatus) => void
   }
 ): Promise<AuditSessionStatus> {
   const intervalMs = options?.intervalMs ?? 750
-  const timeoutMs = options?.timeoutMs ?? 150_000
-  const startedAt = Date.now()
 
   return new Promise((resolve, reject) => {
     const poll = async () => {
@@ -233,11 +325,6 @@ export async function waitForAuditCompletion(
 
       if (session.status === "completed" || session.status === "failed") {
         resolve(session.status)
-        return
-      }
-
-      if (Date.now() - startedAt >= timeoutMs) {
-        reject(new Error("Audit timed out"))
         return
       }
 
@@ -288,6 +375,38 @@ export async function isValidAuditUrl(url: string): Promise<boolean> {
 
 export async function validateAuditUrlInput(url: string) {
   return validateAuditUrl(url)
+}
+
+export async function getAuditLedgerSourceSessions(): Promise<AuditLedgerSourceSession[]> {
+  await delay()
+  const userId = await resolveUserId()
+
+  if (shouldUseSupabaseAudits()) {
+    const listItems = await getAuditListForUser(userId)
+    return listItems.map((item) => ({
+      id: item.session.id,
+      websiteUrl: item.session.websiteUrl,
+      auditType: resolveStoredAuditType(item.session.auditType),
+      createdAt: item.session.createdAt,
+      status: item.session.status,
+    }))
+  }
+
+  const audits = await auditListRepository.getAllAudits()
+  return audits.map((audit) => ({
+    id: audit.id,
+    websiteUrl: audit.websiteUrl ?? audit.domain,
+    auditType: resolveStoredAuditType("full-funnel"),
+    createdAt: audit.completedAt,
+    status: mapLocalAuditStatus(audit.status),
+  }))
+}
+
+function mapLocalAuditStatus(status: Audit["status"]): AuditSessionStatus {
+  if (isAuditSessionStatus(status)) return status
+  if (status === "Completed") return "completed"
+  if (status === "Running") return "analyzing"
+  return "pending"
 }
 
 export async function getDashboardData() {

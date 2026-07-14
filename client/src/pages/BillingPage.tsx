@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 
 import { BusinessFoundationRequired } from "@/components/business/BusinessFoundationRequired"
 import { CurrentPlanCard } from "@/components/billing/CurrentPlanCard"
+import { ChangeSubscriptionModal } from "@/components/billing/ChangeSubscriptionModal"
 import { PaymentNotice } from "@/components/billing/PaymentNotice"
 import { PlanCard } from "@/components/billing/PlanCard"
 import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
@@ -15,6 +16,7 @@ import { AppPageHeader } from "@/components/layout/AppPageHeader"
 import { AppPageSection } from "@/components/layout/AppPageSection"
 import { AppPageShell } from "@/components/layout/AppPageShell"
 import { Card } from "@/components/surfaces/Card"
+import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/typography/Text"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
@@ -72,6 +74,10 @@ function BillingPage() {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
   const [isManaging, setIsManaging] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isCancellingScheduledChange, setIsCancellingScheduledChange] = useState(false)
+  const [changeModalOpen, setChangeModalOpen] = useState(false)
+  const [pendingPlanTarget, setPendingPlanTarget] = useState<SubscriptionPlanId | null>(null)
+  const [isSchedulingPendingPlan, setIsSchedulingPendingPlan] = useState(false)
 
   useEffect(() => {
     function resetCheckoutInteractionState() {
@@ -214,11 +220,42 @@ function BillingPage() {
     )
   }
 
-  async function handleUpgrade(planId: SubscriptionPlanId) {
-    if (planId === "free") return
+  async function handlePlanSelect(planId: SubscriptionPlanId) {
+    if (planId === "free" || !data) return
+    if (billingService.isPaidPlanSelectionBlocked(data, planId)) return
+
+    if (data.showPendingPlanCheckout) {
+      setLoadingPlanId(planId)
+      try {
+        await billingService.setPendingPlan(userId, planId)
+        const mode = await billingService.redirectToCheckout(userId, planId, {
+          onCheckoutDismissed: () => setLoadingPlanId(null),
+          onCheckoutSuccess: () => {
+            navigate(`${ROUTES.billingReturn}?checkout=success`, { replace: true })
+          },
+        })
+        if (mode === "modal") {
+          setLoadingPlanId(null)
+        }
+      } catch (checkoutError) {
+        showErrorToast(
+          "Checkout failed",
+          checkoutError instanceof Error ? checkoutError : new Error("Unable to start checkout")
+        )
+        setLoadingPlanId(null)
+      }
+      return
+    }
+
+    if (billingService.shouldUsePendingPlanFlow(data)) {
+      setPendingPlanTarget(planId)
+      setChangeModalOpen(true)
+      return
+    }
+
     setLoadingPlanId(planId)
     try {
-      const mode = await billingService.redirectToCheckout(userId, planId, {
+      const mode = await billingService.requestPlanChange(userId, planId, {
         onCheckoutDismissed: () => setLoadingPlanId(null),
         onCheckoutSuccess: () => {
           navigate(`${ROUTES.billingReturn}?checkout=success`, { replace: true })
@@ -227,12 +264,62 @@ function BillingPage() {
       if (mode === "modal") {
         setLoadingPlanId(null)
       }
-    } catch (upgradeError) {
+    } catch (checkoutError) {
       showErrorToast(
         "Checkout failed",
-        upgradeError instanceof Error ? upgradeError : new Error("Unable to start checkout")
+        checkoutError instanceof Error ? checkoutError : new Error("Unable to start checkout")
       )
       setLoadingPlanId(null)
+    }
+  }
+
+  async function handleConfirmPendingPlanChange() {
+    if (!pendingPlanTarget) return
+    const selectedPlan = pendingPlanTarget
+    setIsSchedulingPendingPlan(true)
+    try {
+      await billingService.schedulePendingPlanChange(userId, selectedPlan)
+      setChangeModalOpen(false)
+      setPendingPlanTarget(null)
+      await reload()
+      void refreshSession()
+      const planName =
+        data?.plans.find((plan) => plan.id === selectedPlan)?.name ?? "your next plan"
+      setPortalMessage(
+        `Your current plan stays active until it ends. We'll remember ${planName} as your next plan.`
+      )
+    } catch (scheduleError) {
+      showErrorToast(
+        "Unable to save plan choice",
+        scheduleError instanceof Error
+          ? scheduleError
+          : new Error("Unable to save your next plan")
+      )
+    } finally {
+      setIsSchedulingPendingPlan(false)
+    }
+  }
+
+  async function handleResumePendingPlanCheckout() {
+    if (!data?.pendingPlanChange) return
+    await handlePlanSelect(data.pendingPlanChange.planId)
+  }
+
+  async function handleCancelScheduledChange() {
+    setIsCancellingScheduledChange(true)
+    try {
+      await billingService.cancelScheduledPlanChange(userId)
+      await reload()
+      void refreshSession()
+    } catch (cancelError) {
+      showErrorToast(
+        "Cancellation failed",
+        cancelError instanceof Error
+          ? cancelError
+          : new Error("Unable to cancel scheduled change")
+      )
+    } finally {
+      setIsCancellingScheduledChange(false)
     }
   }
 
@@ -279,6 +366,8 @@ function BillingPage() {
   const planCard = (
     <CurrentPlanCard
       plan={data.plan}
+      scheduledPlanChange={data.scheduledPlanChange}
+      pendingPlanChange={data.pendingPlanChange}
       onManage={
         data.plan.planId !== "free" && data.plan.planId !== "internal"
           ? handleManage
@@ -291,12 +380,16 @@ function BillingPage() {
           ? handleCancelSubscription
           : undefined
       }
+      onCancelScheduledChange={
+        data.scheduledPlanChange ? handleCancelScheduledChange : undefined
+      }
       onUpgrade={() => {
         const nextPlan = data.plans.find((p) => !p.highlight && p.priceUsd > 0)
-        if (nextPlan) void handleUpgrade(nextPlan.id)
+        if (nextPlan) void handlePlanSelect(nextPlan.id)
       }}
       isManaging={isManaging}
       isCancelling={isCancelling}
+      isCancellingScheduledChange={isCancellingScheduledChange}
       showUpgrade={showUpgradeCta}
       justActivated={isCelebrating}
       animateBadgeOnce={isCelebrating}
@@ -365,6 +458,30 @@ function BillingPage() {
         </Card>
       </div>
 
+      {data.showPendingPlanCheckout && data.pendingPlanChange ? (
+        <Card className="app-card-compact hover:translate-y-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <Text size="sm" className="max-w-none font-medium text-foreground">
+                Continue with your selected plan
+              </Text>
+              <Text variant="muted" size="sm" className="max-w-none">
+                Subscribe to {data.pendingPlanChange.planName} when you&apos;re ready.
+              </Text>
+            </div>
+            <Button
+              size="sm"
+              disabled={loadingPlanId != null}
+              onClick={() => void handleResumePendingPlanCheckout()}
+            >
+              {loadingPlanId === data.pendingPlanChange.planId
+                ? "Opening checkout…"
+                : `Subscribe to ${data.pendingPlanChange.planName}`}
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       <AppPageSection
         eyebrow="Plans"
         title="Upgrade your workspace"
@@ -375,7 +492,9 @@ function BillingPage() {
             <PlanCard
               key={planOption.id}
               plan={planOption}
-              onSelect={(planId) => void handleUpgrade(planId)}
+              currentPlanId={data.plan.planId}
+              pendingPlanId={data.pendingPlanChange?.planId ?? null}
+              onSelect={(planId) => void handlePlanSelect(planId)}
               isLoading={loadingPlanId != null}
               loadingPlanId={loadingPlanId}
               animateCurrentBadge={isCelebrating && planOption.highlight}
@@ -395,6 +514,25 @@ function BillingPage() {
         </Link>
         .
       </Text>
+
+      <ChangeSubscriptionModal
+        open={changeModalOpen}
+        targetPlanName={
+          data.plans.find((plan) => plan.id === pendingPlanTarget)?.name ?? "your next plan"
+        }
+        renewalDate={data.plan.renewalDate}
+        isSubmitting={isSchedulingPendingPlan}
+        onClose={() => {
+          if (isSchedulingPendingPlan) return
+          setChangeModalOpen(false)
+          setPendingPlanTarget(null)
+        }}
+        onKeepCurrentPlan={() => {
+          setChangeModalOpen(false)
+          setPendingPlanTarget(null)
+        }}
+        onCancelAndChooseNextPlan={() => void handleConfirmPendingPlanChange()}
+      />
     </AppPageShell>
   )
 }

@@ -26,15 +26,7 @@ import {
 } from "@/services/audit/intelligence/rendering/renderReliability"
 import { annotateViewportBestPracticeFindings } from "@/services/audit/intelligence/scoring/viewportBlockerEligibility"
 import {
-  buildAllPageScoreBreakdowns,
-} from "@/services/audit/intelligence/scoring/pageScoreDiagnostics"
-import {
-  buildPageDiagnosticReport,
-  logAuditDiagnostics,
-} from "@/services/audit/intelligence/diagnostics/auditDiagnostics"
-import {
   buildEngineDiagnostics,
-  logEngineDiagnostics,
 } from "@/services/audit/intelligence/diagnostics/engineDiagnostics"
 import { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 import { SCORING_ENGINE_VERSION } from "@/services/audit/intelligence/scoring/scoringPolicy"
@@ -237,19 +229,6 @@ export async function runIntelligenceEngine(
     positiveScoring: scoring.positiveScoring,
   })
 
-  const pageDiagnostics = buildAllPageScoreBreakdowns(
-    context.pages,
-    annotatedFindings,
-    analyzedPageIds
-  ).map((breakdown) =>
-    buildPageDiagnosticReport({
-      pageId: breakdown.pageId,
-      path: breakdown.path,
-      pageIntent: pageIntents[breakdown.pageId]?.pageIntent ?? "generic",
-      scoreBreakdown: breakdown,
-    })
-  )
-
   const pageIntentMap = Object.fromEntries(
     Object.entries(pageIntents).map(([pageId, detected]) => [pageId, detected.pageIntent])
   )
@@ -269,27 +248,6 @@ export async function runIntelligenceEngine(
     appliedBlockers: scoring.appliedBlockers,
     blockerCeiling: scoring.scoreCeiling,
     scoring,
-  })
-
-  logEngineDiagnostics(engineDiagnostics)
-
-  logAuditDiagnostics({
-    engineVersion: SCORING_ENGINE_VERSION,
-    generatedAt: new Date().toISOString(),
-    websiteIntent,
-    pageIntents: context.pages.map((page) => ({
-      pageId: page.id,
-      path: page.path,
-      intent: pageIntents[page.id] ?? detectPageIntent({
-        page,
-        snapshot: snapshotsByPageId.get(page.id),
-      }),
-    })),
-    ruleExecution,
-    scoreExplanation,
-    auditConfidence: scoring.auditConfidence,
-    consultantRecommendations,
-    pageDiagnostics,
   })
 
   const execution: IntelligenceExecutionResult = {

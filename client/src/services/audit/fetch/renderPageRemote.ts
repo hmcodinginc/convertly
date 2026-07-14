@@ -1,7 +1,6 @@
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import { isAuditRenderConfigured, isSupabaseConfigured } from "@/lib/env"
 import { AUDIT_RENDER_FUNCTION } from "@/services/audit/fetch/constants"
-import { logPlaywright } from "@/services/audit/fetch/auditPipelineLogger"
 import { classifyFetchFailure } from "@/services/audit/fetch/fetchErrorClassifier"
 import type { RenderPageResult } from "@/services/audit/fetch/types"
 
@@ -115,8 +114,6 @@ async function renderOnce(url: string): Promise<RenderPageResult> {
 }
 
 export async function renderPageRemote(url: string): Promise<RenderPageResult> {
-  logPlaywright("Render requested", { url })
-
   let lastResult = await renderOnce(url)
 
   for (let attempt = 1; attempt <= RENDER_RETRIES && !lastResult.ok; attempt += 1) {
@@ -124,7 +121,6 @@ export async function renderPageRemote(url: string): Promise<RenderPageResult> {
       break
     }
 
-    logPlaywright("Render retry", { url, attempt, error: lastResult.error })
     lastResult = await renderOnce(url)
   }
 

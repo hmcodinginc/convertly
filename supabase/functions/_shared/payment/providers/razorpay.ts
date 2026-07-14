@@ -1,19 +1,19 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1"
 
-import { resolvePaidPlanFromSubscription } from "../../pricing/index.ts"
 import type { PaidPlanId } from "../../pricing/catalog.ts"
 import {
-  getRazorpayEnvironment,
+  mapToProviderPlanId,
+  resolvePaidPlanFromSubscription,
+} from "../../pricing/index.ts"
+import {
   getRazorpayKeyId,
   getRazorpayKeySecret,
   getRazorpayWebhookSecret,
-  inspectRazorpayAuthMaterial,
-  inspectRazorpayWebhookSecret,
-  maskRazorpayKeyId,
 } from "../razorpayConfig.ts"
 import {
   revertToFreePlan,
   syncSubscriptionRecord,
+  syncSubscriptionScheduleOnly,
 } from "../syncSubscription.ts"
 import type {
   CancelContext,
@@ -21,6 +21,10 @@ import type {
   CheckoutResult,
   PaymentProvider,
   PortalContext,
+  RazorpayPaymentProvider,
+  RazorpayPlanChangeSchedule,
+  RazorpayUpdateSubscriptionInput,
+  RazorpayUpdateSubscriptionResult,
   VerifiedWebhook,
 } from "../types.ts"
 
@@ -40,7 +44,17 @@ type RazorpaySubscription = {
   charge_at?: number | null
   expire_by?: number | null
   created_at?: number | null
+  has_scheduled_changes?: boolean
+  change_scheduled_at?: number | null
+  schedule_change_at?: string | null
+  payment_method?: string | null
+  auth_attempts?: number | null
+  paid_count?: number | null
+  source?: string | null
+  offer_id?: string | null
 }
+
+export type { RazorpayPlanChangeSchedule, RazorpayUpdateSubscriptionInput, RazorpayUpdateSubscriptionResult }
 
 export class RazorpayApiError extends Error {
   readonly httpStatus: number
@@ -87,76 +101,14 @@ function tryParseJson(text: string): unknown {
   }
 }
 
-const WEBHOOK_SENSITIVE_HEADER_NAMES = new Set([
-  "authorization",
-  "apikey",
-  "x-api-key",
-  "cookie",
-  "set-cookie",
-])
-
-function collectIncomingWebhookHeaders(req: Request): {
-  loggedHeaders: Record<string, string>
-  razorpayHeaders: Record<string, string>
-  signatureHeaderCount: number
-  signatureHeaderPresentExactlyOnce: boolean
-  contentType: string | null
-  userAgent: string | null
-  razorpayEventId: string | null
-} {
-  const loggedHeaders: Record<string, string> = {}
-  const razorpayHeaders: Record<string, string> = {}
-  let signatureHeaderCount = 0
-
-  req.headers.forEach((value, name) => {
-    const lower = name.toLowerCase()
-
-    if (lower === "x-razorpay-signature") {
-      signatureHeaderCount += 1
-    }
-
-    if (lower.startsWith("x-razorpay-")) {
-      razorpayHeaders[name] =
-        lower === "x-razorpay-signature" ? `[present,length=${value.length}]` : value
-    }
-
-    if (WEBHOOK_SENSITIVE_HEADER_NAMES.has(lower)) {
-      loggedHeaders[name] = "[redacted]"
-      return
-    }
-
-    if (
-      lower === "content-type" ||
-      lower === "user-agent" ||
-      lower === "host" ||
-      lower === "content-length" ||
-      lower === "x-forwarded-for" ||
-      lower === "x-real-ip" ||
-      lower === "cf-connecting-ip" ||
-      lower === "fly-client-ip"
-    ) {
-      loggedHeaders[name] = value
+function countRazorpaySignatureHeaders(req: Request): number {
+  let count = 0
+  req.headers.forEach((_, name) => {
+    if (name.toLowerCase() === "x-razorpay-signature") {
+      count += 1
     }
   })
-
-  return {
-    loggedHeaders,
-    razorpayHeaders,
-    signatureHeaderCount,
-    signatureHeaderPresentExactlyOnce: signatureHeaderCount === 1,
-    contentType: req.headers.get("content-type"),
-    userAgent: req.headers.get("user-agent"),
-    razorpayEventId: req.headers.get("x-razorpay-event-id"),
-  }
-}
-
-function tryParseRazorpayEventName(rawBody: string): string | null {
-  const parsed = tryParseJson(rawBody)
-  if (typeof parsed === "object" && parsed !== null && "event" in parsed) {
-    const eventName = (parsed as { event: unknown }).event
-    return typeof eventName === "string" ? eventName : null
-  }
-  return null
+  return count
 }
 
 function getRazorpayAuthHeader(): string {
@@ -165,85 +117,10 @@ function getRazorpayAuthHeader(): string {
   return `Basic ${btoa(`${keyId}:${keySecret}`)}`
 }
 
-function logPreSubscriptionRequest(
-  path: string,
-  method: string,
-  providerPlanId: string | null
-): void {
-  const keyId = getRazorpayKeyId()
-  const keySecret = getRazorpayKeySecret()
-
-  console.log("[razorpay][auth] pre-request", {
-    environment: getRazorpayEnvironment(),
-    maskedKeyId: maskRazorpayKeyId(keyId),
-    providerPlanId,
-    apiEndpoint: `https://api.razorpay.com/v1${path}`,
-    method,
-    authConstruction: inspectRazorpayAuthMaterial(keyId, keySecret),
-  })
-}
-
-function logSubscriptionCreateResponseBody(
-  httpStatus: number,
-  parsedBody: unknown,
-  rawBody: string
-): void {
-  console.log("[razorpay][subscription.create] response body", {
-    httpStatus,
-    parsedJson: parsedBody,
-    rawBody,
-  })
-}
-
-const SUBSCRIPTION_RESPONSE_FIELDS = [
-  "id",
-  "short_url",
-  "plan_id",
-  "status",
-  "customer_notify",
-  "remaining_count",
-  "total_count",
-  "current_start",
-  "current_end",
-  "charge_at",
-  "expire_by",
-  "created_at",
-] as const
-
-function logSubscriptionCreateFieldAudit(subscription: RazorpaySubscription): void {
-  const fieldValues: Record<string, unknown> = {}
-
-  for (const field of SUBSCRIPTION_RESPONSE_FIELDS) {
-    const value = subscription[field]
-    fieldValues[field] = value ?? null
-
-    if (value === undefined || value === null) {
-      console.warn(`[razorpay][subscription.create] missing field: ${field}`)
-    }
-  }
-
-  console.log("[razorpay][subscription.create] field audit", fieldValues)
-}
-
 async function razorpayRequest<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
-  const method = init.method ?? "GET"
-  const isSubscriptionCreate = method === "POST" && path === "/subscriptions"
-  const requestPayload =
-    isSubscriptionCreate && typeof init.body === "string"
-      ? tryParseJson(init.body)
-      : null
-
-  if (isSubscriptionCreate) {
-    const providerPlanId =
-      requestPayload && typeof requestPayload === "object" && "plan_id" in requestPayload
-        ? (requestPayload as { plan_id: string }).plan_id
-        : null
-    logPreSubscriptionRequest(path, method, providerPlanId)
-  }
-
   const response = await fetch(`https://api.razorpay.com/v1${path}`, {
     ...init,
     headers: {
@@ -257,22 +134,9 @@ async function razorpayRequest<T>(
   const parsedBody = tryParseJson(rawBody)
   const responseHeaders = headersToObject(response.headers)
 
-  if (isSubscriptionCreate) {
-    logSubscriptionCreateResponseBody(response.status, parsedBody, rawBody)
-  }
-
   if (!response.ok) {
-    if (isSubscriptionCreate) {
-      console.error("[razorpay][subscription.create] error response", {
-        httpStatus: response.status,
-        headers: responseHeaders,
-        rawBody,
-        parsedJson: parsedBody,
-        errorObject:
-          typeof parsedBody === "object" && parsedBody !== null && "error" in parsedBody
-            ? (parsedBody as { error: unknown }).error
-            : parsedBody,
-      })
+    if (init.method === "POST" && path === "/subscriptions") {
+      console.error("[razorpay][subscription.create] failed", response.status)
     }
 
     throw new RazorpayApiError({
@@ -283,13 +147,7 @@ async function razorpayRequest<T>(
     })
   }
 
-  const result = parsedBody as T
-
-  if (isSubscriptionCreate) {
-    logSubscriptionCreateFieldAudit(result as RazorpaySubscription)
-  }
-
-  return result
+  return parsedBody as T
 }
 
 function getSubscriptionTotalCount(): number {
@@ -371,12 +229,21 @@ function readNotes(subscription: RazorpaySubscription): {
   return { workspaceId, userId, planId }
 }
 
+/** Live entitlement plan — ignores notes.plan_id while a cycle_end change is scheduled. */
+function readEntitlementPlanId(subscription: RazorpaySubscription): PaidPlanId | null {
+  if (subscription.has_scheduled_changes && subscription.plan_id) {
+    return resolvePaidPlanFromSubscription(undefined, subscription.plan_id, "razorpay")
+  }
+  return readNotes(subscription).planId
+}
+
 async function syncRazorpaySubscription(
   adminClient: SupabaseClient,
   subscription: RazorpaySubscription,
-  options: { resetPeriodUsage?: boolean } = {}
+  options: { resetPeriodUsage?: boolean; clearScheduled?: boolean } = {}
 ): Promise<void> {
-  const { workspaceId, userId, planId } = readNotes(subscription)
+  const { workspaceId, userId } = readNotes(subscription)
+  const planId = readEntitlementPlanId(subscription)
 
   if (!workspaceId || !userId) {
     console.error("Missing notes on Razorpay subscription", subscription.id)
@@ -398,19 +265,273 @@ async function syncRazorpaySubscription(
     workspaceId,
     userId,
     planId,
-    status: mapRazorpayStatus(subscription.status),
-    externalCustomerId: subscription.customer_id,
-    externalSubscriptionId: subscription.id,
-    externalPriceId: subscription.plan_id,
+    status: mapRazorpayStatus(subscription.status ?? "active"),
+    externalCustomerId: subscription.customer_id ?? null,
+    externalSubscriptionId: subscription.id ?? null,
+    externalPriceId: subscription.plan_id ?? null,
     currentPeriodStart: toIsoTimestamp(subscription.current_start),
     currentPeriodEnd: toIsoTimestamp(subscription.current_end),
     cancelAtPeriodEnd,
     resetPeriodUsage: options.resetPeriodUsage,
     paymentProvider: "razorpay",
+    clearScheduled: options.clearScheduled,
   })
 }
 
-export const razorpayProvider: PaymentProvider = {
+const UNSUPPORTED_PLAN_CHANGE_METHODS = new Set(["upi", "emandate", "nach"])
+
+function assertPlanChangeSupported(subscription: RazorpaySubscription): void {
+  const method = subscription.payment_method?.toLowerCase().trim()
+  if (method && UNSUPPORTED_PLAN_CHANGE_METHODS.has(method)) {
+    throw new Error(
+      `Plan changes are not supported for ${method.toUpperCase()} subscriptions. Contact support or cancel and resubscribe on card.`
+    )
+  }
+}
+
+async function fetchRazorpaySubscription(
+  externalSubscriptionId: string
+): Promise<RazorpaySubscription> {
+  return razorpayRequest<RazorpaySubscription>(`/subscriptions/${externalSubscriptionId}`)
+}
+
+const CONTINUABLE_CHECKOUT_STATUSES = new Set(["created", "authenticated", "pending"])
+
+const TERMINAL_RAZORPAY_STATUSES = new Set(["cancelled", "completed", "expired"])
+
+const LIVE_RAZORPAY_STATUSES = new Set(["active", "halted"])
+
+export class CheckoutSubscriptionConflictError extends Error {
+  readonly code = "USE_PLAN_CHANGE" as const
+
+  constructor(message: string) {
+    super(message)
+    this.name = "CheckoutSubscriptionConflictError"
+  }
+}
+
+async function fetchExistingRazorpaySubscription(
+  externalSubscriptionId: string
+): Promise<RazorpaySubscription | null> {
+  try {
+    return await fetchRazorpaySubscription(externalSubscriptionId)
+  } catch (error) {
+    if (error instanceof RazorpayApiError && error.httpStatus === 404) {
+      return null
+    }
+    throw error
+  }
+}
+
+async function createRazorpayCheckoutSubscription(
+  requestPayload: Record<string, unknown>
+): Promise<RazorpaySubscription> {
+  return razorpayRequest<RazorpaySubscription>("/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(requestPayload),
+  })
+}
+
+async function cancelRazorpaySubscriptionImmediately(
+  externalSubscriptionId: string
+): Promise<RazorpaySubscription> {
+  return razorpayRequest<RazorpaySubscription>(
+    `/subscriptions/${externalSubscriptionId}/cancel`,
+    {
+      method: "POST",
+      body: JSON.stringify({ cancel_at_cycle_end: false }),
+    }
+  )
+}
+
+function isTerminalRazorpayStatus(status: string | undefined): boolean {
+  return TERMINAL_RAZORPAY_STATUSES.has((status ?? "").toLowerCase())
+}
+
+async function clearStaleCheckoutSubscriptionReference(
+  context: CheckoutContext
+): Promise<void> {
+  await context.adminClient
+    .from("subscriptions")
+    .update({
+      stripe_subscription_id: null,
+      stripe_price_id: null,
+    })
+    .eq("id", context.workspace.subscriptionId)
+}
+
+async function persistCheckoutSubscriptionReference(
+  context: CheckoutContext,
+  subscription: RazorpaySubscription,
+  providerPlanId: string
+): Promise<void> {
+  const { error: updateError } = await context.adminClient
+    .from("subscriptions")
+    .update({
+      stripe_subscription_id: subscription.id,
+      stripe_price_id: providerPlanId,
+      payment_provider: "razorpay",
+    })
+    .eq("id", context.workspace.subscriptionId)
+
+  if (updateError) {
+    console.error(
+      "[razorpay][checkout] database persist failed",
+      context.workspace.workspaceId,
+      subscription.id ?? null,
+      updateError.message
+    )
+  }
+}
+
+async function resolveCheckoutSubscription(
+  context: CheckoutContext,
+  requestPayload: Record<string, unknown>
+): Promise<RazorpaySubscription> {
+  const existingId = context.workspace.subscription.stripe_subscription_id as string | null
+
+  if (!existingId) {
+    return createRazorpayCheckoutSubscription(requestPayload)
+  }
+
+  const existing = await fetchExistingRazorpaySubscription(existingId)
+
+  if (!existing) {
+    await clearStaleCheckoutSubscriptionReference(context)
+    return createRazorpayCheckoutSubscription(requestPayload)
+  }
+
+  const status = (existing.status ?? "created").toLowerCase()
+
+  if (LIVE_RAZORPAY_STATUSES.has(status)) {
+    throw new CheckoutSubscriptionConflictError(
+      "An active subscription already exists for this workspace. Use plan change instead of checkout."
+    )
+  }
+
+  if (CONTINUABLE_CHECKOUT_STATUSES.has(status)) {
+    if (existing.plan_id === context.providerPlanId) {
+      return existing
+    }
+
+    await cancelRazorpaySubscriptionImmediately(existingId)
+    const verified = await fetchRazorpaySubscription(existingId)
+
+    if (!isTerminalRazorpayStatus(verified.status)) {
+      throw new Error("Unable to replace unfinished subscription. Try again shortly.")
+    }
+
+    return createRazorpayCheckoutSubscription(requestPayload)
+  }
+
+  if (isTerminalRazorpayStatus(status)) {
+    return createRazorpayCheckoutSubscription(requestPayload)
+  }
+
+  throw new Error(`Unable to start checkout for subscription in status: ${status}`)
+}
+
+async function updateRazorpaySubscription(
+  input: RazorpayUpdateSubscriptionInput
+): Promise<RazorpayUpdateSubscriptionResult> {
+  const live = await fetchRazorpaySubscription(input.externalSubscriptionId)
+  assertPlanChangeSupported(live)
+
+  const scheduleChangeAt: RazorpayPlanChangeSchedule = "cycle_end"
+
+  const patchPayload = {
+    plan_id: input.providerPlanId,
+    schedule_change_at: scheduleChangeAt,
+    customer_notify: true,
+  }
+
+  let subscription: RazorpaySubscription
+  try {
+    subscription = await razorpayRequest<RazorpaySubscription>(
+      `/subscriptions/${input.externalSubscriptionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(patchPayload),
+      }
+    )
+  } catch (error) {
+    if (error instanceof RazorpayApiError) {
+      console.error(
+        "[razorpay][plan-change] PATCH failed",
+        input.externalSubscriptionId,
+        error.httpStatus
+      )
+    }
+    throw error
+  }
+
+  return {
+    subscription: subscription as unknown as Record<string, unknown>,
+    scheduleChangeAt,
+  }
+}
+
+async function fetchRazorpayPendingUpdate(
+  externalSubscriptionId: string
+): Promise<RazorpaySubscription> {
+  return razorpayRequest<RazorpaySubscription>(
+    `/subscriptions/${externalSubscriptionId}/retrieve_scheduled_changes`
+  )
+}
+
+async function cancelRazorpayScheduledChanges(
+  externalSubscriptionId: string
+): Promise<RazorpaySubscription> {
+  return razorpayRequest<RazorpaySubscription>(
+    `/subscriptions/${externalSubscriptionId}/cancel_scheduled_changes`,
+    { method: "POST", body: JSON.stringify({}) }
+  )
+}
+
+async function handleSubscriptionUpdated(
+  adminClient: SupabaseClient,
+  subscription: RazorpaySubscription
+): Promise<void> {
+  const { workspaceId, userId } = readNotes(subscription)
+
+  if (!workspaceId || !userId) {
+    console.error("Missing notes on Razorpay subscription.updated", subscription.id)
+    return
+  }
+
+  if (subscription.has_scheduled_changes) {
+    let scheduledPlan = readNotes(subscription).planId
+
+    try {
+      const pending = await fetchRazorpayPendingUpdate(subscription.id!)
+      const pendingNotes = pending.notes ?? {}
+      scheduledPlan =
+        resolvePaidPlanFromSubscription(
+          pendingNotes.plan_id,
+          pending.plan_id,
+          "razorpay"
+        ) ?? scheduledPlan
+    } catch (error) {
+      console.error("[razorpay][webhook] retrieve_scheduled_changes failed", {
+        subscriptionId: subscription.id,
+        error: error instanceof Error ? error.message : error,
+      })
+    }
+
+    await syncSubscriptionScheduleOnly(adminClient, {
+      workspaceId,
+      userId,
+      scheduledPlan,
+      scheduledChangeAt: toIsoTimestamp(subscription.change_scheduled_at),
+      currentPeriodEnd: toIsoTimestamp(subscription.current_end),
+    })
+    return
+  }
+
+  await syncRazorpaySubscription(adminClient, subscription, { clearScheduled: true })
+}
+
+export const razorpayProvider: RazorpayPaymentProvider = {
   id: "razorpay",
 
   async createCheckout(context: CheckoutContext): Promise<CheckoutResult> {
@@ -429,75 +550,24 @@ export const razorpayProvider: PaymentProvider = {
       },
     }
 
-    console.log("[razorpay][checkout] createCheckout start", {
-      environment: getRazorpayEnvironment(),
-      convertlyPlanId: context.planId,
-      providerPlanId: context.providerPlanId,
-      workspaceId: context.workspace.workspaceId,
-      userId: context.user.id,
-      subscriptionId: context.workspace.subscriptionId,
-      requestPayload,
-    })
+    const subscription = await resolveCheckoutSubscription(context, requestPayload)
 
-    const subscription = await razorpayRequest<RazorpaySubscription>("/subscriptions", {
-      method: "POST",
-      body: JSON.stringify(requestPayload),
-    })
-
-    if (!subscription.short_url) {
-      console.error("[razorpay][checkout] missing short_url on Razorpay response", {
-        subscriptionId: subscription.id ?? null,
-        status: subscription.status ?? null,
-        plan_id: subscription.plan_id ?? null,
-        response: subscription,
-      })
+    const shortUrl = subscription.short_url?.trim()
+    if (!shortUrl) {
+      console.error(
+        "[razorpay][checkout] missing short_url",
+        subscription.id ?? null,
+        subscription.status ?? null
+      )
       throw new Error("Unable to create Razorpay checkout link.")
     }
 
-    console.log("[razorpay][checkout] createCheckout returned", {
-      url: subscription.short_url ?? null,
-      subscriptionId: subscription.id ?? null,
-      status: subscription.status ?? null,
-      plan_id: subscription.plan_id ?? null,
-      fullRazorpayResponse: subscription,
-    })
-
-    const { error: updateError } = await context.adminClient
-      .from("subscriptions")
-      .update({
-        stripe_subscription_id: subscription.id,
-        stripe_price_id: context.providerPlanId,
-        payment_provider: "razorpay",
-      })
-      .eq("id", context.workspace.subscriptionId)
-
-    if (updateError) {
-      console.error("[razorpay][checkout] database persist failed", {
-        workspaceId: context.workspace.workspaceId,
-        externalSubscriptionId: subscription.id ?? null,
-        provider: "razorpay",
-        planId: context.providerPlanId,
-        convertlyPlanId: context.planId,
-        workspaceSubscriptionId: context.workspace.subscriptionId,
-        success: false,
-        error: updateError,
-      })
-    } else {
-      console.log("[razorpay][checkout] database persist succeeded", {
-        workspaceId: context.workspace.workspaceId,
-        externalSubscriptionId: subscription.id ?? null,
-        provider: "razorpay",
-        planId: context.providerPlanId,
-        convertlyPlanId: context.planId,
-        workspaceSubscriptionId: context.workspace.subscriptionId,
-        success: true,
-      })
-    }
+    await persistCheckoutSubscriptionReference(context, subscription, context.providerPlanId)
 
     return {
-      url: subscription.short_url,
+      url: shortUrl,
       subscriptionId: subscription.id,
-      shortUrl: subscription.short_url,
+      shortUrl,
       keyId: getRazorpayKeyId(),
     }
   },
@@ -516,17 +586,9 @@ export const razorpayProvider: PaymentProvider = {
 
     const portalUrl = subscription.short_url?.trim()
     if (!portalUrl) {
-      console.error("[razorpay][portal] missing short_url on subscription", {
-        externalSubscriptionId,
-        status: subscription.status ?? null,
-      })
+      console.error("[razorpay][portal] missing short_url", externalSubscriptionId)
       throw new Error("Subscription management link is unavailable.")
     }
-
-    console.log("[razorpay][portal] returning Razorpay management URL", {
-      externalSubscriptionId,
-      status: subscription.status ?? null,
-    })
 
     return { url: portalUrl }
   },
@@ -563,26 +625,13 @@ export const razorpayProvider: PaymentProvider = {
 
   async verifyWebhook(req: Request): Promise<VerifiedWebhook> {
     const webhookSecret = getRazorpayWebhookSecret()
-    const webhookSecretDiagnostics = inspectRazorpayWebhookSecret()
-    const incomingHeaders = collectIncomingWebhookHeaders(req)
+    const signatureHeaderCount = countRazorpaySignatureHeaders(req)
 
-    console.log("[razorpay][webhook] incoming request headers", {
-      webhookSecretDiagnostics,
-      ...incomingHeaders,
-      requestOriginNote:
-        "Supabase Edge receives proxied requests; use user-agent and x-razorpay-* headers to assess Razorpay origin.",
-    })
-
-    if (!incomingHeaders.signatureHeaderPresentExactlyOnce) {
-      console.error("[razorpay][webhook] invalid signature header cardinality", {
-        signatureHeaderCount: incomingHeaders.signatureHeaderCount,
-        expected: 1,
-      })
-
-      if (incomingHeaders.signatureHeaderCount === 0) {
+    if (signatureHeaderCount !== 1) {
+      console.error("[razorpay][webhook] invalid signature header count", signatureHeaderCount)
+      if (signatureHeaderCount === 0) {
         throw new Error("Missing x-razorpay-signature header.")
       }
-
       throw new Error("Invalid x-razorpay-signature header count.")
     }
 
@@ -592,45 +641,14 @@ export const razorpayProvider: PaymentProvider = {
     }
 
     const rawBody = await req.text()
-    const eventNameFromRawBody = tryParseRazorpayEventName(rawBody)
-
-    console.log("[razorpay][webhook] raw body captured before JSON parse", {
-      rawBodyLength: rawBody.length,
-      rawBodyIsEmpty: rawBody.length === 0,
-      eventNameFromRawBody,
-      xRazorpayEventId: incomingHeaders.razorpayEventId,
-    })
-
     const isValid = await verifyRazorpaySignature(rawBody, signature, webhookSecret)
 
     if (!isValid) {
-      const trimmedSecretValid = await verifyRazorpaySignature(
-        rawBody,
-        signature,
-        webhookSecret.trim()
-      )
-
-      console.error("[razorpay][webhook] signature verification failed", {
-        webhookSecretDiagnostics,
-        ...incomingHeaders,
-        signatureLength: signature.length,
-        rawBodyLength: rawBody.length,
-        eventNameFromRawBody,
-        hmacAlgorithm: "HMAC-SHA256",
-        digestEncoding: "hex",
-        matchesWithTrimmedSecret: trimmedSecretValid,
-      })
-
+      console.error("[razorpay][webhook] signature verification failed")
       throw new Error("Invalid Razorpay webhook signature.")
     }
 
     const payload = JSON.parse(rawBody) as RazorpayEvent
-
-    console.log("[razorpay][webhook] signature verified", {
-      eventName: payload.event,
-      xRazorpayEventId: incomingHeaders.razorpayEventId,
-      signatureHeaderPresentExactlyOnce: incomingHeaders.signatureHeaderPresentExactlyOnce,
-    })
 
     return {
       provider: "razorpay",
@@ -649,10 +667,15 @@ export const razorpayProvider: PaymentProvider = {
 
     switch (event.eventType) {
       case "subscription.authenticated":
-      case "subscription.activated":
-      case "subscription.updated": {
+      case "subscription.activated": {
         if (subscription) {
           await syncRazorpaySubscription(adminClient, subscription)
+        }
+        break
+      }
+      case "subscription.updated": {
+        if (subscription) {
+          await handleSubscriptionUpdated(adminClient, subscription)
         }
         break
       }
@@ -660,6 +683,7 @@ export const razorpayProvider: PaymentProvider = {
         if (subscription) {
           await syncRazorpaySubscription(adminClient, subscription, {
             resetPeriodUsage: true,
+            clearScheduled: !subscription.has_scheduled_changes,
           })
         }
         break
@@ -686,4 +710,12 @@ export const razorpayProvider: PaymentProvider = {
         break
     }
   },
+
+  updateSubscription: updateRazorpaySubscription,
+  fetchPendingUpdate: async (externalSubscriptionId: string) =>
+    fetchRazorpayPendingUpdate(externalSubscriptionId) as unknown as Record<string, unknown>,
+  cancelScheduledChanges: async (externalSubscriptionId: string) =>
+    cancelRazorpayScheduledChanges(externalSubscriptionId) as unknown as Record<string, unknown>,
+  fetchSubscription: async (externalSubscriptionId: string) =>
+    fetchRazorpaySubscription(externalSubscriptionId) as unknown as Record<string, unknown>,
 }

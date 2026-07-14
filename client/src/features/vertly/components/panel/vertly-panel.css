@@ -20,13 +20,13 @@
   position: fixed;
   z-index: 122;
   width: min(24rem, calc(100vw - 1.5rem));
-  max-height: min(34rem, calc(100vh - 6rem));
+  max-height: min(34rem, calc(100dvh - 6rem));
   pointer-events: auto;
 }
 
 .vertly-panel {
   display: flex;
-  height: min(34rem, calc(100vh - 6rem));
+  height: min(34rem, calc(100dvh - 6rem));
   flex-direction: column;
   border-radius: calc(var(--radius-lg) + 2px);
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
@@ -46,6 +46,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-shrink: 0;
   padding: 1rem 1rem 0.75rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
@@ -103,6 +104,7 @@
 }
 
 .vertly-panel__context {
+  flex-shrink: 0;
   padding: 0.75rem 1rem 0.625rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   background: color-mix(in srgb, var(--accent) 4%, transparent);
@@ -141,8 +143,8 @@
 
 .vertly-rail {
   flex-shrink: 0;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: transparent;
 }
 
 .vertly-rail__toggle {
@@ -195,6 +197,13 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--foreground) 52%, transparent);
+}
+
+.vertly-rail__empty {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--foreground) 48%, transparent);
 }
 
 .vertly-rail__chips {
@@ -321,6 +330,27 @@
   margin-top: 0.875rem;
 }
 
+.vertly-quick-actions-bar {
+  flex-shrink: 0;
+  padding: 0.625rem 1rem 0.875rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.vertly-quick-actions-bar__heading {
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 52%, transparent);
+}
+
+.vertly-quick-actions-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
+}
+
 .vertly-quick-action {
   padding: 0.4375rem 0.75rem;
   border-radius: var(--radius-md);
@@ -406,12 +436,18 @@
   }
 }
 
+.vertly-panel__footer {
+  flex-shrink: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
 .vertly-panel__composer {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.5rem;
-  padding: 0.75rem 1rem 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding: 0.75rem 1rem 0.625rem;
+  border-top: none;
 }
 
 .vertly-panel__input {

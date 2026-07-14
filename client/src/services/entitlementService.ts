@@ -14,47 +14,70 @@ import * as workspaceRepository from "@/services/repositories/business/workspace
 import type { AuditEntitlementCheck } from "@/types/entitlement"
 import { AuditLimitError } from "@/types/billing"
 
+function formatRenewalDate(iso: string | null): string | null {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
+function buildEntitlementFallback(
+  partial: Partial<AuditEntitlementCheck> & Pick<AuditEntitlementCheck, "allowed" | "planId">
+): AuditEntitlementCheck {
+  return {
+    planName: planDisplayName(partial.planId ?? "free"),
+    auditsUsed: partial.auditsUsed ?? 0,
+    auditsIncluded: partial.auditsIncluded ?? 2,
+    auditsRemaining: partial.auditsRemaining ?? 0,
+    periodEndFormatted: partial.periodEndFormatted ?? null,
+    blockedByLimit: partial.blockedByLimit ?? false,
+    reason: partial.reason,
+    allowed: partial.allowed,
+    planId: partial.planId,
+  }
+}
+
 export async function getAuditEntitlement(userId: string): Promise<AuditEntitlementCheck> {
   assertBusinessFoundationEnabled()
   await ensureBusinessFoundation(userId)
 
   const workspace = await workspaceRepository.getPersonalWorkspace(userId)
   if (!workspace) {
-    return {
+    return buildEntitlementFallback({
       allowed: false,
       planId: "free",
-      auditsUsed: 0,
-      auditsIncluded: 2,
-      auditsRemaining: 0,
       reason: "Workspace not found.",
-    }
+    })
   }
 
   const subscription = await workspaceRepository.getSubscriptionByWorkspaceId(workspace.id)
   if (!subscription) {
-    return {
+    return buildEntitlementFallback({
       allowed: false,
       planId: "free",
-      auditsUsed: 0,
-      auditsIncluded: 2,
-      auditsRemaining: 0,
       reason: "Subscription not found.",
-    }
+    })
   }
 
   const resolved = await resolvePlanForUser(userId)
   const usage = buildPlanUsage(subscription, resolved)
+  const blockedByLimit = usage.subscriptionActive && usage.auditsRemaining <= 0
 
   return {
     allowed: usage.subscriptionActive && usage.auditsRemaining > 0,
     planId: usage.effectivePlanId,
+    planName: usage.planName,
     auditsUsed: usage.auditsUsed,
     auditsIncluded: usage.auditsIncluded,
     auditsRemaining: usage.auditsRemaining,
+    periodEndFormatted: formatRenewalDate(usage.periodEnd),
+    blockedByLimit,
     reason:
       usage.subscriptionActive && usage.auditsRemaining > 0
         ? undefined
-        : usage.auditsRemaining <= 0
+        : blockedByLimit
           ? "You have used all audits included in your plan."
           : "Your subscription is not active.",
   }

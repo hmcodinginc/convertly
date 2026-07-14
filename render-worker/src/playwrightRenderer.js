@@ -5,7 +5,7 @@ import { extractFromPage, hashContent } from "./extractPageContent.js"
 import { assertSafeUrl } from "./urlSafety.js"
 import { PLAYWRIGHT_BROWSERS_DIR } from "./playwrightEnv.js"
 
-const RENDER_SETTLE_MAX_MS = 6_000
+const RENDER_SETTLE_MAX_MS = 8_000
 const MAX_HTML_CHARS = 4_000_000
 
 const BLOCKED_RESOURCE_TYPES = new Set(["image", "media", "font"])

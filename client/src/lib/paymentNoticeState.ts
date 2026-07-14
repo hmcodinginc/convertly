@@ -62,7 +62,7 @@ export function derivePaymentNotice(input: DerivePaymentNoticeInput): PaymentNot
     return dismissedKind === content.kind ? null : content
   }
 
-  let effectivePersistedNotice = persistedNotice
+  const effectivePersistedNotice = persistedNotice
 
   if (billing) {
     const pending = readPendingCheckoutForUser(userId)

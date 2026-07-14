@@ -1,14 +1,30 @@
-/* ─── Launcher shell ─── */
-.vertly-launcher {
+/* ─── Launcher anchor (positioned shell; speech + button are siblings) ─── */
+.vertly-launcher-anchor {
   position: fixed;
   z-index: 122;
-  display: flex;
   width: 3.5rem;
   height: 4.5rem;
+  pointer-events: none;
+}
+
+.vertly-launcher-anchor--open {
+  z-index: 123;
+}
+
+.vertly-launcher-anchor .vertly-launcher,
+.vertly-launcher-anchor .vertly-speech {
+  pointer-events: auto;
+}
+
+/* ─── Launcher control ─── */
+.vertly-launcher {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
   align-items: flex-end;
   justify-content: center;
   padding: 0;
-  pointer-events: auto;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -18,10 +34,6 @@
 
 .vertly-launcher--dragging {
   cursor: grabbing;
-}
-
-.vertly-launcher--open {
-  z-index: 123;
 }
 
 /* ─── Speech bubble (above head) ─── */
@@ -172,6 +184,7 @@
   animation: vertly-head-micro 7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
+.vertly-launcher-anchor--speaking .vertly-robot__aura,
 .vertly-launcher--hover .vertly-robot__head-group,
 .vertly-robot--eye-look-up .vertly-robot__head-group,
 .vertly-robot--action-wave .vertly-robot__head-group {
@@ -246,7 +259,7 @@
 
 .vertly-robot--mode-hover .vertly-robot__aura,
 .vertly-launcher--hover .vertly-robot__aura,
-.vertly-launcher--speaking .vertly-robot__aura {
+.vertly-launcher-anchor--speaking .vertly-robot__aura {
   opacity: 0.88;
   transform: scale(1.06);
 }

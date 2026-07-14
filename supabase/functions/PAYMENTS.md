@@ -55,9 +55,38 @@ Webhook endpoint:
 POST https://<project-ref>.supabase.co/functions/v1/payment-webhook
 ```
 
-Subscribe to: `subscription.authenticated`, `subscription.activated`, `subscription.charged`,
-`subscription.pending`, `subscription.halted`, `subscription.cancelled`, `subscription.completed`,
-`subscription.expired`
+Subscribe to: `subscription.authenticated`, `subscription.activated`, `subscription.updated`,
+`subscription.charged`, `subscription.pending`, `subscription.halted`, `subscription.cancelled`,
+`subscription.completed`, `subscription.expired`
+
+### Plan changes (paid → paid)
+
+One Razorpay subscription per workspace for its lifetime. Paid→paid changes use
+`PATCH /v1/subscriptions/:id` via the `payment-change-plan` edge function — never a second
+`POST /subscriptions`.
+
+| Direction  | `schedule_change_at` | Entitlements                         |
+|------------|----------------------|--------------------------------------|
+| Upgrade    | `now`                | Update on `subscription.updated` after charge |
+| Downgrade  | `cycle_end`          | Current plan/limits until cycle end  |
+
+Card subscriptions support PATCH (auto-charge saved mandate). UPI and eMandate subscriptions
+return `422 PLAN_CHANGE_UNSUPPORTED` — user must cancel and resubscribe on card.
+
+Webhooks remain authoritative. PATCH success alone does not update entitlements.
+
+Scheduled downgrades persist `scheduled_plan` and `scheduled_change_at` on `subscriptions`.
+Cancel via `payment-change-plan` with `{ "cancelScheduled": true }`.
+
+### Orphan subscription audit (report only)
+
+Before/after rollout, run:
+
+```
+deno run --allow-net --allow-env supabase/scripts/audit-orphan-subscriptions.ts
+```
+
+Requires `SUPABASE_URL`, `SERVICE_ROLE_KEY`, and Razorpay credentials. Does not cancel anything.
 
 ## Stripe (future)
 
@@ -86,9 +115,10 @@ If Checkout.js cannot load, the client falls back to the subscription `short_url
 
 ## Edge functions
 
-| Function          | JWT   | Purpose                          |
-|-------------------|-------|----------------------------------|
-| payment-checkout  | true  | Start subscription checkout      |
-| payment-portal    | true  | Customer portal / manage URL     |
-| payment-cancel    | true  | Cancel subscription via provider |
-| payment-webhook   | false | Provider webhook ingestion       |
+| Function              | JWT   | Purpose                                      |
+|-----------------------|-------|----------------------------------------------|
+| payment-checkout      | true  | Free→paid subscription checkout only         |
+| payment-change-plan   | true  | Paid→paid upgrade/downgrade (PATCH)          |
+| payment-portal        | true  | Customer portal / manage URL                 |
+| payment-cancel        | true  | Cancel subscription via provider             |
+| payment-webhook       | false | Provider webhook ingestion                   |

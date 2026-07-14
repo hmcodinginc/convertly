@@ -1,19 +1,26 @@
 import { Link } from "react-router-dom"
 
 import { UsageSummaryCard } from "@/components/billing/UsageSummaryCard"
+import { WorkspaceUsageBreakdown } from "@/components/workspace/WorkspaceUsageBreakdown"
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/typography/Text"
 import { Card } from "@/components/surfaces/Card"
 import { ROUTES } from "@/lib/routes"
 import type { WorkspaceUsage } from "@/types/workspace"
+import type { WorkspaceAuditUsageBreakdown } from "@/types/workspaceUsageBreakdown"
 
 type WorkspaceOverviewCardProps = {
   workspaceName: string
   usage: WorkspaceUsage
+  usageBreakdown: WorkspaceAuditUsageBreakdown
 }
 
-function WorkspaceOverviewCard({ workspaceName, usage }: WorkspaceOverviewCardProps) {
+function WorkspaceOverviewCard({
+  workspaceName,
+  usage,
+  usageBreakdown,
+}: WorkspaceOverviewCardProps) {
   const isInternalAccount = usage.planId === "internal"
 
   const billingAction =
@@ -44,6 +51,8 @@ function WorkspaceOverviewCard({ workspaceName, usage }: WorkspaceOverviewCardPr
       </div>
 
       <UsageSummaryCard usage={usage} showHeading={false} footer={billingAction} />
+
+      <WorkspaceUsageBreakdown breakdown={usageBreakdown} />
     </Card>
   )
 }

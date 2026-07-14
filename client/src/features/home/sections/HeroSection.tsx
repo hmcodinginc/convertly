@@ -53,8 +53,8 @@ function HeroSection() {
       <div className="relative w-full">
         <div className="pointer-events-none absolute inset-x-0 top-[-14rem] -z-10 h-[20rem] bg-[var(--gradient-primary)] opacity-12 blur-3xl" />
 
-        <div className="grid items-center gap-6 py-8 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
-          <div className="flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 lg:gap-7">
+        <div className="marketing-hero-grid grid items-center gap-6 py-8 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
+          <div className="marketing-hero-copy flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 lg:max-w-none lg:gap-7">
             <FadeIn>
               <Text
                 size="sm"
@@ -91,7 +91,7 @@ function HeroSection() {
             </FadeIn>
 
             <FadeIn delay={0.18}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="marketing-hero-actions flex w-full flex-col gap-4 sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   className="marketing-cta-primary w-full sm:w-auto h-11 flex items-center justify-center gap-1.5"
@@ -115,7 +115,7 @@ function HeroSection() {
             </FadeIn>
 
             <FadeIn delay={0.24}>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 pt-2">
+              <div className="marketing-hero-trust flex flex-wrap items-center gap-x-6 gap-y-2.5 pt-2">
                 {[
                   "No credit card",
                   "Ships insights in minutes",
@@ -132,7 +132,7 @@ function HeroSection() {
             </FadeIn>
           </div>
 
-          <FadeIn delay={0.08} className="w-full lg:pl-4">
+          <FadeIn delay={0.08} className="marketing-hero-visual w-full lg:pl-4">
             <div className="relative mx-auto w-full max-w-xl">
               <div
                 aria-hidden="true"

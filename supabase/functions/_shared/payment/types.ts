@@ -44,6 +44,21 @@ export type CheckoutResult = {
   keyId?: string
 }
 
+export type RazorpayPlanChangeSchedule = "cycle_end"
+
+export type RazorpayUpdateSubscriptionInput = {
+  externalSubscriptionId: string
+  targetPlanId: PaidPlanId
+  providerPlanId: string
+  workspaceId: string
+  userId: string
+}
+
+export type RazorpayUpdateSubscriptionResult = {
+  subscription: Record<string, unknown>
+  scheduleChangeAt: RazorpayPlanChangeSchedule
+}
+
 export interface PaymentProvider {
   readonly id: PaymentProviderId
 
@@ -56,4 +71,16 @@ export interface PaymentProvider {
   verifyWebhook(req: Request): Promise<VerifiedWebhook>
 
   handleWebhookEvent(adminClient: SupabaseClient, event: VerifiedWebhook): Promise<void>
+}
+
+export interface RazorpayPaymentProvider extends PaymentProvider {
+  updateSubscription(
+    input: RazorpayUpdateSubscriptionInput
+  ): Promise<RazorpayUpdateSubscriptionResult>
+
+  fetchPendingUpdate(externalSubscriptionId: string): Promise<Record<string, unknown>>
+
+  cancelScheduledChanges(externalSubscriptionId: string): Promise<Record<string, unknown>>
+
+  fetchSubscription(externalSubscriptionId: string): Promise<Record<string, unknown>>
 }

@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
+import type { SubscriptionPlanId } from "@/lib/billingPlans"
 import type { SubscriptionRow, WorkspaceRow } from "@/types/businessDatabase"
 
 export async function getPersonalWorkspace(userId: string): Promise<WorkspaceRow | null> {
@@ -58,4 +59,15 @@ export async function getSubscriptionForUser(userId: string): Promise<Subscripti
 
   if (error) throw new Error(error.message)
   return data
+}
+
+export async function setPendingPlan(
+  planId: SubscriptionPlanId | null
+): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc("set_subscription_pending_plan", {
+    p_pending_plan: planId,
+  })
+
+  if (error) throw new Error(error.message)
 }

@@ -50,7 +50,52 @@
   }
 }
 
-/* Section header block → content */
+/* Hero — center copy + card below lg (two-column desktop keeps left alignment) */
+@media (max-width: 1023px) {
+  .marketing-hero-grid {
+    justify-items: center;
+  }
+
+  .marketing-hero-copy {
+    align-items: center;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .marketing-hero-copy #home-hero-title {
+    margin-inline: auto;
+  }
+
+  .marketing-hero-actions {
+    justify-content: center;
+  }
+
+  .marketing-hero-trust {
+    justify-content: center;
+  }
+
+  .marketing-hero-visual {
+    width: 100%;
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-copy {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .marketing-hero-actions {
+    justify-content: flex-start;
+  }
+
+  .marketing-hero-trust {
+    justify-content: flex-start;
+  }
+}
+
 .marketing-section-stack {
   display: flex;
   flex-direction: column;

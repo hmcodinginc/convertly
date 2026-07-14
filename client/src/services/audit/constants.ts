@@ -33,16 +33,6 @@ export function inferPageTypeFromPath(path: string): AuditPageType {
   return "custom"
 }
 
-export const AUDIT_LOADING_PHASES = [
-  "Discovering pages",
-  "Reviewing user experience",
-  "Checking conversion opportunities",
-  "Evaluating trust signals",
-  "Preparing recommendations",
-] as const
-
-export type AuditLoadingPhase = (typeof AUDIT_LOADING_PHASES)[number]
-
 export const SCORE_CATEGORY_DEFINITIONS = [
   { category: "conversion" as const, label: "Conversion", maxScore: 100 },
   { category: "trust" as const, label: "Trust", maxScore: 100 },

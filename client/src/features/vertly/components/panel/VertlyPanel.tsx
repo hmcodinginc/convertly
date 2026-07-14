@@ -6,11 +6,12 @@ import { Link } from "react-router-dom"
 import { ConvertlyMark } from "@/components/brand/ConvertlyMark"
 import { GlassPanel } from "@/components/surfaces/GlassPanel"
 import { VertlyMessageBubble } from "@/features/vertly/components/panel/VertlyMessageBubble"
+import { VertlyQuickActionsBar } from "@/features/vertly/components/panel/VertlyQuickActionsBar"
 import { VertlySuggestionsRail } from "@/features/vertly/components/panel/VertlySuggestionsRail"
 import { VertlyTypingIndicator } from "@/features/vertly/components/panel/VertlyTypingIndicator"
-import { getLatestRelatedSuggestions, resolveRelatedSuggestions } from "@/features/vertly/content/relatedQuestions"
 import { VERTLY_PANEL_TRANSITION } from "@/features/vertly/motion/vertlyMotion"
-import type { VertlyMessage, VertlyPageContext } from "@/features/vertly/types"
+import { getPanelWelcomeMessage } from "@/features/vertly/services/vertlyConversationService"
+import type { VertlyMessage, VertlyPageContext, VertlyVariant } from "@/features/vertly/types"
 
 type VertlyPanelProps = {
   anchor: {
@@ -18,6 +19,7 @@ type VertlyPanelProps = {
     top: number
     transformOrigin: string
   }
+  variant: VertlyVariant
   pageContext: VertlyPageContext
   messages: VertlyMessage[]
   showProactive: boolean
@@ -30,6 +32,7 @@ type VertlyPanelProps = {
 
 function VertlyPanel({
   anchor,
+  variant,
   pageContext,
   messages,
   showProactive,
@@ -45,9 +48,11 @@ function VertlyPanel({
   const [draft, setDraft] = useState("")
 
   const hasUserMessages = messages.some((message) => message.role === "user")
-  const relatedSuggestions = useMemo(
-    () => resolveRelatedSuggestions(messages, pageContext, isTyping),
-    [messages, pageContext, isTyping]
+  const hasAssistantReply = messages.some((message) => message.role === "assistant")
+  const [suggestionsCollapsed, setSuggestionsCollapsed] = useState(true)
+  const welcomeMessage = useMemo(
+    () => getPanelWelcomeMessage(pageContext, variant),
+    [pageContext, variant]
   )
 
   const composerPlaceholder =
@@ -60,10 +65,16 @@ function VertlyPanel({
   }, [])
 
   useEffect(() => {
+    if (hasAssistantReply) {
+      setSuggestionsCollapsed(true)
+    }
+  }, [hasAssistantReply])
+
+  useEffect(() => {
     const container = messagesRef.current
     if (!container) return
     container.scrollTop = container.scrollHeight
-  }, [messages, isTyping, relatedSuggestions])
+  }, [messages, isTyping])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -187,12 +198,14 @@ function VertlyPanel({
 
         <div ref={messagesRef} className="vertly-panel__messages">
           {!hasUserMessages ? (
-            <div className="vertly-empty">
-              <p className="vertly-empty__title">How can I help?</p>
-              <p className="vertly-empty__copy">
-                I know where you are in Convertly. Ask anything or use the suggestions below.
-              </p>
-            </div>
+            <VertlyMessageBubble
+              message={{
+                id: "vertly-welcome",
+                role: "assistant",
+                content: welcomeMessage,
+                createdAt: 0,
+              }}
+            />
           ) : null}
 
           {messages.map((message) => (
@@ -202,16 +215,8 @@ function VertlyPanel({
           {isTyping ? <VertlyTypingIndicator pageContext={pageContext} /> : null}
         </div>
 
-        <VertlySuggestionsRail
-          suggestions={pageContext.suggestions}
-          relatedSuggestions={relatedSuggestions}
-          quickActions={pageContext.quickActions}
-          isTyping={isTyping}
-          onSelectSuggestion={onSelectSuggestion}
-          onClose={onClose}
-        />
-
-        <form className="vertly-panel__composer" onSubmit={(event) => void handleSubmit(event)}>
+        <div className="vertly-panel__footer">
+          <form className="vertly-panel__composer" onSubmit={(event) => void handleSubmit(event)}>
           <label htmlFor="vertly-input" className="sr-only">
             Message Vertly
           </label>
@@ -222,7 +227,13 @@ function VertlyPanel({
             rows={2}
             placeholder={composerPlaceholder}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onFocus={() => setSuggestionsCollapsed(true)}
+            onChange={(event) => {
+              setDraft(event.target.value)
+              if (event.target.value.trim()) {
+                setSuggestionsCollapsed(true)
+              }
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault()
@@ -239,6 +250,16 @@ function VertlyPanel({
             <ArrowUp className="size-4" />
           </button>
         </form>
+
+        <VertlySuggestionsRail
+          suggestions={pageContext.suggestions}
+          isTyping={isTyping}
+          forceCollapsed={suggestionsCollapsed}
+          onSelectSuggestion={onSelectSuggestion}
+        />
+
+        <VertlyQuickActionsBar actions={pageContext.quickActions} onClose={onClose} />
+        </div>
       </GlassPanel>
     </motion.div>
   )

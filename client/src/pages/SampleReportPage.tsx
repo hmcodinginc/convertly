@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -16,6 +17,8 @@ import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSect
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
 import { SiteWideFindingsSection } from "@/features/audits/sections/SiteWideFindingsSection"
 import { ScoreBreakdownSection } from "@/features/audits/sections/ScoreBreakdownSection"
+import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
+import { buildVertlyAuditSnapshotFromDetail } from "@/features/vertly/routing/buildVertlyAuditSnapshot"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
@@ -81,6 +84,25 @@ function SampleReportPage() {
 
 function SampleReportContent({ audit }: { audit: AuditDetail }) {
   const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
+
+  const vertlyContext = useMemo(
+    () => ({
+      surface: "sample-report" as const,
+      title: audit.domain,
+      description: `Sample audit report for ${audit.domain}`,
+      auditContext: buildVertlyAuditSnapshotFromDetail(audit),
+      metadata: {
+        auditId: audit.id,
+        domain: audit.domain,
+        score: audit.overallScore,
+        status: audit.status,
+        sample: true,
+      },
+    }),
+    [audit]
+  )
+
+  useVertlyPageContext(vertlyContext)
 
   return (
     <div className="sample-report-body audit-report-page">

@@ -18,6 +18,7 @@ function VertlyWidget() {
     position,
     showProactive,
     speechBubble,
+    variant,
     toggle,
     open,
     close,
@@ -59,6 +60,7 @@ function VertlyWidget() {
             <VertlyBackdrop onClose={close} />
             <VertlyPanel
               anchor={panelAnchor}
+              variant={variant}
               pageContext={pageContext}
               messages={messages}
               showProactive={showProactive}

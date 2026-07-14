@@ -20,12 +20,9 @@ import { PageFindingsSection } from "@/features/audits/sections/PageFindingsSect
 import { PrioritizedIssuesSection } from "@/features/audits/sections/PrioritizedIssuesSection"
 import { SiteWideFindingsSection } from "@/features/audits/sections/SiteWideFindingsSection"
 import { ScoreBreakdownSection } from "@/features/audits/sections/ScoreBreakdownSection"
-import {
-  resetNetworkTrace,
-  setNetworkTraceRoute,
-} from "@/diagnostics/networkTrace"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
+import { buildVertlyAuditSnapshotFromDetail } from "@/features/vertly/routing/buildVertlyAuditSnapshot"
 import { isAuditInProgress } from "@/lib/auditStatus"
 import { ROUTES } from "@/lib/routes"
 import * as auditService from "@/services/auditService"
@@ -44,32 +41,13 @@ function AuditDetailPage() {
   const { data: audit, isLoading, isError, error, reload } = useAsyncData(loadAudit, [id])
 
   const inProgress = audit ? isAuditInProgress(audit.status) : false
-
-  const vertlyContext = useMemo(
-    () =>
-      audit
-        ? {
-            surface: "audit-detail" as const,
-            title: audit.domain,
-            description: `Reviewing ${audit.domain}`,
-            metadata: {
-              auditId: audit.id,
-              domain: audit.domain,
-              score: audit.overallScore,
-              status: audit.status,
-            },
-          }
-        : null,
-    [audit]
-  )
-
-  useVertlyPageContext(vertlyContext)
+  const [auditType, setAuditType] = useState<string | undefined>()
 
   useEffect(() => {
-    if (import.meta.env.VITE_NETWORK_TRACE === "true" && id) {
-      resetNetworkTrace()
-      setNetworkTraceRoute(`/audits/${id}`)
-    }
+    if (!id) return
+    void auditService.getAuditSessionDataById(id).then((sessionData) => {
+      setAuditType(sessionData?.session.auditType)
+    })
   }, [id])
 
   useEffect(() => {
@@ -145,14 +123,16 @@ function AuditDetailPage() {
     )
   }
 
-  return <AuditDetailContent audit={audit} onReload={reload} />
+  return <AuditDetailContent audit={audit} auditType={auditType} onReload={reload} />
 }
 
 function AuditDetailContent({
   audit,
+  auditType,
   onReload,
 }: {
   audit: AuditDetail
+  auditType?: string
   onReload: (options?: { silent?: boolean }) => void
 }) {
   const navigate = useNavigate()
@@ -167,9 +147,14 @@ function AuditDetailContent({
 
   if (running && showExecution) {
     return (
-      <AppPageShell header={null} sectionsClassName="gap-0">
+      <AppPageShell
+        header={null}
+        className="app-page--execution"
+        sectionsClassName="app-page-sections--execution gap-0"
+      >
         <AuditExecutionView
           auditId={audit.id}
+          vertlySurface="audit-detail"
           onComplete={() => {
             setShowExecution(false)
             auditService.invalidateCompletedAuditDetail(audit.id)
@@ -192,12 +177,36 @@ function AuditDetailContent({
     )
   }
 
-  return <AuditDetailReport audit={audit} />
+  return <AuditDetailReport audit={audit} auditType={auditType} />
 }
 
-function AuditDetailReport({ audit }: { audit: AuditDetail }) {
+function AuditDetailReport({
+  audit,
+  auditType,
+}: {
+  audit: AuditDetail
+  auditType?: string
+}) {
   const failed = audit.status === "failed"
   const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
+
+  const vertlyContext = useMemo(
+    () => ({
+      surface: "audit-detail" as const,
+      title: audit.domain,
+      description: `Reviewing ${audit.domain}`,
+      auditContext: buildVertlyAuditSnapshotFromDetail(audit, { auditType }),
+      metadata: {
+        auditId: audit.id,
+        domain: audit.domain,
+        score: audit.overallScore,
+        status: audit.status,
+      },
+    }),
+    [audit, auditType]
+  )
+
+  useVertlyPageContext(vertlyContext)
 
   return (
     <AppPageShell sectionsClassName="audit-report-sections" header={null}>

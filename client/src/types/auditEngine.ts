@@ -1,7 +1,9 @@
 import type { PageContentSnapshot } from "@/services/audit/pageContentService"
 
 /** Core audit session lifecycle statuses */
-export type AuditSessionStatus =  | "pending"
+export type AuditSessionStatus =
+  | "draft"
+  | "pending"
   | "crawling"
   | "analyzing"
   | "completed"
@@ -11,10 +13,12 @@ export type AuditSession = {
   id: string
   userId: string
   websiteUrl: string
+  auditType: string
   createdAt: string
   updatedAt: string
   status: AuditSessionStatus
   errorMessage?: string
+  workspaceId?: string | null
 }
 
 export type AuditPageType =

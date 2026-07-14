@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 }
 
-const WORKER_TIMEOUT_MS = 45_000
+const WORKER_TIMEOUT_MS = 55_000
 
 const BLOCKED_HOSTNAMES = new Set([
   "localhost",

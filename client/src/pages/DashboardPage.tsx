@@ -1,7 +1,10 @@
 import { AnimatePresence } from "framer-motion"
-import { Link, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 
+import { AuditAllowanceBadge } from "@/components/audit/AuditAllowanceBadge"
+import { AuditLimitInfoCard } from "@/components/audit/AuditLimitInfoCard"
+import { PendingPlanResumeBanner } from "@/components/billing/PendingPlanResumeBanner"
 import { PremiumCelebrationBanner } from "@/components/billing/PremiumCelebrationBanner"
 import { PremiumWelcomeCard } from "@/components/billing/PremiumWelcomeCard"
 import { OnboardingCard } from "@/components/feedback/OnboardingCard"
@@ -14,6 +17,7 @@ import { AiRecommendationsSection } from "@/features/dashboard/sections/AiRecomm
 import { DashboardPriorityInsights } from "@/features/dashboard/sections/DashboardPriorityInsights"
 import { MetricsOverviewSection } from "@/features/dashboard/sections/MetricsOverviewSection"
 import { OpportunityQueueSection } from "@/features/dashboard/sections/OpportunityQueueSection"
+import { DraftAuditsSection } from "@/features/dashboard/sections/DraftAuditsSection"
 import { RecentAuditsSection } from "@/features/dashboard/sections/RecentAuditsSection"
 import { DeleteAuditModal } from "@/features/audits/components/DeleteAuditModal"
 import {
@@ -25,8 +29,15 @@ import {
 } from "@/features/dashboard/utils/auditDashboardView"
 import { useAuthSession } from "@/hooks/useAuthSession"
 import { useAsyncData } from "@/hooks/useAsyncData"
+import { isBusinessFoundationEnabled } from "@/lib/businessFoundation"
 import { type SubscriptionPlanId } from "@/lib/billingPlans"
+import {
+  dismissPendingPlanBanner,
+  isPendingPlanBannerDismissed,
+} from "@/lib/pendingPlanBannerPersistence"
+import { showErrorToast } from "@/lib/toast"
 import { isKnownPlan } from "@/services/pricingService"
+import * as billingService from "@/services/billingService"
 import {
   dismissPremiumWelcome,
   peekPremiumActivation,
@@ -34,13 +45,16 @@ import {
   type PremiumActivationContext,
 } from "@/lib/premiumWelcomePersistence"
 import { ROUTES } from "@/lib/routes"
+import { getAuditEntitlement } from "@/services/entitlementService"
 import * as auditService from "@/services/auditService"
 import type { Audit, Recommendation } from "@/types/audit"
+import type { AuditDraft } from "@/types/auditDraft"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
 
 type DashboardData = {
   metrics: DashboardMetric[]
   audits: Audit[]
+  drafts: AuditDraft[]
   showOnboarding: boolean
 }
 
@@ -50,6 +64,7 @@ async function loadDashboard(): Promise<DashboardData> {
   return {
     metrics: bundle.metrics,
     audits: sortAuditsNewestFirst(bundle.audits),
+    drafts: bundle.drafts,
     showOnboarding: bundle.showOnboarding,
   }
 }
@@ -76,6 +91,7 @@ function resolveActivationContext(
 function DashboardPage() {
   const { session } = useAuthSession()
   const userId = session?.userId ?? ""
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activationContext, setActivationContext] = useState<PremiumActivationContext | null>(
     null
@@ -85,6 +101,24 @@ function DashboardPage() {
   const { data, isLoading, isError, error, reload } = useAsyncData(loadDashboard, [])
   const [userSelectedAuditId, setUserSelectedAuditId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Audit | null>(null)
+  const [pendingPlanCheckoutLoading, setPendingPlanCheckoutLoading] = useState(false)
+  const [dismissedBannerUserId, setDismissedBannerUserId] = useState<string | null>(null)
+  const pendingPlanBannerDismissed =
+    !userId ||
+    dismissedBannerUserId === userId ||
+    isPendingPlanBannerDismissed(userId)
+
+  const { data: billing } = useAsyncData(
+    () => billingService.getBilling(userId),
+    [userId],
+    { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
+  )
+
+  const { data: entitlement } = useAsyncData(
+    () => getAuditEntitlement(userId),
+    [userId],
+    { enabled: Boolean(userId) && isBusinessFoundationEnabled() }
+  )
 
   useEffect(() => {
     const activated = searchParams.get("activated")
@@ -170,9 +204,12 @@ function DashboardPage() {
       title="Audit dashboard"
       description="Monitor conversion health, prioritize fixes, and track audit outcomes across your funnel."
       actions={
-        <Button size="sm" asChild>
-          <Link to={ROUTES.auditNew}>{heroCtaLabel}</Link>
-        </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          {entitlement ? <AuditAllowanceBadge entitlement={entitlement} /> : null}
+          <Button size="sm" asChild>
+            <Link to={ROUTES.auditNew}>{heroCtaLabel}</Link>
+          </Button>
+        </div>
       }
     />
   )
@@ -193,6 +230,37 @@ function DashboardPage() {
     )
   }
 
+  async function handlePendingPlanSubscribe() {
+    if (!billing?.pendingPlanChange) return
+    setPendingPlanCheckoutLoading(true)
+    try {
+      const mode = await billingService.redirectToCheckout(
+        userId,
+        billing.pendingPlanChange.planId,
+        {
+          onCheckoutDismissed: () => setPendingPlanCheckoutLoading(false),
+          onCheckoutSuccess: () => {
+            navigate(`${ROUTES.billingReturn}?checkout=success`, { replace: true })
+          },
+        }
+      )
+      if (mode === "modal") {
+        setPendingPlanCheckoutLoading(false)
+      }
+    } catch (checkoutError) {
+      showErrorToast(
+        "Checkout failed",
+        checkoutError instanceof Error ? checkoutError : new Error("Unable to start checkout")
+      )
+      setPendingPlanCheckoutLoading(false)
+    }
+  }
+
+  function handleDismissPendingPlanBanner() {
+    dismissPendingPlanBanner(userId)
+    setDismissedBannerUserId(userId)
+  }
+
   async function handleConfirmDelete() {
     if (!deleteTarget) return
     await auditService.deleteAudit(deleteTarget.id)
@@ -209,6 +277,17 @@ function DashboardPage() {
         <PremiumCelebrationBanner planName={celebrationPlanName} />
       ) : null}
 
+      {billing?.showPendingPlanCheckout &&
+      billing.pendingPlanChange &&
+      !pendingPlanBannerDismissed ? (
+        <PendingPlanResumeBanner
+          pendingPlan={billing.pendingPlanChange}
+          isLoading={pendingPlanCheckoutLoading}
+          onSubscribe={() => void handlePendingPlanSubscribe()}
+          onDismiss={handleDismissPendingPlanBanner}
+        />
+      ) : null}
+
       <AnimatePresence>
         {showWelcomeCard && activationContext ? (
           <PremiumWelcomeCard
@@ -219,7 +298,13 @@ function DashboardPage() {
         ) : null}
       </AnimatePresence>
 
-      {data.showOnboarding ? <OnboardingCard /> : null}
+      {entitlement?.blockedByLimit ? (
+        <AuditLimitInfoCard entitlement={entitlement} />
+      ) : null}
+
+      {data.showOnboarding && entitlement ? (
+        <OnboardingCard entitlement={entitlement} />
+      ) : null}
 
       {data.audits.length > 0 ? (
         <CurrentAuditSelector
@@ -253,6 +338,8 @@ function DashboardPage() {
           />
         </>
       )}
+
+      <DraftAuditsSection drafts={data.drafts} onChanged={reload} />
 
       <RecentAuditsSection audits={data.audits} onDeleteRequest={setDeleteTarget} />
 
