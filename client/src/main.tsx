@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { resetBodyScrollLock } from '@/lib/bodyScrollLock'
+import { warnIfProductionMisconfigured } from '@/lib/env'
 import './styles/theme.css'
 import './styles/app-layout.css'
 import './styles/marketing-layout.css'
@@ -12,6 +13,7 @@ import './index.css'
 import App from './App.tsx'
 
 resetBodyScrollLock()
+warnIfProductionMisconfigured()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

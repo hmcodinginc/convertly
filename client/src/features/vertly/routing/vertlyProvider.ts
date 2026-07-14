@@ -67,11 +67,3 @@ export const localVertlyProvider: VertlyResponseProvider = {
     }
   },
 }
-
-export function routeWithProvider(
-  request: VertlyConversationRequest,
-  routing: VertlyRoutingResult,
-  provider: VertlyResponseProvider = localVertlyProvider
-): VertlyConversationResponse {
-  return provider.respond(request, routing)
-}

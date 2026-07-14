@@ -306,12 +306,6 @@
   margin-top: -0.25rem;
 }
 
-.audit-report-progress-note {
-  max-width: none;
-  padding-top: 1.5rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-}
-
 .audit-report-summary-grid {
   display: grid;
   gap: 1rem;
@@ -321,10 +315,6 @@
   .audit-report-summary-grid--with-comparison {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.25rem;
-  }
-
-  .audit-report-summary-grid--single {
-    grid-template-columns: minmax(0, 14rem);
   }
 }
 

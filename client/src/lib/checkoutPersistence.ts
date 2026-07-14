@@ -133,13 +133,3 @@ export function disposePaymentSession(outcome: PaymentTerminalOutcome): void {
   void outcome
   clearAllPaymentClientState()
 }
-
-/** @deprecated Use readPendingCheckoutForUser */
-export function getPendingCheckoutForUser(userId: string): PendingCheckout | null {
-  return readPendingCheckoutForUser(userId)
-}
-
-/** @deprecated Use readPendingCheckout */
-export function getPendingCheckout(): PendingCheckout | null {
-  return readPendingCheckout()
-}

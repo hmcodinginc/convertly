@@ -40,5 +40,3 @@ export function routeVertlyResponse(
   const routing = resolveVertlyRouting(request)
   return localVertlyProvider.respond(request, routing)
 }
-
-export { localVertlyProvider }

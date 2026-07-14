@@ -18,7 +18,6 @@ export function bootstrapIntelligenceEngine(): void {
 export { runIntelligenceEngine } from "@/services/audit/intelligence/execution/auditIntelligenceEngine"
 export { getRuleRegistry } from "@/services/audit/intelligence/rules/ruleRegistry"
 export {
-  calculateAuditScoreV2,
   calculateAuditScoreV3,
   calculatePageScore,
   calculatePageScoreFromAuditFindings,

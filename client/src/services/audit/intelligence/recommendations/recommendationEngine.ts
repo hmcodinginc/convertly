@@ -71,7 +71,3 @@ export function buildRecommendations(
     return buildRecommendationFromFinding(representativeFinding, index, rec.businessImpactLabel)
   })
 }
-
-export function toLegacyRecommendationText(draft: RecommendationDraft): string {
-  return draft.recommendation
-}

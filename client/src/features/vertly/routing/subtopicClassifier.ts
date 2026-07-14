@@ -198,18 +198,4 @@ export function classifyVertlySubtopic(
   return matchSubtopic(message, rules)
 }
 
-export function isPageOverviewRequest(message: string, domain: VertlyDomain): boolean {
-  const n = normalize(message)
-  switch (domain) {
-    case "dashboard":
-      return /\bexplain\b.*\bdashboard\b/.test(n) || /\bwhat is (the )?dashboard\b/.test(n)
-    case "workspace":
-      return /\bexplain\b.*\bworkspace\b/.test(n) || /\bwhat is (the )?workspace\b/.test(n)
-    case "billing":
-      return /\bexplain\b.*\bbilling\b/.test(n) || /\bhow (does|do) billing work\b/.test(n)
-    default:
-      return false
-  }
-}
-
 export type { DashboardSubtopic, WorkspaceSubtopic, BillingSubtopic, AuditSubtopic }

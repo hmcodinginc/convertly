@@ -22,5 +22,3 @@ export function createLogger(scope: string) {
     error: (message: string, data?: Record<string, unknown>) => write("error", scope, message, data),
   }
 }
-
-export const auditLogger = createLogger("audit")

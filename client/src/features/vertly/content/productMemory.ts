@@ -2,7 +2,6 @@ import {
   getEffectivePlanEntitlement,
   type EffectivePlanId,
 } from "@/lib/billingPlans"
-import type { VertlySurface } from "@/features/vertly/types"
 
 export type ProductMemoryTopic =
   | "overview"
@@ -107,34 +106,6 @@ export function resolveProductMemoryTopic(message: string): ProductMemoryTopic |
 
   if (/\bconvertly\b/.test(normalized)) return "overview"
   return null
-}
-
-export function resolveProductMemoryTopicFromSurface(
-  surface: VertlySurface
-): ProductMemoryTopic | null {
-  switch (surface) {
-    case "dashboard":
-      return "dashboard"
-    case "billing":
-    case "billing-return":
-      return "billing"
-    case "workspace":
-    case "audits":
-      return "workspace"
-    case "audit-detail":
-    case "audit-new":
-    case "recommendation-playbook":
-      return "audits"
-    case "settings":
-    case "settings-profile":
-    case "settings-preferences":
-    case "settings-notifications":
-    case "settings-security":
-    case "settings-danger":
-      return "settings"
-    default:
-      return null
-  }
 }
 
 function planAllowanceLabel(planId: EffectivePlanId): string {

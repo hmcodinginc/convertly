@@ -2,10 +2,12 @@
 
 render-worker/node_modules/
 client/node_modules/
+client/dist/
 
 supabase/.temp/
 supabase/audit_engine_full.sql
-.vscode/
-.client/.env
-.client/.env.local
-.client/.env.example
+
+# Local env — never commit secrets (use client/.env.example as template)
+client/.env
+client/.env.local
+client/.env.*.local

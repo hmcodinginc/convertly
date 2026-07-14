@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { createLogger } from "@/lib/logger"
+
+const asyncLogger = createLogger("async")
+
+export const USER_FACING_LOAD_ERROR = "Something went wrong. Please try again."
+
 export type QueryStatus = "idle" | "loading" | "success" | "error" | "empty"
 
 export type AsyncState<T> = {
@@ -58,7 +64,10 @@ export function useAsyncData<T>(
       } catch (err) {
         if (cancelled) return
         setData(null)
-        setError(err instanceof Error ? err.message : "Something went wrong")
+        asyncLogger.error("Async fetch failed", {
+          message: err instanceof Error ? err.message : String(err),
+        })
+        setError(USER_FACING_LOAD_ERROR)
         setStatus("error")
       }
     }

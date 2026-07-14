@@ -1,3 +1,5 @@
+import { createLogger } from "@/lib/logger"
+
 type EnvConfig = {
   supabaseUrl: string
   supabaseAnonKey: string
@@ -31,4 +33,20 @@ export function shouldUseSupabaseAudits(): boolean {
 
 export function isAuditRenderConfigured(): boolean {
   return Boolean(readEnv("VITE_AUDIT_RENDER_URL"))
+}
+
+export function warnIfProductionMisconfigured(): void {
+  if (!import.meta.env.PROD) return
+
+  const logger = createLogger("env")
+
+  if (shouldUseLocalAuth()) {
+    logger.warn(
+      "Production build is using local auth. Set VITE_USE_LOCAL_AUTH=false and configure Supabase."
+    )
+  }
+
+  if (!isSupabaseConfigured()) {
+    logger.warn("Production build is missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY.")
+  }
 }
