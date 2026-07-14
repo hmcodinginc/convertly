@@ -112,9 +112,19 @@ function FooterSection() {
             <Text size="sm" variant="muted" className="max-w-none text-foreground/50 text-center sm:text-left">
               © {year} Convertly. All rights reserved to HM Coding.
             </Text>
-            <div className="flex gap-6">
-              <a href="#" className="text-xs text-foreground/40 transition-colors hover:text-foreground/70">Privacy Policy</a>
-              <a href="#" className="text-xs text-foreground/40 transition-colors hover:text-foreground/70">Terms of Service</a>
+            <div className="flex flex-wrap items-center justify-center gap-6 sm:justify-end">
+              <Link
+                to={ROUTES.legalPrivacy}
+                className="text-xs text-foreground/40 transition-colors hover:text-foreground/70"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                to={ROUTES.legalTerms}
+                className="text-xs text-foreground/40 transition-colors hover:text-foreground/70"
+              >
+                Terms &amp; Conditions
+              </Link>
             </div>
           </div>
         </motion.div>

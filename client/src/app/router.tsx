@@ -16,6 +16,7 @@ import DashboardPage from "@/pages/DashboardPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import HomePage from "@/pages/HomePage"
+import { LegalPage } from "@/pages/LegalPage"
 import LoginPage from "@/pages/LoginPage"
 import NewAuditPage from "@/pages/NewAuditPage"
 import ProfilePage from "@/pages/ProfilePage"
@@ -35,6 +36,8 @@ function AppRouter() {
         <Route element={<MarketingLayout />}>
           <Route path={ROUTES.home} element={<HomePage />} />
           <Route path={ROUTES.sampleReport} element={<SampleReportPage />} />
+          <Route path={ROUTES.legalTerms} element={<LegalPage view="terms" />} />
+          <Route path={ROUTES.legalPrivacy} element={<LegalPage view="privacy" />} />
         </Route>
 
         <Route element={<AuthLayout />}>

@@ -5,6 +5,8 @@ export const ROUTES = {
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   sampleReport: "/sample-report",
+  legalTerms: "/legal/terms",
+  legalPrivacy: "/legal/privacy",
   dashboard: "/dashboard",
   auditNew: "/audit/new",
   audits: "/audits",
