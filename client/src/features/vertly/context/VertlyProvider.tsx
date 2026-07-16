@@ -30,6 +30,10 @@ import {
   writeVertlyHistory,
   writeVertlyPosition,
 } from "@/features/vertly/services/vertlyPersistence"
+import {
+  readVertlyConversation,
+  writeVertlyConversation,
+} from "@/features/vertly/services/vertlyConversationRepository"
 import type {
   VertlyMessage,
   VertlyPageContext,
@@ -88,6 +92,7 @@ function VertlyProvider({
 }: VertlyProviderProps) {
   const location = useLocation()
   const userKey = getVertlyUserKey(userId)
+  const shouldUseRemoteHistory = variant === "authenticated" && Boolean(userId?.trim())
   const routeContext = useMemo(() => {
     if (variant === "signup") return SIGNUP_CONTEXT
     if (variant === "guest-auth") return resolveGuestAuthContext(location.pathname)
@@ -98,12 +103,15 @@ function VertlyProvider({
   const [pageOverride, setPageOverride] = useState<Partial<VertlyPageContext> | null>(
     null
   )
-  const [messages, setMessages] = useState<VertlyMessage[]>(() => readVertlyHistory(userKey))
+  const [messages, setMessages] = useState<VertlyMessage[]>(() =>
+    shouldUseRemoteHistory || variant === "authenticated" ? [] : readVertlyHistory(userKey)
+  )
   const [isOpen, setIsOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [showProactive, setShowProactive] = useState(false)
+  const [historyReady, setHistoryReady] = useState(() => !shouldUseRemoteHistory)
   const [position, setPositionState] = useState<VertlyPosition>(() => {
     if (typeof window === "undefined") return { x: 24, y: 24 }
     return (
@@ -128,8 +136,52 @@ function VertlyProvider({
   }, [location.pathname])
 
   useEffect(() => {
+    let cancelled = false
+
+    async function loadHistory() {
+      setHistoryReady(false)
+
+      if (shouldUseRemoteHistory && userId) {
+        try {
+          const stored = await readVertlyConversation(userId)
+          if (!cancelled) {
+            setMessages(stored)
+          }
+        } catch {
+          if (!cancelled) {
+            setMessages([])
+          }
+        } finally {
+          if (!cancelled) {
+            setHistoryReady(true)
+          }
+        }
+        return
+      }
+
+      if (!cancelled) {
+        setMessages(variant === "authenticated" ? [] : readVertlyHistory(userKey))
+        setHistoryReady(true)
+      }
+    }
+
+    void loadHistory()
+
+    return () => {
+      cancelled = true
+    }
+  }, [shouldUseRemoteHistory, userId, userKey, variant])
+
+  useEffect(() => {
+    if (!historyReady) return
+
+    if (shouldUseRemoteHistory && userId) {
+      void writeVertlyConversation(userId, messages)
+      return
+    }
+
     writeVertlyHistory(userKey, messages)
-  }, [messages, userKey])
+  }, [historyReady, messages, shouldUseRemoteHistory, userId, userKey])
 
   useEffect(() => {
     const proactive = pageContext.proactive

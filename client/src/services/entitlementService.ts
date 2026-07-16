@@ -4,7 +4,6 @@ import {
   type EffectivePlanId,
 } from "@/lib/billingPlans"
 import { assertBusinessFoundationEnabled } from "@/lib/businessFoundation"
-import * as bootstrapRepository from "@/services/repositories/business/bootstrapRepository"
 import {
   buildPlanUsage,
   resolvePlanForUser,
@@ -90,16 +89,6 @@ export async function assertCanRunAudit(userId: string): Promise<void> {
   throw new AuditLimitError(
     entitlement.reason ?? "Upgrade your plan to run more audits."
   )
-}
-
-export async function consumeAuditEntitlement(userId: string): Promise<void> {
-  assertBusinessFoundationEnabled()
-  const workspaceId = await ensureBusinessFoundation(userId)
-  const consumed = await bootstrapRepository.tryConsumeAuditEntitlement(workspaceId)
-
-  if (!consumed) {
-    throw new AuditLimitError("You have used all audits included in your plan. Upgrade to continue.")
-  }
 }
 
 export async function getPlanIdForUser(userId: string): Promise<EffectivePlanId> {

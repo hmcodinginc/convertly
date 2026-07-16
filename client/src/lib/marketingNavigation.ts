@@ -1,7 +1,7 @@
 export const MARKETING_NAV_ITEMS = [
   { label: "Features", sectionId: "features-title" },
   { label: "How it Works", sectionId: "how-it-works-title" },
-  { label: "Pricing", sectionId: "cta-title" },
+  { label: "Pricing", sectionId: "pricing-title" },
 ] as const
 
 export type MarketingSectionId =

@@ -28,8 +28,8 @@ function FooterSection() {
     {
       title: "Company",
       links: [
-        { label: "About", href: "#" },
-        { label: "Security", href: "#" },
+        { label: "About", to: ROUTES.about },
+        { label: "Security", to: ROUTES.security },
         { label: "Contact", href: "mailto:hello@convertly.com" },
       ]
     }

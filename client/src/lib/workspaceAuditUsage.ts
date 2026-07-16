@@ -3,6 +3,7 @@ import { formatAuditDateTime } from "@/lib/formatAuditDateTime"
 import type { AuditSessionStatus } from "@/types/auditEngine"
 import type { WorkspaceUsage } from "@/types/workspace"
 import type {
+  AuditEntitlementLedgerSnapshot,
   AuditLedgerSourceSession,
   WorkspaceAuditLedgerRow,
   WorkspaceAuditUsageBreakdown,
@@ -35,50 +36,51 @@ function toLedgerDisplayStatus(status: AuditSessionStatus): WorkspaceLedgerDispl
   return "Pending"
 }
 
-function isCountedLedgerStatus(status: WorkspaceLedgerDisplayStatus): boolean {
-  return status === "Completed" || status === "Deleted"
-}
-
-function buildDeletedLedgerRows(count: number): WorkspaceAuditLedgerRow[] {
-  return Array.from({ length: count }, (_, index) => ({
-    id: `deleted-counted-${index}`,
-    url: "Unavailable — audit was removed",
-    auditType: "—",
-    createdAt: "—",
-    status: "Deleted" as const,
-    counted: true,
-  }))
-}
-
 export function buildWorkspaceAuditUsageBreakdown(
   sessions: AuditLedgerSourceSession[],
-  usage: WorkspaceUsage
+  usage: WorkspaceUsage,
+  consumedSnapshots: AuditEntitlementLedgerSnapshot[] = []
 ): WorkspaceAuditUsageBreakdown {
   const completedCount = sessions.filter((session) => session.status === "completed").length
   const failedCount = sessions.filter((session) => session.status === "failed").length
   const draftCount = sessions.filter((session) => session.status === "draft").length
 
-  const ledger: WorkspaceAuditLedgerRow[] = [...sessions]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((session) => {
-      const status = toLedgerDisplayStatus(session.status)
+  const sessionIds = new Set(sessions.map((session) => session.id))
 
-      return {
+  const ledgerItems = [
+    ...sessions.map((session) => ({
+      sortAt: session.createdAt,
+      row: {
         id: session.id,
         url: session.websiteUrl,
         auditType: getAuditTypeLabel(session.auditType),
         createdAt: formatAuditDateTime(session.createdAt),
-        status,
-        counted: isCountedLedgerStatus(status),
-      }
-    })
+        status: toLedgerDisplayStatus(session.status),
+        counted: Boolean(session.entitlementConsumedAt),
+      } satisfies WorkspaceAuditLedgerRow,
+    })),
+    ...consumedSnapshots
+      .filter((snapshot) => snapshot.auditId === null || !sessionIds.has(snapshot.auditId))
+      .map((snapshot) => ({
+        sortAt: snapshot.completedAt,
+        row: {
+          id: snapshot.auditId ?? `ledger-${snapshot.id}`,
+          url: snapshot.websiteUrl,
+          auditType: getAuditTypeLabel(snapshot.auditType),
+          createdAt: formatAuditDateTime(snapshot.completedAt),
+          status: "Deleted" as const,
+          counted: true,
+        } satisfies WorkspaceAuditLedgerRow,
+      })),
+  ]
 
-  const countedInLedger = ledger.filter((row) => row.counted).length
-  const deletedCountedCount = Math.max(0, usage.auditsUsed - countedInLedger)
+  const ledger = ledgerItems
+    .sort((a, b) => b.sortAt.localeCompare(a.sortAt))
+    .map((item) => item.row)
 
-  if (deletedCountedCount > 0) {
-    ledger.push(...buildDeletedLedgerRows(deletedCountedCount))
-  }
+  const deletedCountedCount = consumedSnapshots.filter(
+    (snapshot) => snapshot.auditId === null || !sessionIds.has(snapshot.auditId)
+  ).length
 
   return {
     completedCount,

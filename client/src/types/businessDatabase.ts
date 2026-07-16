@@ -160,10 +160,6 @@ export type BusinessDatabase = {
         Args: Record<string, never>
         Returns: string
       }
-      try_consume_audit_entitlement: {
-        Args: { p_workspace_id: string }
-        Returns: boolean
-      }
       get_personal_workspace_id: {
         Args: { p_user_id: string }
         Returns: string

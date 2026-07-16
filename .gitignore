@@ -11,3 +11,11 @@ supabase/audit_engine_full.sql
 client/.env
 client/.env.local
 client/.env.*.local
+
+supabase/verification
+
+supabase/verification/audit_usage_reset_verification.sql
+
+# Internal developer notes (local only)
+Plan.md
+Architecture.md

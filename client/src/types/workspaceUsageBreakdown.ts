@@ -34,4 +34,14 @@ export type AuditLedgerSourceSession = {
   auditType: string
   createdAt: string
   status: AuditSessionStatus
+  entitlementConsumedAt?: string | null
+}
+
+export type AuditEntitlementLedgerSnapshot = {
+  id: string
+  auditId: string | null
+  websiteUrl: string
+  auditType: string
+  completedAt: string
+  consumedAt: string
 }

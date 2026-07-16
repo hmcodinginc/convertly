@@ -4,24 +4,24 @@ import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { motion } from "framer-motion"
 
-const testimonials = [
+const launchPrinciples = [
   {
-    quote: "Convertly completely changed how we prioritize funnel optimizations. The V4 scoring engine pointed out a critical hero CTA alignment issue we completely missed.",
-    name: "Sarah Jenkins",
-    role: "VP of Growth at Vectra",
-    avatar: "SJ",
+    quote: "Deterministic audit rules and explicit findings are prioritized over generic AI copy so teams can review why an issue was flagged.",
+    name: "Deterministic audits",
+    role: "Audit methodology",
+    avatar: "DA",
   },
   {
-    quote: "We plugged in our landing pages and got immediate actionable advice. We updated two of our features CTAs and saw a 14% lift in signup conversions within a week.",
-    name: "David Chen",
-    role: "Head of Product at Halcyon",
-    avatar: "DC",
+    quote: "Public-page analysis, structured scoring, and consultant-style recommendations are designed to help product and growth teams act quickly.",
+    name: "Actionable reporting",
+    role: "Product workflow",
+    avatar: "AR",
   },
   {
-    quote: "The JS rendering bot detected that our React app's headings weren't hydrating correctly on mobile viewports. It saved us weeks of engineering debugging time.",
-    name: "Elena Rostova",
-    role: "Founder at Orbitly",
-    avatar: "ER",
+    quote: "Convertly is in launch hardening. We would rather show accurate product capabilities than publish placeholder customer claims.",
+    name: "Launch transparency",
+    role: "Operating principle",
+    avatar: "LT",
   },
 ]
 
@@ -30,14 +30,14 @@ function TestimonialsSection() {
     <Section aria-labelledby="testimonials-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
         <SectionHeader
-          eyebrow="Testimonials"
-          title="Loved by modern product & growth teams"
+          eyebrow="Approach"
+          title="Built around correctness and usable output"
           titleId="testimonials-title"
-          description="Read how tech teams use Convertly audits to surface friction and lift overall metrics."
+          description="These are the product principles guiding Convertly at launch."
         />
 
         <div className="grid gap-6 md:grid-cols-3 mt-4">
-          {testimonials.map((t, idx) => (
+          {launchPrinciples.map((t, idx) => (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, y: 15 }}

@@ -11,7 +11,7 @@ import {
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import { delay } from "@/services/internal/delay"
 import { shouldUseSupabaseAudits } from "@/lib/env"
-import { consumeAuditEntitlement } from "@/services/entitlementService"
+import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import {
   serializeIntelligenceSnapshot,
   type IntelligenceSnapshot,
@@ -151,7 +151,15 @@ function buildComputedScores(
 
 export async function runAuditEngine(auditId: string): Promise<void> {
   const session = await getSessionById(auditId)
-  if (!session || session.status === "draft") return
+  if (
+    !session ||
+    session.status === "draft" ||
+    session.status === "completed" ||
+    session.status === "failed" ||
+    session.entitlementConsumedAt
+  ) {
+    return
+  }
 
   try {
     const isPageSpecific = session.auditType === "page-specific"
@@ -327,7 +335,11 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     await updateSessionStatus(auditId, "completed")
     if (shouldUseSupabaseAudits()) {
       try {
-        await consumeAuditEntitlement(analyzingSession.userId)
+        const supabase = getSupabaseClient()
+        const { error } = await supabase.rpc("consume_completed_audit_entitlement", {
+          p_audit_id: auditId,
+        })
+        if (error) throw error
       } catch {
         // Allow completion even if allowance sync fails at the edge.
       }

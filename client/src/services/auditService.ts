@@ -30,6 +30,7 @@ import {
   getSessionById,
   updateSessionFields,
 } from "@/services/repositories/audit/provider"
+import { getLedgerSnapshotsForUser } from "@/services/repositories/audit/auditEntitlementLedgerRepository"
 import {
   clearCompletedAuditDetail,
   getCompletedAuditDetail,
@@ -57,7 +58,10 @@ import type {
 import type { AuditDraft, SaveAuditDraftInput } from "@/types/auditDraft"
 import type { AuditSession, AuditSessionData, AuditSessionStatus } from "@/types/auditEngine"
 import type { DashboardMetric, OpportunityItem } from "@/types/dashboard"
-import type { AuditLedgerSourceSession } from "@/types/workspaceUsageBreakdown"
+import type {
+  AuditEntitlementLedgerSnapshot,
+  AuditLedgerSourceSession,
+} from "@/types/workspaceUsageBreakdown"
 
 const SAMPLE_AUDIT_ID = "audit-1"
 
@@ -389,6 +393,7 @@ export async function getAuditLedgerSourceSessions(): Promise<AuditLedgerSourceS
       auditType: resolveStoredAuditType(item.session.auditType),
       createdAt: item.session.createdAt,
       status: item.session.status,
+      entitlementConsumedAt: item.session.entitlementConsumedAt ?? null,
     }))
   }
 
@@ -399,7 +404,21 @@ export async function getAuditLedgerSourceSessions(): Promise<AuditLedgerSourceS
     auditType: resolveStoredAuditType("full-funnel"),
     createdAt: audit.completedAt,
     status: mapLocalAuditStatus(audit.status),
+    entitlementConsumedAt: audit.status === "Completed" ? audit.completedAt : null,
   }))
+}
+
+export async function getAuditEntitlementLedgerSnapshots(): Promise<
+  AuditEntitlementLedgerSnapshot[]
+> {
+  await delay()
+  const userId = await resolveUserId()
+
+  if (!shouldUseSupabaseAudits()) {
+    return []
+  }
+
+  return getLedgerSnapshotsForUser(userId)
 }
 
 function mapLocalAuditStatus(status: Audit["status"]): AuditSessionStatus {

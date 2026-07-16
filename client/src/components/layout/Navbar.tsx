@@ -24,7 +24,7 @@ function Navbar() {
 
   React.useEffect(() => {
     const handleScroll = () => {
-      const sectionIds = ["home-hero-title", "features-title", "how-it-works-title", "cta-title"]
+      const sectionIds = ["home-hero-title", "features-title", "how-it-works-title", "pricing-title"]
       let currentSection = "home-hero-title"
       let minDistance = Infinity
 

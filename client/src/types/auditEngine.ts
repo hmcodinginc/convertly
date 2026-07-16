@@ -19,6 +19,7 @@ export type AuditSession = {
   status: AuditSessionStatus
   errorMessage?: string
   workspaceId?: string | null
+  entitlementConsumedAt?: string | null
 }
 
 export type AuditPageType =

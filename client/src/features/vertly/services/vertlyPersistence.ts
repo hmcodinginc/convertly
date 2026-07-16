@@ -1,5 +1,5 @@
 import type { VertlyMessage, VertlyPosition } from "@/features/vertly/types"
-import { getJson, setJson } from "@/services/storage/localStorageClient"
+import { getJson, removeItem, setJson } from "@/services/storage/localStorageClient"
 
 const POSITION_PREFIX = "convertly:vertly:position:"
 const HISTORY_PREFIX = "convertly:vertly:history:"
@@ -29,6 +29,17 @@ export function readVertlyHistory(userKey: string): VertlyMessage[] {
 export function writeVertlyHistory(userKey: string, messages: VertlyMessage[]): void {
   const trimmed = messages.slice(-40)
   setJson(storageKey(HISTORY_PREFIX, userKey), trimmed)
+}
+
+export function clearVertlyHistory(userKey: string): void {
+  removeItem(storageKey(HISTORY_PREFIX, userKey))
+}
+
+export function clearVertlyLocalCache(userId?: string): void {
+  clearVertlyHistory("guest")
+  if (userId?.trim()) {
+    clearVertlyHistory(userId)
+  }
 }
 
 export function hasSeenSignupWelcome(): boolean {

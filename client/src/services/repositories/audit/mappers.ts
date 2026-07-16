@@ -35,6 +35,7 @@ export function mapAuditRowToSession(row: AuditRow): AuditSession {
     status: row.status,
     errorMessage: row.error_message ?? undefined,
     workspaceId: row.workspace_id,
+    entitlementConsumedAt: row.entitlement_consumed_at,
   }
 }
 
