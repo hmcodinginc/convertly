@@ -7,6 +7,8 @@ export const ROUTES = {
   sampleReport: "/sample-report",
   legalTerms: "/legal/terms",
   legalPrivacy: "/legal/privacy",
+  about: "/about",
+  security: "/security",
   dashboard: "/dashboard",
   auditNew: "/audit/new",
   audits: "/audits",

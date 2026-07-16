@@ -27,16 +27,3 @@ export async function getPersonalWorkspaceId(userId: string): Promise<string | n
 
   return data ?? null
 }
-
-export async function tryConsumeAuditEntitlement(workspaceId: string): Promise<boolean> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase.rpc("try_consume_audit_entitlement", {
-    p_workspace_id: workspaceId,
-  })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return Boolean(data)
-}

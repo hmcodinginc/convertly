@@ -209,7 +209,11 @@ export function classifyFetchFailure(input: {
     error.includes("NetworkError") ||
     error.includes("network") ||
     error.includes("ECONNRESET") ||
-    error.includes("socket")
+    error.includes("socket") ||
+    combined.includes("http2") ||
+    combined.includes("stream error") ||
+    combined.includes("unexpected internal error") ||
+    combined.includes("internal_error")
   ) {
     return {
       kind: "network",

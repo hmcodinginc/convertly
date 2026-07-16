@@ -119,7 +119,7 @@ function HeroSection() {
                 {[
                   "No credit card",
                   "Ships insights in minutes",
-                  "SOC 2 aligned"
+                  "Public website audits only"
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2 text-xs text-foreground/60">
                     <svg className="size-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

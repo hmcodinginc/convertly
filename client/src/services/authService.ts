@@ -1,4 +1,5 @@
 import { clearAllPaymentClientState } from "@/lib/checkoutPersistence"
+import { clearVertlyLocalCache } from "@/features/vertly/services/vertlyPersistence"
 import { getInAppPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import { shouldUseLocalAuth } from "@/lib/env"
 import {
@@ -428,8 +429,10 @@ export async function completePasswordRecovery(
 
 
 export async function logout(): Promise<void> {
+  const session = await getSession()
 
   clearAllPaymentClientState()
+  clearVertlyLocalCache(session?.userId)
 
   if (shouldUseLocalAuth()) {
 

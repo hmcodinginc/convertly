@@ -68,6 +68,7 @@ export type Database = {
           status: AuditSessionStatus
           error_message: string | null
           workspace_id: string | null
+          entitlement_consumed_at: string | null
           created_at: string
           updated_at: string
         }
@@ -79,6 +80,7 @@ export type Database = {
           status?: AuditSessionStatus
           error_message?: string | null
           workspace_id?: string | null
+          entitlement_consumed_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -90,8 +92,44 @@ export type Database = {
           status?: AuditSessionStatus
           error_message?: string | null
           workspace_id?: string | null
+          entitlement_consumed_at?: string | null
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_entitlement_ledger: {
+        Row: {
+          id: string
+          audit_id: string | null
+          workspace_id: string
+          user_id: string
+          website_url: string
+          audit_type: string
+          completed_at: string
+          consumed_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          audit_id?: string | null
+          workspace_id: string
+          user_id: string
+          website_url: string
+          audit_type: string
+          completed_at: string
+          consumed_at?: string
+          created_at?: string
+        }
+        Update: {
+          audit_id?: string | null
+          workspace_id?: string
+          user_id?: string
+          website_url?: string
+          audit_type?: string
+          completed_at?: string
+          consumed_at?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -390,6 +428,27 @@ export type Database = {
         }
         Relationships: []
       }
+      vertly_conversations: {
+        Row: {
+          user_id: string
+          messages: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          messages?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          messages?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           user_id: string
@@ -474,8 +533,8 @@ export type Database = {
         Args: Record<string, never>
         Returns: string
       }
-      try_consume_audit_entitlement: {
-        Args: { p_workspace_id: string }
+      consume_completed_audit_entitlement: {
+        Args: { p_audit_id: string }
         Returns: boolean
       }
       get_personal_workspace_id: {

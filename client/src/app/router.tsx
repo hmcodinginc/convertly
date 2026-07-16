@@ -11,6 +11,7 @@ import { ROUTES } from "@/lib/routes"
 import AuditDetailPage from "@/pages/AuditDetailPage"
 import AuditsPage from "@/pages/AuditsPage"
 import BillingPage from "@/pages/BillingPage"
+import AboutPage from "@/pages/AboutPage"
 import PaymentReturnPage from "@/pages/PaymentReturnPage"
 import DashboardPage from "@/pages/DashboardPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
@@ -21,6 +22,7 @@ import LoginPage from "@/pages/LoginPage"
 import NewAuditPage from "@/pages/NewAuditPage"
 import ProfilePage from "@/pages/ProfilePage"
 import SampleReportPage from "@/pages/SampleReportPage"
+import SecurityPage from "@/pages/SecurityPage"
 import SettingsDangerZonePage from "@/pages/settings/SettingsDangerZonePage"
 import SettingsNotificationsPage from "@/pages/settings/SettingsNotificationsPage"
 import SettingsPreferencesPage from "@/pages/settings/SettingsPreferencesPage"
@@ -38,6 +40,8 @@ function AppRouter() {
           <Route path={ROUTES.sampleReport} element={<SampleReportPage />} />
           <Route path={ROUTES.legalTerms} element={<LegalPage view="terms" />} />
           <Route path={ROUTES.legalPrivacy} element={<LegalPage view="privacy" />} />
+          <Route path={ROUTES.about} element={<AboutPage />} />
+          <Route path={ROUTES.security} element={<SecurityPage />} />
         </Route>
 
         <Route element={<AuthLayout />}>

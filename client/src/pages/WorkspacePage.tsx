@@ -28,14 +28,19 @@ type WorkspacePageData = WorkspaceSnapshot & {
 }
 
 async function loadWorkspacePage(userId: string): Promise<WorkspacePageData> {
-  const [workspace, sessions] = await Promise.all([
+  const [workspace, sessions, consumedSnapshots] = await Promise.all([
     workspaceService.getWorkspace(userId),
     auditService.getAuditLedgerSourceSessions(),
+    auditService.getAuditEntitlementLedgerSnapshots(),
   ])
 
   return {
     ...workspace,
-    usageBreakdown: buildWorkspaceAuditUsageBreakdown(sessions, workspace.usage),
+    usageBreakdown: buildWorkspaceAuditUsageBreakdown(
+      sessions,
+      workspace.usage,
+      consumedSnapshots
+    ),
   }
 }
 

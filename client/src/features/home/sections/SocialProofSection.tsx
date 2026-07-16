@@ -6,15 +6,6 @@ import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { cn } from "@/lib/utils"
 
-const logoPlaceholders = [
-  "Vectra",
-  "Halcyon",
-  "Baseline",
-  "Meridian",
-  "Orbitly",
-  "Slate",
-]
-
 const trustCards = [
   {
     title: "AI-first growth workflows",
@@ -49,17 +40,15 @@ const trustCards = [
 ]
 
 function SocialProofSection() {
-  const repeatedLogos = [...logoPlaceholders, ...logoPlaceholders, ...logoPlaceholders]
-
   return (
     <Section aria-labelledby="social-proof-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
-            eyebrow="TRUST"
-            title="Built for teams that care about conversion quality"
+            eyebrow="Trust"
+            title="Focused on clear analysis and launch-grade reliability"
             titleId="social-proof-title"
-            description="Convertly supports product, marketing, and growth teams with focused insights they can act on quickly."
+            description="Convertly is positioned around practical audit output, transparent limitations, and scoped product workflows."
           />
         </FadeIn>
 
@@ -82,44 +71,23 @@ function SocialProofSection() {
           ))}
         </div>
 
-        {/* Logo Wall Marquee */}
         <FadeIn delay={0.1}>
-          <Card className="marketing-card-compact bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] border-[color-mix(in_srgb,var(--border)_85%,transparent)] hover:translate-y-0 overflow-hidden relative mt-4">
-            {/* Ambient edge-fade masks */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#11141b] to-transparent z-10"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#11141b] to-transparent z-10"
-            />
-
-            <div className="overflow-hidden w-full flex">
-              <motion.div
-                animate={{ x: ["0%", "-33.333%"] }}
-                transition={{
-                  repeat: Infinity,
-                  ease: "linear",
-                  duration: 25,
-                }}
-                className="flex gap-4 shrink-0 min-w-full"
-              >
-                {repeatedLogos.map((logo, index) => (
-                  <div
-                    key={`${logo}-${index}`}
-                    className="marketing-tile flex min-h-14 w-[160px] shrink-0 items-center justify-center border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] text-center transition-all duration-300 hover:border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]"
-                  >
-                    <Text
-                      size="sm"
-                      variant="muted"
-                      className="max-w-none tracking-[0.12em] uppercase"
-                    >
-                      {logo}
-                    </Text>
-                  </div>
-                ))}
-              </motion.div>
+          <Card className="marketing-card-compact bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] border-[color-mix(in_srgb,var(--border)_85%,transparent)] hover:translate-y-0 mt-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                "Public-page website audits with deterministic scoring",
+                "Supabase-backed auth, billing, and data access controls",
+                "AI assistant scoped to Convertly product context",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="marketing-tile flex min-h-14 items-center justify-center border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-4 text-center"
+                >
+                  <Text size="sm" variant="muted" className="max-w-none leading-6">
+                    {item}
+                  </Text>
+                </div>
+              ))}
             </div>
           </Card>
         </FadeIn>

@@ -42,7 +42,7 @@ const pricingPlans = [
     features: [
       "30 audits per month",
     ],
-    ctaText: "Upgarde to growth",
+    ctaText: "Upgrade to Growth",
     ctaRoute: ROUTES.signup,
     highlighted: false,
   },

@@ -74,8 +74,8 @@ function WorkspaceUsageBreakdown({ breakdown }: WorkspaceUsageBreakdownProps) {
         {breakdown.deletedCountedCount > 0 ? (
           <Text variant="muted" size="sm" className="max-w-none text-xs leading-5">
             {breakdown.deletedCountedCount} completed audit
-            {breakdown.deletedCountedCount === 1 ? "" : "s"} were removed but still count
-            toward your allowance.
+            {breakdown.deletedCountedCount === 1 ? "" : "s"} were removed from your workspace but
+            still count toward your allowance. Their details are preserved below.
           </Text>
         ) : null}
 

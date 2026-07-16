@@ -37,6 +37,7 @@ function NewAuditPage() {
   const { session } = useAuthSession()
   const autoStartConsumed = useRef(false)
   const resumeStateConsumed = useRef(false)
+  const startRequestInFlight = useRef(false)
   const [url, setUrl] = useState("")
   const [draftId, setDraftId] = useState<string | undefined>()
   const [selectedType, setSelectedType] = useState<SelectableAuditTemplateId>(
@@ -77,13 +78,15 @@ function NewAuditPage() {
 
   const executeAudit = useCallback(
     async (urlToRun: string) => {
-      if (auditLimitReached) return
+      if (auditLimitReached || startRequestInFlight.current) return
+      startRequestInFlight.current = true
 
       const validation = await auditService.validateAuditUrlInput(urlToRun)
       if (!validation.valid) {
         setUrlError(validation.errors[0] ?? "Enter a valid website URL")
         setUrlWarning(null)
         setIsRunning(false)
+        startRequestInFlight.current = false
         return
       }
 
@@ -103,6 +106,7 @@ function NewAuditPage() {
         if (error instanceof AuditLimitError) {
           setUrlError(error.message)
           setIsRunning(false)
+          startRequestInFlight.current = false
           return
         }
         const message =
@@ -113,6 +117,7 @@ function NewAuditPage() {
             : message
         )
         setIsRunning(false)
+        startRequestInFlight.current = false
       }
     },
     [auditLimitReached, draftId, selectedType]
@@ -195,6 +200,7 @@ function NewAuditPage() {
         <AuditExecutionView
           auditId={runningAuditId}
           onComplete={(detail: AuditDetail) => {
+            startRequestInFlight.current = false
             navigate(auditDetailPath(detail.id))
           }}
           onFailed={(errorMessage) => {
@@ -204,10 +210,12 @@ function NewAuditPage() {
             )
             setIsRunning(false)
             setRunningAuditId(null)
+            startRequestInFlight.current = false
           }}
           onBackToNewAudit={() => {
             setIsRunning(false)
             setRunningAuditId(null)
+            startRequestInFlight.current = false
           }}
           onRetry={() => {
             void executeAudit(url)
