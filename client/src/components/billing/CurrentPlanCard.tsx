@@ -11,11 +11,9 @@ type CurrentPlanCardProps = {
   plan: BillingPlanSummary
   scheduledPlanChange?: ScheduledPlanChange | null
   pendingPlanChange?: PendingPlanChange | null
-  onManage?: () => void
   onCancel?: () => void
   onCancelScheduledChange?: () => void
   onUpgrade?: () => void
-  isManaging?: boolean
   isCancelling?: boolean
   isCancellingScheduledChange?: boolean
   showUpgrade?: boolean
@@ -44,11 +42,9 @@ function CurrentPlanCard({
   plan,
   scheduledPlanChange,
   pendingPlanChange,
-  onManage,
   onCancel,
   onCancelScheduledChange,
   onUpgrade,
-  isManaging,
   isCancelling,
   isCancellingScheduledChange,
   showUpgrade,
@@ -151,21 +147,11 @@ function CurrentPlanCard({
         <InternalAccountBadge />
       ) : (
         <div className="billing-plan-card__actions">
-          {plan.planId !== "free" && onManage ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isManaging || isCancelling}
-              onClick={() => void onManage()}
-            >
-              {isManaging ? "Opening…" : "Manage subscription"}
-            </Button>
-          ) : null}
           {plan.planId !== "free" && onCancel && !plan.cancelAtPeriodEnd ? (
             <Button
               variant="ghost"
               size="sm"
-              disabled={isManaging || isCancelling}
+              disabled={isCancelling}
               onClick={() => void onCancel()}
             >
               {isCancelling ? "Cancelling…" : "Cancel subscription"}
@@ -175,7 +161,7 @@ function CurrentPlanCard({
             <Button
               variant="ghost"
               size="sm"
-              disabled={isManaging || isCancelling || isCancellingScheduledChange}
+              disabled={isCancelling || isCancellingScheduledChange}
               onClick={() => void onCancelScheduledChange()}
             >
               {isCancellingScheduledChange ? "Cancelling…" : "Cancel scheduled downgrade"}

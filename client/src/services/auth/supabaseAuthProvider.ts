@@ -19,13 +19,14 @@ import {
 import { getAuthSnapshot, getCachedAuthSession } from "@/lib/authSessionCache"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
-import type {
-  AuthResult,
-  AuthSession,
-  ForgotPasswordInput,
-  LoginInput,
-  SignupInput,
-  UserProfile,
+import {
+  AccountExistsError,
+  type AuthResult,
+  type AuthSession,
+  type ForgotPasswordInput,
+  type LoginInput,
+  type SignupInput,
+  type UserProfile,
 } from "@/types/auth"
 
 function readMetadataString(user: User, key: string): string {
@@ -234,11 +235,22 @@ export async function signUpWithSupabase(input: SignupInput): Promise<AuthResult
   })
 
   if (error) {
+    // Confirm-email-disabled projects surface an explicit "User already registered" error.
+    if (error.message.toLowerCase().includes("already registered")) {
+      throw new AccountExistsError()
+    }
     throw toAuthError(error)
   }
 
   if (!data.user) {
     throw new Error("Unable to create account. Please try again.")
+  }
+
+  // Supabase returns an obfuscated user with an empty identities array when the
+  // email already belongs to a confirmed account (anti-enumeration behavior).
+  // No new auth user, profile, workspace, or subscription is created in this case.
+  if ((data.user.identities?.length ?? 0) === 0) {
+    throw new AccountExistsError()
   }
 
   if (!data.session) {

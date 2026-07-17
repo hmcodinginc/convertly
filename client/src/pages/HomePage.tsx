@@ -45,7 +45,12 @@ function HomePage() {
   }
 
   return (
-    <main className="marketing-page app-atmosphere overflow-x-clip">
+    <main className="marketing-page app-atmosphere relative overflow-x-clip">
+      <div className="marketing-page-atmosphere" aria-hidden="true">
+        <span className="marketing-page-atmosphere__orb marketing-page-atmosphere__orb--a" />
+        <span className="marketing-page-atmosphere__orb marketing-page-atmosphere__orb--b" />
+        <span className="marketing-page-atmosphere__orb marketing-page-atmosphere__orb--c" />
+      </div>
       {deletedNotice ? (
         <div className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
           <AuthFormMessage variant="success" className="max-w-md shadow-[var(--shadow-medium)]">

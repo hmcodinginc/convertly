@@ -4,10 +4,6 @@ export type PaymentCheckoutParams = {
   planId: string
 }
 
-export type PaymentPortalParams = {
-  returnUrl: string
-}
-
 export type PaymentCancelParams = {
   cancelAtPeriodEnd?: boolean
 }
@@ -18,12 +14,10 @@ export type PaymentCancelParams = {
  */
 export interface PaymentProviderClient {
   createCheckout(params: PaymentCheckoutParams): Promise<{ url: string }>
-  getCustomerPortal(params: PaymentPortalParams): Promise<{ url: string }>
   cancelSubscription(params?: PaymentCancelParams): Promise<void>
 }
 
 export {
   invokeCancelSubscription,
   invokeCheckout,
-  invokePortal,
 } from "./paymentClient"

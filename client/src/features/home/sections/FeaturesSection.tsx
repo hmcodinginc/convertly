@@ -91,6 +91,7 @@ function FeaturesSection() {
       <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
+            centered
             eyebrow="Product"
             title="Features built for focused growth execution"
             titleId="features-title"

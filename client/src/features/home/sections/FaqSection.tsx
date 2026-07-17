@@ -79,6 +79,7 @@ function FaqSection() {
     <Section aria-labelledby="faq-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
         <SectionHeader
+          centered
           eyebrow="FAQ"
           title="Frequently asked questions"
           titleId="faq-title"
