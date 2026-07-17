@@ -1,10 +1,9 @@
 import type { PaidPlanId } from "@/services/pricingService"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
-import type { CheckoutSessionResult, ChangePlanResult, PortalSessionResult } from "@/types/billing"
+import type { CheckoutSessionResult, ChangePlanResult } from "@/types/billing"
 
 const CHECKOUT_FUNCTION = "payment-checkout"
 const CHANGE_PLAN_FUNCTION = "payment-change-plan"
-const PORTAL_FUNCTION = "payment-portal"
 const CANCEL_FUNCTION = "payment-cancel"
 
 export async function invokeCheckout(planId: PaidPlanId): Promise<CheckoutSessionResult> {
@@ -30,27 +29,6 @@ export async function invokeCheckout(planId: PaidPlanId): Promise<CheckoutSessio
 
   if (!hasHostedUrl && !hasCheckoutJs) {
     throw new Error("Checkout session could not be created.")
-  }
-
-  return data
-}
-
-export async function invokePortal(returnUrl: string): Promise<PortalSessionResult> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase.functions.invoke<PortalSessionResult>(
-    PORTAL_FUNCTION,
-    {
-      method: "POST",
-      body: { returnUrl },
-    }
-  )
-
-  if (error) {
-    throw new Error(error.message || "Unable to open billing portal.")
-  }
-
-  if (!data?.url) {
-    throw new Error("Billing portal session could not be created.")
   }
 
   return data

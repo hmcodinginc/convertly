@@ -66,6 +66,7 @@ function PricingSection() {
     <Section aria-labelledby="pricing-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
         <SectionHeader
+          centered
           eyebrow="Pricing"
           title="Simple, performance-driven plans"
           titleId="pricing-title"

@@ -72,10 +72,6 @@ export type CheckoutSessionResult = {
   keyId?: string
 }
 
-export type PortalSessionResult = {
-  url: string
-}
-
 export class AuditLimitError extends Error {
   readonly code = "AUDIT_LIMIT_REACHED" as const
 

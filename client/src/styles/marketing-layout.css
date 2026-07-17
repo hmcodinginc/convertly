@@ -1,5 +1,123 @@
 /* Marketing page layout rhythm (spacing only — mirrors app discipline) */
 
+/* Landing-only ambient orbs — do not reuse on app/auth shells */
+.marketing-page {
+  isolation: isolate;
+}
+
+.marketing-page-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.marketing-page-atmosphere__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 0.2;
+}
+
+.marketing-page-atmosphere__orb--a {
+  width: min(58vw, 42rem);
+  height: min(58vw, 42rem);
+  top: -12%;
+  left: -8%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #7c6cff 88%, transparent) 0%,
+    transparent 70%
+  );
+  animation: marketing-orb-drift-a 22s var(--ease-standard) infinite alternate;
+}
+
+.marketing-page-atmosphere__orb--b {
+  width: min(48vw, 34rem);
+  height: min(48vw, 34rem);
+  top: 18%;
+  right: -10%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #5d7dff 80%, transparent) 0%,
+    transparent 72%
+  );
+  opacity: 0.2;
+  animation: marketing-orb-drift-b 25s var(--ease-standard) infinite alternate;
+}
+
+.marketing-page-atmosphere__orb--c {
+  width: min(52vw, 38rem);
+  height: min(52vw, 38rem);
+  bottom: -8%;
+  left: 28%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #35b3ff 72%, transparent) 0%,
+    transparent 74%
+  );
+  opacity: 0.2;
+  animation: marketing-orb-drift-c 20s var(--ease-standard) infinite alternate;
+}
+
+@keyframes marketing-orb-drift-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate3d(4%, 5%, 0) scale(1.04);
+    opacity: 0.22;
+  }
+}
+
+@keyframes marketing-orb-drift-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate3d(-5%, 4%, 0) scale(1.03);
+    opacity: 0.22;
+  }
+}
+
+@keyframes marketing-orb-drift-c {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate3d(3%, -4%, 0) scale(1.05);
+    opacity: 0.22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-page-atmosphere__orb {
+    animation: none !important;
+    will-change: auto;
+  }
+
+  .marketing-page-atmosphere__orb--a {
+    transform: translate3d(2%, 2%, 0) scale(1.02);
+    opacity: 0.21;
+  }
+
+  .marketing-page-atmosphere__orb--b {
+    transform: translate3d(-2%, 1%, 0) scale(1.01);
+    opacity: 0.2;
+  }
+
+  .marketing-page-atmosphere__orb--c {
+    transform: translate3d(1%, -2%, 0) scale(1.02);
+    opacity: 0.21;
+  }
+}
+
 .marketing-container {
   --container-max: 80rem;
   --container-gutter: 1rem;
@@ -100,6 +218,23 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.marketing-section-stack > * {
+  width: 100%;
+}
+
+.marketing-section-stack [data-slot="section-header"][data-centered="true"] {
+  width: 100%;
+}
+
+.marketing-section-stack [data-slot="section-header-copy"],
+.marketing-section-header__copy {
+  align-self: center;
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+  text-align: center;
 }
 
 @media (min-width: 640px) {
@@ -341,6 +476,85 @@
     line-height: 1.25rem;
     border-radius: var(--radius-md);
     border-width: 1px;
+  }
+}
+
+/* Final CTA — premium closing section */
+.marketing-cta-section {
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+
+.marketing-cta-section__panel {
+  padding: 3rem 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-cta-section__panel {
+    padding: 4rem 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-cta-section__panel {
+    padding: 5rem 3.5rem;
+  }
+}
+
+.marketing-cta-section__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .marketing-cta-section__content {
+    gap: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-cta-section__content {
+    gap: 3rem;
+  }
+}
+
+.marketing-cta-section__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .marketing-cta-section__copy {
+    gap: 1.25rem;
+  }
+}
+
+.marketing-cta-section__actions {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .marketing-cta-section__actions {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.5rem;
   }
 }
 

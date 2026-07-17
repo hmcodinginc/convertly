@@ -21,19 +21,21 @@ import * as authRepository from "@/services/repositories/authRepository"
 import * as profileRepository from "@/services/repositories/profileRepository"
 
 import type { AccountInfo } from "@/types/account"
-import type {
+import {
 
-  AuthResult,
+  AccountExistsError,
 
-  AuthSession,
+  type AuthResult,
 
-  ForgotPasswordInput,
+  type AuthSession,
 
-  LoginInput,
+  type ForgotPasswordInput,
 
-  SignupInput,
+  type LoginInput,
 
-  StoredAuthUser,
+  type SignupInput,
+
+  type StoredAuthUser,
 
 } from "@/types/auth"
 
@@ -107,7 +109,7 @@ async function signUpLocal(input: SignupInput): Promise<AuthResult> {
 
   if (existing) {
 
-    throw new Error("An account with this email already exists.")
+    throw new AccountExistsError()
 
   }
 

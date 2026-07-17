@@ -72,7 +72,6 @@ function BillingPage() {
   const [celebrateUpgrade, setCelebrateUpgrade] = useState(false)
   const [portalMessage, setPortalMessage] = useState<string | null>(null)
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
-  const [isManaging, setIsManaging] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isCancellingScheduledChange, setIsCancellingScheduledChange] = useState(false)
   const [changeModalOpen, setChangeModalOpen] = useState(false)
@@ -82,7 +81,6 @@ function BillingPage() {
   useEffect(() => {
     function resetCheckoutInteractionState() {
       setLoadingPlanId(null)
-      setIsManaging(false)
     }
 
     resetCheckoutInteractionState()
@@ -340,19 +338,6 @@ function BillingPage() {
     }
   }
 
-  async function handleManage() {
-    setIsManaging(true)
-    try {
-      await billingService.redirectToBillingPortal(userId)
-    } catch (portalError) {
-      showErrorToast(
-        "Billing portal failed",
-        portalError instanceof Error ? portalError : new Error("Unable to open billing portal")
-      )
-      setIsManaging(false)
-    }
-  }
-
   function handleDismissWelcome() {
     if (userId && activationContext) {
       dismissPremiumWelcome(userId, activationContext.planId)
@@ -368,11 +353,6 @@ function BillingPage() {
       plan={data.plan}
       scheduledPlanChange={data.scheduledPlanChange}
       pendingPlanChange={data.pendingPlanChange}
-      onManage={
-        data.plan.planId !== "free" && data.plan.planId !== "internal"
-          ? handleManage
-          : undefined
-      }
       onCancel={
         data.plan.planId !== "free" &&
         data.plan.planId !== "internal" &&
@@ -387,7 +367,6 @@ function BillingPage() {
         const nextPlan = data.plans.find((p) => !p.highlight && p.priceUsd > 0)
         if (nextPlan) void handlePlanSelect(nextPlan.id)
       }}
-      isManaging={isManaging}
       isCancelling={isCancelling}
       isCancellingScheduledChange={isCancellingScheduledChange}
       showUpgrade={showUpgradeCta}

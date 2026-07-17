@@ -33,6 +33,7 @@ function HowItWorksSection() {
       <div className="marketing-section-stack">
         <FadeIn>
           <SectionHeader
+            centered
             eyebrow="Flow"
             title="A clear workflow from analysis to action"
             titleId="how-it-works-title"

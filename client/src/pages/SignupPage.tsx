@@ -13,6 +13,7 @@ import { Text } from "@/components/ui/typography/Text"
 import { validateSignupFields, type SignupField } from "@/lib/authValidation"
 import { ROUTES } from "@/lib/routes"
 import * as authService from "@/services/authService"
+import { AccountExistsError } from "@/types/auth"
 
 function SignupPage() {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ function SignupPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<SignupField, string>>>({})
   const [formError, setFormError] = useState<string | null>(null)
+  const [accountExists, setAccountExists] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard
@@ -39,6 +41,7 @@ function SignupPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError(null)
+    setAccountExists(false)
 
     const errors = validateSignupFields({
       firstName,
@@ -64,7 +67,12 @@ function SignupPage() {
       })
       navigate(redirectTo, { replace: true })
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to create account.")
+      if (error instanceof AccountExistsError) {
+        setAccountExists(true)
+        setFormError(error.message)
+      } else {
+        setFormError(error instanceof Error ? error.message : "Unable to create account.")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -171,6 +179,18 @@ function SignupPage() {
         </div>
 
         {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
+
+        {accountExists ? (
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 w-full"
+          >
+            <Link to={ROUTES.login} state={location.state}>
+              Sign in instead
+            </Link>
+          </Button>
+        ) : null}
 
         <Button type="submit" className="auth-form-submit h-10 w-full" disabled={!canSubmit}>
           {isSubmitting ? (

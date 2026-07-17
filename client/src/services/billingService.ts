@@ -20,7 +20,6 @@ import {
   shouldOfferPendingPlanCheckout,
 } from "@/lib/subscriptionHelpers"
 import { assertBusinessFoundationEnabled } from "@/lib/businessFoundation"
-import { env } from "@/lib/env"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import * as paymentClient from "@/services/payment/paymentClient"
 import { openRazorpaySubscriptionCheckout } from "@/services/payment/razorpayCheckout"
@@ -37,7 +36,6 @@ import type {
   ChangePlanResult,
   CheckoutSessionResult,
   PendingPlanChange,
-  PortalSessionResult,
   ScheduledPlanChange,
 } from "@/types/billing"
 
@@ -158,14 +156,6 @@ export async function createCheckoutSession(
   await ensureBusinessFoundation(userId)
   const paidPlan = pricingService.assertPaidCheckoutPlan(planId)
   return paymentClient.invokeCheckout(paidPlan)
-}
-
-export async function createPortalSession(userId: string): Promise<PortalSessionResult> {
-  assertBusinessFoundationEnabled()
-  await ensureBusinessFoundation(userId)
-
-  const returnUrl = `${env.appUrl || window.location.origin}/billing`
-  return paymentClient.invokePortal(returnUrl)
 }
 
 export async function cancelSubscriptionAtPeriodEnd(userId: string): Promise<void> {
@@ -294,11 +284,6 @@ export async function redirectToCheckout(
 
   window.location.assign(fallbackUrl)
   return "redirect"
-}
-
-export async function redirectToBillingPortal(userId: string): Promise<void> {
-  const session = await createPortalSession(userId)
-  window.location.assign(session.url)
 }
 
 export function shouldUsePendingPlanFlow(billing: BillingSnapshot): boolean {

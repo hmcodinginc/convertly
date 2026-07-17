@@ -57,16 +57,17 @@ function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 lg:px-6">
-        <div
-          className={cn(
-            "marketing-container container-premium h-14 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] transition-[background-color,border-color,box-shadow] duration-[var(--motion-base)] ease-[var(--ease-standard)] sm:h-[4.5rem]",
-            "bg-[color-mix(in_srgb,var(--background)_64%,transparent)] backdrop-blur-sm",
-            scrolled &&
-              "border-[color-mix(in_srgb,var(--border)_90%,transparent)] bg-[color-mix(in_srgb,var(--background)_84%,transparent)] shadow-[0_10px_30px_rgba(2,6,23,0.28)]"
-          )}
-        >
-          <div className="flex h-full items-center justify-between gap-3 px-4 sm:px-5">
+      <header className="sticky top-0 z-40 pt-3">
+        <div className="marketing-container container-premium">
+          <div
+            className={cn(
+              "h-14 rounded-[var(--radius-lg)] border border-[color-mix(in_srgb,var(--border)_70%,transparent)] transition-[background-color,border-color,box-shadow] duration-[var(--motion-base)] ease-[var(--ease-standard)] sm:h-[4.5rem]",
+              "bg-[color-mix(in_srgb,var(--background)_64%,transparent)] backdrop-blur-sm",
+              scrolled &&
+                "border-[color-mix(in_srgb,var(--border)_90%,transparent)] bg-[color-mix(in_srgb,var(--background)_84%,transparent)] shadow-[0_10px_30px_rgba(2,6,23,0.28)]"
+            )}
+          >
+            <div className="flex h-full items-center justify-between gap-3 px-4 sm:px-5">
             <ConvertlyMarketingLogoLink sectionId="home-hero-title" />
 
             <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
@@ -112,6 +113,7 @@ function Navbar() {
             </button>
           </div>
         </div>
+      </div>
       </header>
 
       <Drawer

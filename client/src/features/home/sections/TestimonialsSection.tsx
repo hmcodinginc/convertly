@@ -30,6 +30,7 @@ function TestimonialsSection() {
     <Section aria-labelledby="testimonials-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
         <SectionHeader
+          centered
           eyebrow="Approach"
           title="Built around correctness and usable output"
           titleId="testimonials-title"
