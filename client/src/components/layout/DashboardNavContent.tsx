@@ -1,11 +1,11 @@
 import { ClipboardList, LogOut, User } from "lucide-react"
-import { Link, NavLink, useNavigate } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
 
-import { useAuthSession } from "@/hooks/useAuthSession"
 import {
   primaryNavItems,
   secondaryNavItems,
 } from "@/components/layout/dashboardNav"
+import { useLogoutWithAuditGuard } from "@/hooks/useLogoutWithAuditGuard"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
@@ -29,14 +29,9 @@ function DashboardNavContent({
   showMobileAccount = false,
   includeMarketingLink = true,
 }: DashboardNavContentProps) {
-  const navigate = useNavigate()
-  const { logout } = useAuthSession()
-
-  async function handleLogout() {
-    onNavigate?.()
-    await logout()
-    navigate(ROUTES.login, { replace: true })
-  }
+  const { requestLogout, logoutConfirmModal } = useLogoutWithAuditGuard({
+    onBeforeLogout: () => onNavigate?.(),
+  })
 
   return (
     <div className="flex flex-col gap-5">
@@ -104,7 +99,7 @@ function DashboardNavContent({
           </Link>
           <button
             type="button"
-            onClick={() => void handleLogout()}
+            onClick={() => void requestLogout()}
             className="flex w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium text-[#fca5a5] transition-colors hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)]"
           >
             <LogOut className="size-4 shrink-0 opacity-80" aria-hidden />
@@ -112,6 +107,8 @@ function DashboardNavContent({
           </button>
         </div>
       ) : null}
+
+      {logoutConfirmModal}
     </div>
   )
 }

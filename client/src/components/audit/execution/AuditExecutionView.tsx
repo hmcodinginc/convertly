@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 
 import { AuditExecutionBotProtection } from "@/components/audit/execution/AuditExecutionBotProtection"
+import { AuditExecutionInterrupted } from "@/components/audit/execution/AuditExecutionInterrupted"
 import { AuditExecutionScreen } from "@/components/audit/execution/AuditExecutionScreen"
 import { useAuditExecution } from "@/hooks/useAuditExecution"
 import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
@@ -34,6 +35,7 @@ function AuditExecutionView({
     showCompletion,
     completionDetail,
     failureOutcome,
+    failureMessage,
   } = useAuditExecution({
     auditId,
     onCompleted: onComplete,
@@ -42,7 +44,7 @@ function AuditExecutionView({
 
   const vertlyContext = useMemo(
     () =>
-      state && failureOutcome !== "bot_protection"
+      state && failureOutcome !== "bot_protection" && failureOutcome !== "interrupted"
         ? {
             surface: vertlySurface,
             title: state.domain,
@@ -84,6 +86,19 @@ function AuditExecutionView({
       <div className={`audit-exec-screen audit-exec-screen--outcome ${className ?? ""}`}>
         <AuditExecutionBotProtection
           domain={state?.domain}
+          onBack={onBackToNewAudit}
+          onRetry={onRetry}
+        />
+      </div>
+    )
+  }
+
+  if (failureOutcome === "interrupted") {
+    return (
+      <div className={`audit-exec-screen audit-exec-screen--outcome ${className ?? ""}`}>
+        <AuditExecutionInterrupted
+          domain={state?.domain}
+          message={failureMessage}
           onBack={onBackToNewAudit}
           onRetry={onRetry}
         />

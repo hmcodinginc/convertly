@@ -349,9 +349,23 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     const message =
       error instanceof Error ? error.message : "Audit session failed unexpectedly"
 
-    await createHistoryEvent(auditId, "failed", message)
-    await updateSessionStatus(auditId, "failed", message)
-    await auditListRepository.syncAuditFromSession(auditId)
+    try {
+      await createHistoryEvent(auditId, "failed", message)
+    } catch {
+      // History write may fail after logout / session loss — continue to status update.
+    }
+
+    try {
+      await updateSessionStatus(auditId, "failed", message)
+    } catch {
+      // Best-effort: stale watchdog will mark the audit failed if this cannot persist.
+    }
+
+    try {
+      await auditListRepository.syncAuditFromSession(auditId)
+    } catch {
+      // Non-fatal — list view will refresh from session status on next load.
+    }
   }
 }
 

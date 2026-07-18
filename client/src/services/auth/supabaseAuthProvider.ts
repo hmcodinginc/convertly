@@ -21,6 +21,7 @@ import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
 import {
   AccountExistsError,
+  AuthRateLimitError,
   type AuthResult,
   type AuthSession,
   type ForgotPasswordInput,
@@ -60,7 +61,44 @@ function mapUserToSession(user: User): AuthSession {
   }
 }
 
-function toAuthError(error: { message: string }): Error {
+function parseRetryAfterSeconds(error: {
+  message?: string
+  status?: number
+}): number | undefined {
+  const message = error.message ?? ""
+  const match = message.match(/after\s+(\d+)\s*seconds?/i) ?? message.match(/(\d+)\s*seconds?/i)
+  if (!match) return undefined
+  const seconds = Number(match[1])
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined
+}
+
+function isRateLimitAuthError(error: { message?: string; status?: number }): boolean {
+  if (error.status === 429) return true
+  const message = (error.message ?? "").toLowerCase()
+  return (
+    message.includes("rate limit") ||
+    message.includes("too many requests") ||
+    message.includes("email rate limit exceeded") ||
+    message.includes("over_request_rate_limit")
+  )
+}
+
+function formatRateLimitMessage(retryAfterSeconds?: number): string {
+  if (retryAfterSeconds && retryAfterSeconds > 0) {
+    const minutes = Math.ceil(retryAfterSeconds / 60)
+    if (retryAfterSeconds < 60) {
+      return `Too many attempts. Please wait ${retryAfterSeconds} seconds and try again.`
+    }
+    return `Too many attempts. Please wait about ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`
+  }
+  return "Too many attempts. Please wait a few minutes and try again."
+}
+
+function toAuthError(error: { message: string; status?: number }): Error {
+  if (isRateLimitAuthError(error)) {
+    const retryAfterSeconds = parseRetryAfterSeconds(error)
+    return new AuthRateLimitError(formatRateLimitMessage(retryAfterSeconds), retryAfterSeconds)
+  }
   return new Error(error.message)
 }
 
@@ -226,6 +264,7 @@ export async function signUpWithSupabase(input: SignupInput): Promise<AuthResult
     password: input.password,
     options: {
       emailRedirectTo: getEmailConfirmationRedirectUrl(),
+      captchaToken: input.captchaToken,
       data: {
         firstName: input.firstName.trim(),
         lastName: input.lastName.trim(),
@@ -270,6 +309,11 @@ export async function signInWithSupabase(input: LoginInput): Promise<AuthResult>
   const { data, error } = await supabase.auth.signInWithPassword({
     email: input.email.trim().toLowerCase(),
     password: input.password,
+    options: input.captchaToken
+      ? {
+          captchaToken: input.captchaToken,
+        }
+      : undefined,
   })
 
   if (error) {
@@ -304,7 +348,10 @@ export async function resetPasswordWithSupabase(
 
   const { error } = await supabase.auth.resetPasswordForEmail(
     input.email.trim().toLowerCase(),
-    { redirectTo }
+    {
+      redirectTo,
+      captchaToken: input.captchaToken,
+    }
   )
 
   if (error) {

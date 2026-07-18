@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { CreditCard, LogOut, Settings, User } from "lucide-react"
 import * as React from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 
 import { useAuthSession } from "@/hooks/useAuthSession"
+import { useLogoutWithAuditGuard } from "@/hooks/useLogoutWithAuditGuard"
 import { ROUTES } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
@@ -12,10 +13,12 @@ type DashboardUserMenuProps = {
 }
 
 function DashboardUserMenu({ className }: DashboardUserMenuProps) {
-  const navigate = useNavigate()
-  const { account, logout } = useAuthSession()
+  const { account } = useAuthSession()
   const [open, setOpen] = React.useState(false)
   const containerRef = React.useRef<HTMLDivElement>(null)
+  const { requestLogout, logoutConfirmModal } = useLogoutWithAuditGuard({
+    onBeforeLogout: () => setOpen(false),
+  })
 
   React.useEffect(() => {
     if (!open) return
@@ -40,12 +43,6 @@ function DashboardUserMenu({ className }: DashboardUserMenuProps) {
       document.removeEventListener("keydown", handleKeyDown)
     }
   }, [open])
-
-  async function handleLogout() {
-    setOpen(false)
-    await logout()
-    navigate(ROUTES.login, { replace: true })
-  }
 
   const initials = account?.initials ?? "C"
   const fullName = account?.fullName ?? "Account"
@@ -114,7 +111,7 @@ function DashboardUserMenu({ className }: DashboardUserMenuProps) {
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => void handleLogout()}
+                onClick={() => void requestLogout()}
                 className="flex w-full items-center gap-2.5 rounded-[var(--radius-md)] px-3 py-2 text-sm text-[#fca5a5] transition-colors hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)]"
               >
                 <LogOut className="size-4 shrink-0 opacity-80" aria-hidden />
@@ -124,6 +121,8 @@ function DashboardUserMenu({ className }: DashboardUserMenuProps) {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {logoutConfirmModal}
     </div>
   )
 }

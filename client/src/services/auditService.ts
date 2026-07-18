@@ -29,6 +29,7 @@ import {
   getDraftSessionsByUserId,
   getSessionById,
   updateSessionFields,
+  updateSessionStatus,
 } from "@/services/repositories/audit/provider"
 import { getLedgerSnapshotsForUser } from "@/services/repositories/audit/auditEntitlementLedgerRepository"
 import {
@@ -40,7 +41,9 @@ import { getCachedAuthSession } from "@/lib/authSessionCache"
 import { isDeletableAudit, isSampleAuditId } from "@/lib/auditHistoryUtils"
 import { applyScoreDeltaFromHistory } from "@/services/audit/utils/auditScoreHistory"
 import { shouldUseSupabaseAudits } from "@/lib/env"
+import { AUDIT_INTERRUPTED_MESSAGE } from "@/lib/auditReliability"
 import { validateAuditUrl } from "@/lib/auditUrlValidation"
+import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import { AuditLimitError } from "@/types/billing"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import {
@@ -83,8 +86,43 @@ async function loadUserAudits(userId: string): Promise<Audit[]> {
 
 export async function getAudits(): Promise<Audit[]> {
   await delay()
+  await sweepStaleAuditsForCurrentUser()
   const userId = await resolveUserId()
   return loadUserAudits(userId)
+}
+
+/**
+ * Marks the current user's stale non-terminal audits as failed.
+ * Best-effort; never throws to callers.
+ */
+export async function sweepStaleAuditsForCurrentUser(): Promise<void> {
+  if (!shouldUseSupabaseAudits()) return
+
+  try {
+    const supabase = getSupabaseClient()
+    await supabase.rpc("fail_my_stale_audits")
+  } catch {
+    // Watchdog is best-effort — listing audits must still succeed.
+  }
+}
+
+/**
+ * Persist interrupted status for a specific audit when the client detects staleness.
+ */
+export async function markAuditInterrupted(auditId: string): Promise<void> {
+  if (!shouldUseSupabaseAudits()) return
+
+  try {
+    await createHistoryEvent(auditId, "failed", AUDIT_INTERRUPTED_MESSAGE)
+  } catch {
+    // Continue to status write.
+  }
+
+  try {
+    await updateSessionStatus(auditId, "failed", AUDIT_INTERRUPTED_MESSAGE)
+  } catch {
+    // Stale watchdog / RPC sweep will still reclaim this row.
+  }
 }
 
 export async function getAuditById(id: string): Promise<Audit | null> {
