@@ -7,11 +7,15 @@ import {
 } from "@/services/audit/execution/deriveAuditExecutionState"
 import * as auditService from "@/services/auditService"
 import { isBotProtectionFailure } from "@/lib/auditFailureDetection"
+import {
+  AUDIT_INTERRUPTED_MESSAGE,
+  isAuditStale,
+} from "@/lib/auditReliability"
 import type { AuditDetail } from "@/types/audit"
 import type { AuditExecutionState } from "@/types/auditExecution"
 import type { AuditSessionData } from "@/types/auditEngine"
 
-type AuditExecutionFailureOutcome = "bot_protection" | "generic" | null
+type AuditExecutionFailureOutcome = "bot_protection" | "interrupted" | "generic" | null
 
 type UseAuditExecutionOptions = {
   auditId: string
@@ -50,6 +54,7 @@ function useAuditExecution({
   const [showCompletion, setShowCompletion] = useState(false)
   const [failureOutcome, setFailureOutcome] = useState<AuditExecutionFailureOutcome>(null)
   const [failureMessage, setFailureMessage] = useState<string | null>(null)
+  const [clientInterrupted, setClientInterrupted] = useState(false)
 
   const targetPercentageRef = useRef(0)
   const completionHandledRef = useRef(false)
@@ -59,14 +64,34 @@ function useAuditExecution({
   onCompletedRef.current = onCompleted
   onFailedRef.current = onFailed
 
+  const markInterrupted = useCallback(
+    (message?: string | null) => {
+      if (completionHandledRef.current) return
+      completionHandledRef.current = true
+      setClientInterrupted(true)
+      setFailureOutcome("interrupted")
+      setFailureMessage(message?.trim() || AUDIT_INTERRUPTED_MESSAGE)
+      // Persist Failed so the row cannot remain Running forever if cron is delayed.
+      void auditService.markAuditInterrupted(auditId)
+    },
+    [auditId]
+  )
+
   const fetchSession = useCallback(async () => {
     const data = await auditService.getAuditSessionDataById(auditId)
     if (data) {
       setSessionData(data)
+
+      if (
+        isExecutionRunning(data) &&
+        isAuditStale(data.session.updatedAt)
+      ) {
+        markInterrupted(data.session.errorMessage ?? AUDIT_INTERRUPTED_MESSAGE)
+      }
     }
     setIsLoading(false)
     return data
-  }, [auditId])
+  }, [auditId, markInterrupted])
 
   useEffect(() => {
     if (!enabled || !auditId) return
@@ -74,11 +99,12 @@ function useAuditExecution({
     completionHandledRef.current = false
     setFailureOutcome(null)
     setFailureMessage(null)
+    setClientInterrupted(false)
     void fetchSession()
   }, [auditId, enabled, fetchSession])
 
   useEffect(() => {
-    if (!enabled || !auditId || !sessionData) return
+    if (!enabled || !auditId || !sessionData || clientInterrupted) return
     if (!isExecutionRunning(sessionData) && sessionData.session.status !== "failed") return
 
     const interval = window.setInterval(() => {
@@ -86,17 +112,24 @@ function useAuditExecution({
     }, pollIntervalMs)
 
     return () => window.clearInterval(interval)
-  }, [auditId, enabled, fetchSession, pollIntervalMs, sessionData?.session.status])
+  }, [
+    auditId,
+    clientInterrupted,
+    enabled,
+    fetchSession,
+    pollIntervalMs,
+    sessionData?.session.status,
+  ])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || clientInterrupted) return
 
     const interval = window.setInterval(() => {
       setInsightTick((tick) => tick + 1)
     }, 18_000)
 
     return () => window.clearInterval(interval)
-  }, [enabled])
+  }, [clientInterrupted, enabled])
 
   const state = useMemo(() => {
     if (!sessionData) return null
@@ -135,7 +168,7 @@ function useAuditExecution({
   useEffect(() => {
     if (!sessionData || completionHandledRef.current) return
 
-    const { status, errorMessage } = sessionData.session
+    const { status, errorMessage, updatedAt } = sessionData.session
 
     if (status === "failed") {
       completionHandledRef.current = true
@@ -143,6 +176,15 @@ function useAuditExecution({
       if (isBotProtectionFailure(errorMessage)) {
         setFailureOutcome("bot_protection")
         setFailureMessage(errorMessage ?? null)
+        return
+      }
+
+      const interrupted =
+        (errorMessage ?? "").includes("interrupted") || isAuditStale(updatedAt)
+
+      if (interrupted) {
+        setFailureOutcome("interrupted")
+        setFailureMessage(errorMessage?.trim() || AUDIT_INTERRUPTED_MESSAGE)
         return
       }
 

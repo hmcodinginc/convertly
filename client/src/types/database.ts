@@ -537,6 +537,14 @@ export type Database = {
         Args: { p_audit_id: string }
         Returns: boolean
       }
+      fail_stale_audits: {
+        Args: Record<string, never>
+        Returns: number
+      }
+      fail_my_stale_audits: {
+        Args: Record<string, never>
+        Returns: number
+      }
       get_personal_workspace_id: {
         Args: { p_user_id: string }
         Returns: string

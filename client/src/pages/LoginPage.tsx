@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { AuthAboutLink } from "@/components/auth/AuthLegalLinks"
 import { TextField } from "@/components/forms/TextField"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
 import { validateEmail, validateRequired } from "@/lib/authValidation"
+import { isCaptchaEnabled } from "@/lib/env"
 import { ROUTES } from "@/lib/routes"
 import { sanitizePostLoginPath } from "@/lib/paymentSession"
 import * as authService from "@/services/authService"
@@ -18,6 +20,7 @@ function LoginPage() {
   const location = useLocation()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -26,6 +29,7 @@ function LoginPage() {
   const redirectTo = sanitizePostLoginPath(
     (location.state as { from?: string } | null)?.from
   )
+  const captchaRequired = isCaptchaEnabled()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -39,12 +43,22 @@ function LoginPage() {
 
     if (nextEmailError || nextPasswordError) return
 
+    if (captchaRequired && !captchaToken) {
+      setFormError("Please complete the security check before signing in.")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      await authService.login({ email, password })
+      await authService.login({
+        email,
+        password,
+        captchaToken: captchaToken ?? undefined,
+      })
       navigate(redirectTo, { replace: true })
     } catch (error) {
+      setCaptchaToken(null)
       setFormError(error instanceof Error ? error.message : "Unable to sign in.")
     } finally {
       setIsSubmitting(false)
@@ -102,7 +116,16 @@ function LoginPage() {
 
         {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
 
-        <Button type="submit" className="auth-form-submit h-10 w-full" disabled={isSubmitting}>
+        <AuthCaptcha
+          key={formError ?? "login-captcha"}
+          onToken={setCaptchaToken}
+        />
+
+        <Button
+          type="submit"
+          className="auth-form-submit h-10 w-full"
+          disabled={isSubmitting || (captchaRequired && !captchaToken)}
+        >
           {isSubmitting ? (
             <>
               <Loader2 className="size-4 animate-spin" aria-hidden />

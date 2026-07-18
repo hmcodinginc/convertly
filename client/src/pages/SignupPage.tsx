@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react"
 import { useMemo, useState, type FormEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { AuthAboutLink, AuthLegalLinks } from "@/components/auth/AuthLegalLinks"
 import { TextField } from "@/components/forms/TextField"
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Heading } from "@/components/ui/typography/Heading"
 import { Text } from "@/components/ui/typography/Text"
 import { validateSignupFields, type SignupField } from "@/lib/authValidation"
+import { isCaptchaEnabled } from "@/lib/env"
 import { ROUTES } from "@/lib/routes"
 import * as authService from "@/services/authService"
 import { AccountExistsError } from "@/types/auth"
@@ -27,10 +29,12 @@ function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<SignupField, string>>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [accountExists, setAccountExists] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard
-  const canSubmit = acceptedTerms && !isSubmitting
+  const captchaRequired = isCaptchaEnabled()
+  const canSubmit = acceptedTerms && !isSubmitting && (!captchaRequired || Boolean(captchaToken))
 
   const passwordHint = useMemo(
     () =>
@@ -56,6 +60,11 @@ function SignupPage() {
 
     if (!acceptedTerms) return
 
+    if (captchaRequired && !captchaToken) {
+      setFormError("Please complete the security check before creating your account.")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -64,9 +73,11 @@ function SignupPage() {
         lastName,
         email,
         password,
+        captchaToken: captchaToken ?? undefined,
       })
       navigate(redirectTo, { replace: true })
     } catch (error) {
+      setCaptchaToken(null)
       if (error instanceof AccountExistsError) {
         setAccountExists(true)
         setFormError(error.message)
@@ -179,6 +190,11 @@ function SignupPage() {
         </div>
 
         {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
+
+        <AuthCaptcha
+          key={formError ?? "signup-captcha"}
+          onToken={setCaptchaToken}
+        />
 
         {accountExists ? (
           <Button

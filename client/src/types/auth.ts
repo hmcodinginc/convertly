@@ -9,6 +9,7 @@ export type AuthSession = {
 export type LoginInput = {
   email: string
   password: string
+  captchaToken?: string
 }
 
 export type SignupInput = {
@@ -16,10 +17,12 @@ export type SignupInput = {
   lastName: string
   email: string
   password: string
+  captchaToken?: string
 }
 
 export type ForgotPasswordInput = {
   email: string
+  captchaToken?: string
 }
 
 export type UserProfile = {
@@ -56,5 +59,18 @@ export class AccountExistsError extends Error {
   ) {
     super(message)
     this.name = "AccountExistsError"
+  }
+}
+
+/**
+ * Thrown when Supabase Auth rate-limits the request (HTTP 429).
+ */
+export class AuthRateLimitError extends Error {
+  readonly retryAfterSeconds?: number
+
+  constructor(message: string, retryAfterSeconds?: number) {
+    super(message)
+    this.name = "AuthRateLimitError"
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }

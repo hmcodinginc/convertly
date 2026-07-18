@@ -9,6 +9,7 @@ Convertly uses Supabase **Auth only** (no public Postgres tables). Profile data 
 | `VITE_SUPABASE_URL` | `client/.env` (gitignored) | Project API URL (root only, not `/rest/v1/`) |
 | `VITE_SUPABASE_ANON_KEY` | `client/.env` (gitignored) | Public anon JWT for browser client |
 | `VITE_USE_LOCAL_AUTH` | `client/.env` | `true` = localStorage MVP auth; `false` = Supabase when URL + anon key are set |
+| `VITE_TURNSTILE_SITE_KEY` | `client/.env` + production host env | Public Cloudflare Turnstile site key |
 
 Template: `client/.env.example`
 
@@ -22,6 +23,33 @@ Template: `client/.env.example`
 | `client/vite-env.d.ts` | TypeScript env declarations |
 
 **Never** add `VITE_SERVICE_ROLE_KEY` or any service role key to the frontend.
+
+## Local development with Turnstile (same Supabase project)
+
+Local development can use the same hosted Supabase project as production.
+CAPTCHA stays enabled project-wide; the browser must still complete Turnstile
+and send a token.
+
+Cloudflare supports authorizing `localhost` on a Turnstile widget via
+**Hostname Management**. Add hostnames **without ports**:
+
+- `localhost`
+- `127.0.0.1` (only if you browse via `http://127.0.0.1:…`)
+
+Do **not** enter `localhost:5173` — Turnstile rejects port suffixes, which is
+the usual reason adding localhost appears to fail.
+
+Keep `VITE_TURNSTILE_SITE_KEY` set to the same production site key used in
+Supabase Auth CAPTCHA settings. No Supabase Dashboard change is required for
+localhost beyond the existing Turnstile enablement.
+
+Cloudflare recommends against allowing local domains on production widgets when
+possible; for Convertly's single-project workflow, adding `localhost` is the
+smallest config-only fix and does not weaken CAPTCHA enforcement on real
+domains.
+
+Dummy/test Turnstile keys are **not** usable here: Supabase validates tokens
+with the production secret, and production secrets reject dummy tokens.
 
 ## Server-side secrets (Edge Functions only)
 
