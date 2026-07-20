@@ -1,41 +1,14 @@
-import {
-  isVertlyIdentityQuestion,
-} from "@/features/vertly/routing/normalizeVertlyMessage"
+import { matchConversationalIntent } from "@/features/vertly/routing/conversationalIntents"
 import type { VertlyConversationRequest, VertlyConversationResponse } from "@/features/vertly/types"
 
-function identityResponse(): VertlyConversationResponse {
-  return {
-    content:
-      "I'm **Vertly**, Convertly's AI Product Specialist.\n\n" +
-      "I help you understand audits, reports, dashboards, billing, workspaces, and how to improve your website using Convertly.\n\n" +
-      "I'm not a general-purpose AI assistant. After launch I'll gain broader capabilities through HX AI / Ollama integration.\n\n" +
-      "What would you like to know about Convertly?",
-    suggestions: [
-      {
-        id: "id-audits",
-        label: "How audits work",
-        prompt: "How do Convertly audits work?",
-      },
-      {
-        id: "id-dashboard",
-        label: "Explain dashboard",
-        prompt: "Explain this dashboard.",
-      },
-      {
-        id: "id-plan",
-        label: "My plan",
-        prompt: "What plan am I on?",
-      },
-    ],
-  }
-}
-
+/**
+ * Fallback for greeting-scope routes. Prefer conversationalIntents via the orchestrator.
+ */
 export function handleGreetingRoute(
   request: VertlyConversationRequest
 ): VertlyConversationResponse {
-  if (isVertlyIdentityQuestion(request.message)) {
-    return identityResponse()
-  }
+  const conversational = matchConversationalIntent(request)
+  if (conversational) return conversational
 
   return {
     content:

@@ -32,6 +32,8 @@ type PrioritizedIssuesSectionProps = {
   issues: Issue[]
   pages: PageFinding[]
   auditStatus: AuditStatus
+  /** When true, omits the outer section header (used inside tabbed findings panel). */
+  embedded?: boolean
 }
 
 function getEmptyIssuesMessage(status: AuditStatus): string {
@@ -46,7 +48,12 @@ function getEmptyIssuesMessage(status: AuditStatus): string {
   return "No page-specific conversion issues were detected in this audit."
 }
 
-function PrioritizedIssuesSection({ issues, pages, auditStatus }: PrioritizedIssuesSectionProps) {
+function PrioritizedIssuesSection({
+  issues,
+  pages,
+  auditStatus,
+  embedded = false,
+}: PrioritizedIssuesSectionProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(defaultExpanded)
   const groupedIssues = useMemo(() => groupPageIssues(issues, pages), [issues, pages])
 
@@ -59,74 +66,82 @@ function PrioritizedIssuesSection({ issues, pages, auditStatus }: PrioritizedIss
     setExpanded((prev) => ({ ...prev, [severity]: !prev[severity] }))
   }
 
+  const content =
+    issues.length === 0 ? (
+      <EmptyState
+        icon={AlertTriangle}
+        title="No issues detected"
+        description={getEmptyIssuesMessage(auditStatus)}
+      />
+    ) : (
+      <div className="audit-finding-groups flex flex-col gap-3">
+        {grouped.map(
+          ({ severity, items }) =>
+            items.length > 0 && (
+              <Card key={severity} className="audit-finding-group app-card-table hover:translate-y-0">
+                <button
+                  type="button"
+                  onClick={() => toggle(severity)}
+                  className="audit-finding-accordion-trigger flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--surface)_40%,transparent)]"
+                  aria-expanded={expanded[severity]}
+                >
+                  <div className="flex min-w-0 flex-wrap items-center gap-3">
+                    <StatusBadge label={severity} variant={severityVariant[severity]} />
+                    <Text size="sm" className="max-w-none text-muted">
+                      {items.length} {items.length === 1 ? "finding type" : "finding types"}
+                      <span className="text-foreground/45"> · </span>
+                      {items.reduce((sum, item) => sum + item.issueIds.length, 0)} total
+                    </Text>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 shrink-0 text-foreground/50 transition-transform duration-[var(--motion-fast)]",
+                      expanded[severity] && "rotate-180"
+                    )}
+                    aria-hidden
+                  />
+                </button>
+                {expanded[severity] ? (
+                  <ul className="audit-finding-group__list border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)]">
+                    {items.map((issue) => (
+                      <li key={issue.key} className="audit-finding-item">
+                        <div className="audit-finding-item__header">
+                          <h4 className="audit-finding-item__title">{issue.title}</h4>
+                          {issue.affectedPages.length > 1 ? (
+                            <span className="audit-finding-item__count">
+                              {issue.affectedPages.length} pages
+                            </span>
+                          ) : null}
+                        </div>
+                        <FindingImpactBody
+                          title={issue.title}
+                          impact={issue.representativeImpact}
+                          recommendation={issue.recommendation}
+                          affectedPages={issue.affectedPages}
+                          pageLabels={issue.pageLabels}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </Card>
+            )
+        )}
+      </div>
+    )
+
+  if (embedded) {
+    return <div className="audit-findings-embedded">{content}</div>
+  }
+
   return (
     <AuditReportSection
+      id="findings-page"
       eyebrow="Findings"
       title="Page issues"
       description="Page-specific conversion issues grouped by severity and finding type. Identical issues across pages are consolidated."
     >
-      {issues.length === 0 ? (
-        <EmptyState
-          icon={AlertTriangle}
-          title="No issues detected"
-          description={getEmptyIssuesMessage(auditStatus)}
-        />
-      ) : (
-        <div className="audit-finding-groups flex flex-col gap-3">
-          {grouped.map(
-            ({ severity, items }) =>
-              items.length > 0 && (
-                <Card key={severity} className="audit-finding-group app-card-table hover:translate-y-0">
-                  <button
-                    type="button"
-                    onClick={() => toggle(severity)}
-                    className="audit-finding-accordion-trigger flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--surface)_40%,transparent)]"
-                    aria-expanded={expanded[severity]}
-                  >
-                    <div className="flex min-w-0 flex-wrap items-center gap-3">
-                      <StatusBadge label={severity} variant={severityVariant[severity]} />
-                      <Text size="sm" className="max-w-none text-muted">
-                        {items.length} {items.length === 1 ? "finding type" : "finding types"}
-                        <span className="text-foreground/45"> · </span>
-                        {items.reduce((sum, item) => sum + item.issueIds.length, 0)} total
-                      </Text>
-                    </div>
-                    <ChevronDown
-                      className={cn(
-                        "size-4 shrink-0 text-foreground/50 transition-transform duration-[var(--motion-fast)]",
-                        expanded[severity] && "rotate-180"
-                      )}
-                      aria-hidden
-                    />
-                  </button>
-                  {expanded[severity] ? (
-                    <ul className="audit-finding-group__list border-t border-[color-mix(in_srgb,var(--border)_55%,transparent)]">
-                      {items.map((issue) => (
-                        <li key={issue.key} className="audit-finding-item">
-                          <div className="audit-finding-item__header">
-                            <h4 className="audit-finding-item__title">{issue.title}</h4>
-                            {issue.affectedPages.length > 1 ? (
-                              <span className="audit-finding-item__count">
-                                {issue.affectedPages.length} pages
-                              </span>
-                            ) : null}
-                          </div>
-                          <FindingImpactBody
-                            title={issue.title}
-                            impact={issue.representativeImpact}
-                            recommendation={issue.recommendation}
-                            affectedPages={issue.affectedPages}
-                            pageLabels={issue.pageLabels}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </Card>
-              )
-          )}
-        </div>
-      )}
+      {content}
     </AuditReportSection>
   )
 }

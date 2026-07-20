@@ -15,7 +15,6 @@ import { resolveRouteContext, SIGNUP_CONTEXT } from "@/features/vertly/content/p
 import { useVertlyLifeEngine } from "@/features/vertly/hooks/useVertlyLifeEngine"
 import {
   getSignupWelcomeMessage,
-  getPanelWelcomeMessage,
   requestVertlyResponse,
 } from "@/features/vertly/services/vertlyConversationService"
 import { buildVertlyEnrichedContext } from "@/features/vertly/routing/vertlyContextBuilder"
@@ -25,11 +24,16 @@ import {
   hasSeenSignupWelcome,
   isProactiveDismissed,
   markSignupWelcomeSeen,
-  readVertlyHistory,
+  clearVertlyHistory,
   readVertlyPosition,
-  writeVertlyHistory,
   writeVertlyPosition,
 } from "@/features/vertly/services/vertlyPersistence"
+import {
+  mergeVertlyHistories,
+  readGuestSessionMessages,
+  takeGuestSessionMessages,
+  writeGuestSessionMessages,
+} from "@/features/vertly/services/vertlyGuestSession"
 import {
   readVertlyConversation,
   writeVertlyConversation,
@@ -84,6 +88,10 @@ function mergePageContext(
   }
 }
 
+function isGuestVariant(variant: VertlyVariant): boolean {
+  return variant === "marketing" || variant === "guest-auth" || variant === "signup"
+}
+
 function VertlyProvider({
   children,
   variant = "authenticated",
@@ -93,6 +101,7 @@ function VertlyProvider({
   const location = useLocation()
   const userKey = getVertlyUserKey(userId)
   const shouldUseRemoteHistory = variant === "authenticated" && Boolean(userId?.trim())
+  const guestMode = isGuestVariant(variant)
   const routeContext = useMemo(() => {
     if (variant === "signup") return SIGNUP_CONTEXT
     if (variant === "guest-auth") return resolveGuestAuthContext(location.pathname)
@@ -104,7 +113,7 @@ function VertlyProvider({
     null
   )
   const [messages, setMessages] = useState<VertlyMessage[]>(() =>
-    shouldUseRemoteHistory || variant === "authenticated" ? [] : readVertlyHistory(userKey)
+    guestMode ? readGuestSessionMessages() : []
   )
   const [isOpen, setIsOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -144,12 +153,20 @@ function VertlyProvider({
       if (shouldUseRemoteHistory && userId) {
         try {
           const stored = await readVertlyConversation(userId)
+          const guestPending = takeGuestSessionMessages()
+          // Drop legacy guest localStorage so anonymous chats never revive after login.
+          clearVertlyHistory("guest")
+          const merged = mergeVertlyHistories(stored, guestPending)
           if (!cancelled) {
-            setMessages(stored)
+            setMessages(merged)
+            if (guestPending.length > 0) {
+              await writeVertlyConversation(userId, merged)
+            }
           }
         } catch {
           if (!cancelled) {
-            setMessages([])
+            const guestPending = takeGuestSessionMessages()
+            setMessages(guestPending)
           }
         } finally {
           if (!cancelled) {
@@ -160,7 +177,11 @@ function VertlyProvider({
       }
 
       if (!cancelled) {
-        setMessages(variant === "authenticated" ? [] : readVertlyHistory(userKey))
+        if (guestMode) {
+          setMessages(readGuestSessionMessages())
+        } else {
+          setMessages([])
+        }
         setHistoryReady(true)
       }
     }
@@ -170,7 +191,7 @@ function VertlyProvider({
     return () => {
       cancelled = true
     }
-  }, [shouldUseRemoteHistory, userId, userKey, variant])
+  }, [guestMode, shouldUseRemoteHistory, userId, userKey, variant])
 
   useEffect(() => {
     if (!historyReady) return
@@ -180,8 +201,10 @@ function VertlyProvider({
       return
     }
 
-    writeVertlyHistory(userKey, messages)
-  }, [historyReady, messages, shouldUseRemoteHistory, userId, userKey])
+    if (guestMode) {
+      writeGuestSessionMessages(messages)
+    }
+  }, [guestMode, historyReady, messages, shouldUseRemoteHistory, userId])
 
   useEffect(() => {
     const proactive = pageContext.proactive

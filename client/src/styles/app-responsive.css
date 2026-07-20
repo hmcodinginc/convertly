@@ -80,18 +80,22 @@
   .audit-report-layout {
     display: flex;
     flex-direction: column;
+    gap: 1.75rem;
   }
 
   .audit-report-layout__rail {
     order: 2;
+    position: static;
+    top: auto;
     padding-left: 0;
     border-left: none;
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
     border-top: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
   }
 
   .audit-report-layout__main {
     order: 1;
+    min-width: 0;
   }
 
   .audit-report-hero__aside {
@@ -100,6 +104,10 @@
 
   .audit-report-score-panel {
     width: 100%;
+  }
+
+  .audit-report-timeline {
+    max-height: none;
   }
 }
 
@@ -128,19 +136,15 @@
   }
 
   .audit-report-layout {
-    gap: 1.75rem;
+    gap: 1.5rem;
   }
 
   .audit-report-layout__main {
-    gap: 1.75rem;
+    gap: 1.5rem;
   }
 
-  .audit-summary-metrics {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .audit-score-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .audit-report-sections.app-page-sections {
+    gap: 0;
   }
 }
 

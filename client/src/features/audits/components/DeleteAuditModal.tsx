@@ -41,7 +41,7 @@ function DeleteAuditModal({
   }
 
   async function handleDelete() {
-    if (!audit || isDeleting) return
+    if (isDeleting) return
 
     setIsDeleting(true)
     setError(null)
@@ -88,7 +88,7 @@ function DeleteAuditModal({
               size="sm"
               className="border border-[color-mix(in_srgb,#ef4444_65%,transparent)] bg-[#dc2626] hover:bg-[#b91c1c]"
               onClick={() => void handleDelete()}
-              disabled={!audit || isDeleting}
+              disabled={isDeleting}
             >
               {isDeleting ? (
                 <>

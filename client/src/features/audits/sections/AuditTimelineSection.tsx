@@ -67,16 +67,22 @@ function PageAnalysisGroup({
           <ul className="audit-timeline__group-list">
             {group.events.map((event) => {
               const parsed = formatAnalyzedPageLabel(event.label)
+              const path = parsed?.path ?? event.label
               return (
                 <li key={event.id} className="audit-timeline__group-item">
-                  <span className="audit-timeline__group-path">
-                    {parsed?.path ?? event.label}
+                  <span className="audit-timeline__group-path" title={path}>
+                    {path}
                   </span>
-                  <span className="audit-timeline__group-meta tabular-nums">
-                    {parsed
-                      ? `${parsed.findings} finding${parsed.findings === 1 ? "" : "s"} · ${event.timestamp}`
-                      : event.timestamp}
-                  </span>
+                  <div className="audit-timeline__group-details">
+                    {parsed ? (
+                      <span className="audit-timeline__group-findings tabular-nums">
+                        {parsed.findings} finding{parsed.findings === 1 ? "" : "s"}
+                      </span>
+                    ) : null}
+                    <span className="audit-timeline__group-time tabular-nums">
+                      {event.timestamp}
+                    </span>
+                  </div>
                 </li>
               )
             })}

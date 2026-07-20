@@ -1,4 +1,8 @@
+import { useState } from "react"
+
 import { parseImpactForPresentation, getEvidenceContextLine } from "@/features/audits/utils/evidencePresentation"
+
+const PAGES_VISIBLE = 3
 
 type FindingImpactBodyProps = {
   impact: string
@@ -19,10 +23,12 @@ function FindingImpactBody({
   affectedPages,
   pageLabels,
 }: FindingImpactBodyProps) {
+  const [pagesExpanded, setPagesExpanded] = useState(false)
   const parsed = parseImpactForPresentation(impact)
   const contextLine = getEvidenceContextLine(title, parsed.evidence)
   const pages = affectedPages ?? (page ?? parsed.pageFromImpact ? [page ?? parsed.pageFromImpact!] : [])
   const labels = pageLabels ?? pages
+  const hasMorePages = pages.length > PAGES_VISIBLE
 
   return (
     <div className="audit-finding-item__body">
@@ -43,21 +49,37 @@ function FindingImpactBody({
       ) : pages.length > 0 ? (
         <div className="audit-finding-item__field">
           <span className="audit-finding-item__field-label">
-            {pages.length === 1 ? "Affected page" : "Affected pages"}
+            {pages.length === 1 ? "Affected page" : `Affected pages (${pages.length})`}
           </span>
           {pages.length === 1 ? (
             <code className="audit-finding-item__path">{pages[0]}</code>
           ) : (
-            <ul className="audit-finding-item__page-list">
-              {labels.map((label, index) => (
-                <li key={`${label}-${pages[index] ?? index}`}>
-                  <span className="audit-finding-item__page-label">{label}</span>
-                  {pages[index] ? (
-                    <code className="audit-finding-item__path">{pages[index]}</code>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <div className="audit-finding-item__page-list-wrap">
+              <ul
+                className="audit-finding-item__page-list"
+                data-scrollable={pagesExpanded && hasMorePages ? "true" : undefined}
+              >
+                {(pagesExpanded ? labels : labels.slice(0, PAGES_VISIBLE)).map((label, index) => (
+                  <li key={`${label}-${pages[index] ?? index}`}>
+                    <span className="audit-finding-item__page-label">{label}</span>
+                    {pages[index] ? (
+                      <code className="audit-finding-item__path">{pages[index]}</code>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {hasMorePages ? (
+                <button
+                  type="button"
+                  className="audit-finding-item__pages-toggle"
+                  onClick={() => setPagesExpanded((prev) => !prev)}
+                >
+                  {pagesExpanded
+                    ? "Show fewer"
+                    : `+${pages.length - PAGES_VISIBLE} more pages`}
+                </button>
+              ) : null}
+            </div>
           )}
         </div>
       ) : null}

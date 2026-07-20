@@ -76,9 +76,25 @@ function ScoreImpacts({ category }: { category: ScoreBreakdownItem }) {
   )
 }
 
+function ScoreBar({ score }: { score: number }) {
+  return (
+    <div
+      className="audit-score-bar"
+      role="progressbar"
+      aria-valuenow={score}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Score ${score} out of 100`}
+    >
+      <span className="audit-score-bar__fill" style={{ width: `${score}%` }} />
+    </div>
+  )
+}
+
 function ScoreBreakdownSection({ categories, auditStatus }: ScoreBreakdownSectionProps) {
   return (
     <AuditReportSection
+      id="scores"
       eyebrow="Dimensions"
       title="Score breakdown"
       description="Category-level conversion health with the findings contributing most to each score."
@@ -90,7 +106,7 @@ function ScoreBreakdownSection({ categories, auditStatus }: ScoreBreakdownSectio
           description={getEmptyScoreMessage(auditStatus)}
         />
       ) : (
-        <div className="audit-score-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="audit-score-grid">
           {categories.map((category) => {
             const showTrend = hasMeaningfulScoreTrend(category.trendValue)
             const TrendIcon = trendIcon[category.trend]
@@ -99,6 +115,7 @@ function ScoreBreakdownSection({ categories, auditStatus }: ScoreBreakdownSectio
               <Card key={category.id} className="audit-score-card app-card-metric hover:translate-y-0">
                 <p className="audit-score-card__label">{category.label}</p>
                 <p className="audit-score-card__value">{category.score}</p>
+                <ScoreBar score={category.score} />
                 <div className="audit-score-card__meta">
                   <StatusBadge
                     label={category.status}

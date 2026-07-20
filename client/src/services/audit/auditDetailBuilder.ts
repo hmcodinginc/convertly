@@ -2,6 +2,10 @@ import { isInternalHistoryMessage } from "@/features/audits/utils/timelinePresen
 import { isAuditInProgress } from "@/lib/auditStatus"
 import { calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 import { parseIntelligenceSnapshotFromHistory, getPageScoreFromSnapshot } from "@/services/audit/intelligence/diagnostics/intelligenceSnapshot"
+import {
+  formatEngineConfidenceLabel,
+  tierFromEngineScore,
+} from "@/features/audits/utils/confidencePresentation"
 import { INTELLIGENCE_CATEGORY_LABELS } from "@/services/audit/intelligence/categories"
 import type { ConsultantRecommendation } from "@/services/audit/intelligence/recommendations/consultantRecommendation"
 import { RULE_METADATA } from "@/services/audit/intelligence/rules/ruleMetadata"
@@ -265,6 +269,9 @@ function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
   const auditConfidence = resolveAuxiliaryScore(data.scores, "clarity")
   const growthPotential = resolveAuxiliaryScore(data.scores, "overall")
   const scoreCeiling = resolveAuxiliaryScore(data.scores, "friction")
+  const confidenceTier =
+    intelligenceSnapshot?.auditConfidenceTier ??
+    (auditConfidence != null ? tierFromEngineScore(auditConfidence) : undefined)
 
   return {
     pagesDiscovered: intelligenceSnapshot?.crawlDiagnostics?.pagesDiscovered ?? data.pages.length,
@@ -278,7 +285,9 @@ function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
     ruleCount: RULE_METADATA.length,
     auditEngineVersion: SCORING_ENGINE_VERSION,
     auditConfidence,
-    auditConfidenceLabel: auditConfidence != null ? confidenceLabelFromScore(auditConfidence) : undefined,
+    auditConfidenceLabel: confidenceTier
+      ? formatEngineConfidenceLabel(confidenceTier)
+      : undefined,
     growthPotential,
     recoverablePoints:
       growthPotential != null
@@ -293,16 +302,9 @@ function buildRunMetadata(data: AuditSessionData): AuditRunMetadata {
     crawlDiagnostics: intelligenceSnapshot?.crawlDiagnostics,
     renderConfidence: intelligenceSnapshot?.renderConfidence,
     reliabilityReport: intelligenceSnapshot?.reliabilityReport,
-    auditConfidenceTier: intelligenceSnapshot?.auditConfidenceTier,
+    auditConfidenceTier: intelligenceSnapshot?.auditConfidenceTier ?? confidenceTier,
     manualVerificationRecommended: intelligenceSnapshot?.manualVerificationRecommended,
   }
-}
-
-function confidenceLabelFromScore(score: number): string {
-  if (score >= 88) return "High confidence"
-  if (score >= 72) return "Moderate confidence"
-  if (score >= 55) return "Limited confidence"
-  return "Low confidence"
 }
 
 function classifyTimelineMessage(message: string): TimelineEvent["kind"] {
