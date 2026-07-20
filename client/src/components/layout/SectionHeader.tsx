@@ -41,7 +41,7 @@ function SectionHeader({
             variant="muted"
             size="sm"
             data-slot="section-header-eyebrow"
-            className="w-full max-w-none text-center font-medium uppercase tracking-[0.16em] md:text-left"
+            className="w-full max-w-none text-center font-medium uppercase tracking-[0.16em]"
           >
             {eyebrow}
           </Text>
