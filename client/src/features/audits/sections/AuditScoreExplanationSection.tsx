@@ -21,39 +21,47 @@ function AuditScoreExplanationSection({ audit }: AuditScoreExplanationSectionPro
 
   return (
     <AppPageSection
+      id="insight"
       eyebrow="Score insight"
       title="Why this score"
       description="What contributed most to your Growth Score and where the biggest recovery lives."
     >
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ScoreCard title="Score band" explanation={explanation} />
+      <div className="audit-score-insight">
+        <ScoreSummaryCard explanation={explanation} audit={audit} />
+        <RoiCard audit={audit} explanation={explanation} />
         <BlockersCard explanation={explanation} />
         <ContributorsCard explanation={explanation} />
-        <RoiCard audit={audit} explanation={explanation} />
       </div>
     </AppPageSection>
   )
 }
 
-function ScoreCard({
-  title,
+function ScoreSummaryCard({
   explanation,
+  audit,
 }: {
-  title: string
   explanation: ReportScoreExplanation
+  audit: AuditDetail
 }) {
+  const ceiling = audit.runMetadata.scoreCeiling
+
   return (
-    <Card className="app-card-metric hover:translate-y-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground/55">{title}</p>
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-        {explanation.overallScore}
-      </p>
-      <Text variant="muted" size="sm" className="mt-1 max-w-none">
-        {explanation.scoreBand}
-      </Text>
-      <Text variant="muted" size="sm" className="mt-3 max-w-none leading-relaxed">
-        Intent profile: {explanation.websiteIntent.replace(/-/g, " ")}
-      </Text>
+    <Card className="audit-score-insight__summary app-card-metric hover:translate-y-0">
+      <p className="audit-score-insight__eyebrow">Score band</p>
+      <div className="audit-score-insight__summary-body">
+        <div className="audit-score-insight__score-block">
+          <p className="audit-score-insight__score">{explanation.overallScore}</p>
+          <p className="audit-score-insight__band">{explanation.scoreBand}</p>
+        </div>
+        <div className="audit-score-insight__summary-meta">
+          <p className="audit-score-insight__intent">
+            Intent: {explanation.websiteIntent.replace(/-/g, " ")}
+          </p>
+          {typeof ceiling === "number" ? (
+            <p className="audit-score-insight__ceiling">Score ceiling {ceiling}</p>
+          ) : null}
+        </div>
+      </div>
     </Card>
   )
 }
@@ -63,16 +71,14 @@ function BlockersCard({ explanation }: { explanation: ReportScoreExplanation }) 
   if (blockers.length === 0) return null
 
   return (
-    <Card className="app-card-metric hover:translate-y-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground/55">
-        Biggest blockers
-      </p>
-      <ul className="mt-3 space-y-2">
+    <Card className="audit-score-insight__blockers app-card-metric hover:translate-y-0">
+      <p className="audit-score-insight__eyebrow">Biggest blockers</p>
+      <ul className="audit-score-insight__blocker-list">
         {blockers.map((item) => (
-          <li key={item.label} className="rounded-lg border border-[color-mix(in_srgb,var(--border)_60%,transparent)] px-3 py-2">
-            <p className="text-sm font-medium text-foreground">{item.label}</p>
+          <li key={item.label} className="audit-score-insight__blocker-item">
+            <p className="audit-score-insight__blocker-title">{item.label}</p>
             {item.detail ? (
-              <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.detail}</p>
+              <p className="audit-score-insight__blocker-detail">{item.detail}</p>
             ) : null}
           </li>
         ))}
@@ -89,43 +95,38 @@ function ContributorsCard({ explanation }: { explanation: ReportScoreExplanation
     .slice(0, 4)
 
   return (
-    <Card className="app-card-metric hover:translate-y-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground/55">
-        Category impact
-      </p>
+    <Card className="audit-score-insight__contributors app-card-metric hover:translate-y-0">
+      <p className="audit-score-insight__eyebrow">Category impact</p>
       {categories.length > 0 ? (
-        <ul className="mt-3 space-y-2">
+        <ul className="audit-score-insight__category-list">
           {categories.map((item) => (
-            <li
-              key={item.category}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <span className="text-foreground/85">
+            <li key={item.category} className="audit-score-insight__category-row">
+              <span className="audit-score-insight__category-label">
                 {CATEGORY_LABELS[item.category] ?? item.category}
               </span>
-              <span className="font-medium text-[#fca5a5]">−{item.penalty} pts</span>
+              <span className="audit-score-insight__category-penalty">−{item.penalty} pts</span>
             </li>
           ))}
         </ul>
       ) : (
-        <Text variant="muted" size="sm" className="mt-3 max-w-none">
+        <Text variant="muted" size="sm" className="mt-2 max-w-none">
           No major category penalties detected.
         </Text>
       )}
 
       {positives.length > 0 ? (
-        <>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-foreground/55">
+        <div className="audit-score-insight__strengths">
+          <p className="audit-score-insight__eyebrow audit-score-insight__eyebrow--sub">
             Strengths
           </p>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="audit-score-insight__strength-list">
             {positives.map((item) => (
-              <li key={item.label} className="text-sm text-[#86efac]">
+              <li key={item.label} className="audit-score-insight__strength-item">
                 {item.label}
               </li>
             ))}
           </ul>
-        </>
+        </div>
       ) : null}
     </Card>
   )
@@ -140,22 +141,27 @@ function RoiCard({
 }) {
   const recovery = audit.runMetadata.recoverablePoints
   const ceiling = audit.runMetadata.scoreCeiling
+  const growthPotential = audit.runMetadata.growthPotential
+
+  const recoveryLine =
+    typeof recovery === "number" && recovery > 0
+      ? `Up to +${recovery} pts recoverable`
+      : typeof growthPotential === "number" && growthPotential > audit.overallScore
+        ? `Growth potential ${growthPotential}`
+        : typeof ceiling === "number"
+          ? `Score ceiling ${ceiling}`
+          : null
 
   return (
-    <Card className="app-card-metric hover:translate-y-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-foreground/55">
-        Highest ROI path
-      </p>
-      <Text size="sm" className="mt-3 max-w-none leading-relaxed">
+    <Card className="audit-score-insight__roi app-card-metric hover:translate-y-0">
+      <p className="audit-score-insight__eyebrow">Highest ROI path</p>
+      <Text size="sm" className="audit-score-insight__roi-copy max-w-none leading-relaxed">
         {explanation.majorDeductions[0]?.label
           ? `Fix ${explanation.majorDeductions[0].label.toLowerCase()} first — it is the largest active deduction on this audit.`
           : "Resolve critical and high-severity findings first for the fastest score recovery."}
       </Text>
-      {typeof recovery === "number" ? (
-        <p className="mt-3 text-sm font-medium text-[#86efac]">
-          Up to +{recovery} pts recoverable
-          {typeof ceiling === "number" ? ` · ceiling ${ceiling}` : ""}
-        </p>
+      {recoveryLine ? (
+        <p className="audit-score-insight__roi-metric">{recoveryLine}</p>
       ) : null}
     </Card>
   )

@@ -1,4 +1,5 @@
 import type { VertlyMessage, VertlyPosition } from "@/features/vertly/types"
+import { clearGuestSessionMessages } from "@/features/vertly/services/vertlyGuestSession"
 import { getJson, removeItem, setJson } from "@/services/storage/localStorageClient"
 
 const POSITION_PREFIX = "convertly:vertly:position:"
@@ -22,10 +23,12 @@ export function writeVertlyPosition(userKey: string, position: VertlyPosition): 
   setJson(storageKey(POSITION_PREFIX, userKey), position)
 }
 
+/** @deprecated Guest history is in-memory only; kept for cleanup of older localStorage keys. */
 export function readVertlyHistory(userKey: string): VertlyMessage[] {
   return getJson<VertlyMessage[]>(storageKey(HISTORY_PREFIX, userKey), [])
 }
 
+/** @deprecated Guest history is in-memory only; authenticated history uses Supabase. */
 export function writeVertlyHistory(userKey: string, messages: VertlyMessage[]): void {
   const trimmed = messages.slice(-40)
   setJson(storageKey(HISTORY_PREFIX, userKey), trimmed)
@@ -36,6 +39,7 @@ export function clearVertlyHistory(userKey: string): void {
 }
 
 export function clearVertlyLocalCache(userId?: string): void {
+  clearGuestSessionMessages()
   clearVertlyHistory("guest")
   if (userId?.trim()) {
     clearVertlyHistory(userId)

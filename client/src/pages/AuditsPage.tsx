@@ -56,6 +56,9 @@ function AuditsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Audit | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   const filteredAudits = useMemo(
     () =>
@@ -68,6 +71,15 @@ function AuditsPage() {
     [audits, searchQuery, statusFilter, scoreFilter, sortOption]
   )
 
+  const deletableFilteredIds = useMemo(
+    () => filteredAudits.filter((a) => isDeletableAudit(a.id)).map((a) => a.id),
+    [filteredAudits]
+  )
+
+  const allDeletableSelected =
+    deletableFilteredIds.length > 0 &&
+    deletableFilteredIds.every((id) => selectedIds.has(id))
+
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     statusFilter !== "all" ||
@@ -78,6 +90,23 @@ function AuditsPage() {
   function showSuccess(message: string) {
     setSuccessMessage(message)
     window.setTimeout(() => setSuccessMessage(null), 5000)
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (allDeletableSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(deletableFilteredIds))
+    }
   }
 
   async function handleExport() {
@@ -99,6 +128,21 @@ function AuditsPage() {
     setDeleteTarget(null)
     showSuccess(`"${deleteTarget.name}" was deleted successfully.`)
     reload()
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0 || isBulkDeleting) return
+    setIsBulkDeleting(true)
+    try {
+      await Promise.all([...selectedIds].map((id) => auditService.deleteAudit(id)))
+      const count = selectedIds.size
+      setSelectedIds(new Set())
+      setBulkDeleteOpen(false)
+      showSuccess(`${count} audit${count === 1 ? "" : "s"} deleted successfully.`)
+      reload()
+    } finally {
+      setIsBulkDeleting(false)
+    }
   }
 
   const header = (
@@ -149,6 +193,17 @@ function AuditsPage() {
         />
         {!isEmpty ? (
           <div className="app-toolbar__actions flex shrink-0 items-center gap-2">
+            {selectedIds.size > 0 ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="border border-[color-mix(in_srgb,#ef4444_65%,transparent)] bg-[#dc2626] hover:bg-[#b91c1c]"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                <Trash2 className="size-4" aria-hidden />
+                Delete {selectedIds.size} selected
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               size="sm"
@@ -263,68 +318,78 @@ function AuditsPage() {
           <DataTable minWidth="44rem">
             <DataTableHead>
               <DataTableHeadRow>
+                <DataTableHeaderCell className="w-10">
+                  {deletableFilteredIds.length > 0 ? (
+                    <input
+                      type="checkbox"
+                      aria-label="Select all deletable audits"
+                      className="audit-table-checkbox"
+                      checked={allDeletableSelected}
+                      onChange={toggleSelectAll}
+                    />
+                  ) : null}
+                </DataTableHeaderCell>
                 <DataTableHeaderCell>Name</DataTableHeaderCell>
                 <DataTableHeaderCell>Domain</DataTableHeaderCell>
                 <DataTableHeaderCell>Date</DataTableHeaderCell>
                 <DataTableHeaderCell>Score</DataTableHeaderCell>
                 <DataTableHeaderCell>Status</DataTableHeaderCell>
-                <DataTableHeaderCell className="w-16 text-right">Actions</DataTableHeaderCell>
               </DataTableHeadRow>
             </DataTableHead>
             <DataTableBody>
-              {filteredAudits.map((audit) => (
-                <DataTableRow
-                  key={audit.id}
-                  interactive
-                  tabIndex={0}
-                  role="link"
-                  aria-label={`Open audit report for ${audit.name}`}
-                  onClick={() => navigate(auditDetailPath(audit.id))}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault()
-                      navigate(auditDetailPath(audit.id))
-                    }
-                  }}
-                >
-                  <DataTableCell>
-                    <AuditTableLink
-                      auditId={audit.id}
-                      className="relative z-[1]"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {audit.name}
-                    </AuditTableLink>
-                  </DataTableCell>
-                  <DataTableCell className="font-mono text-xs text-foreground/80">
-                    {audit.domain}
-                  </DataTableCell>
-                  <DataTableCell className="whitespace-nowrap text-foreground/75 tabular-nums">
-                    {audit.completedAt}
-                  </DataTableCell>
-                  <DataTableCell className="tabular-nums">{audit.conversionScore}</DataTableCell>
-                  <DataTableCell>
-                    <AuditStatusBadge status={audit.status} />
-                  </DataTableCell>
-                  <DataTableCell className="text-right">
-                    {isDeletableAudit(audit.id) ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-foreground/60 hover:text-[#f87171]"
-                        aria-label={`Delete ${audit.name}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setDeleteTarget(audit)
-                        }}
+              {filteredAudits.map((audit) => {
+                const deletable = isDeletableAudit(audit.id)
+                const isSelected = selectedIds.has(audit.id)
+                return (
+                  <DataTableRow
+                    key={audit.id}
+                    interactive
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Open audit report for ${audit.name}`}
+                    className={cn(isSelected && "bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]")}
+                    onClick={() => navigate(auditDetailPath(audit.id))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        navigate(auditDetailPath(audit.id))
+                      }
+                    }}
+                  >
+                    <DataTableCell className="w-10">
+                      {deletable ? (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${audit.name}`}
+                          className="audit-table-checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(audit.id)}
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                      ) : null}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <AuditTableLink
+                        auditId={audit.id}
+                        className="relative z-[1]"
+                        onClick={(event) => event.stopPropagation()}
                       >
-                        <Trash2 className="size-4" aria-hidden />
-                      </Button>
-                    ) : null}
-                  </DataTableCell>
-                </DataTableRow>
-              ))}
+                        {audit.name}
+                      </AuditTableLink>
+                    </DataTableCell>
+                    <DataTableCell className="font-mono text-xs text-foreground/80">
+                      {audit.domain}
+                    </DataTableCell>
+                    <DataTableCell className="whitespace-nowrap text-foreground/75 tabular-nums">
+                      {audit.completedAt}
+                    </DataTableCell>
+                    <DataTableCell className="tabular-nums">{audit.conversionScore}</DataTableCell>
+                    <DataTableCell>
+                      <AuditStatusBadge status={audit.status} />
+                    </DataTableCell>
+                  </DataTableRow>
+                )
+              })}
             </DataTableBody>
           </DataTable>
         </Card>
@@ -336,6 +401,20 @@ function AuditsPage() {
         audit={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirmDelete={handleConfirmDelete}
+      />
+
+      <DeleteAuditModal
+        open={bulkDeleteOpen}
+        audit={null}
+        onClose={() => !isBulkDeleting && setBulkDeleteOpen(false)}
+        onConfirmDelete={handleBulkDelete}
+        title={`Delete ${selectedIds.size} audit${selectedIds.size === 1 ? "" : "s"}`}
+        description={`This permanently removes ${selectedIds.size} audit${selectedIds.size === 1 ? "" : "s"} and all related data.`}
+        confirmLabel={
+          isBulkDeleting
+            ? "Deleting…"
+            : `Delete ${selectedIds.size} audit${selectedIds.size === 1 ? "" : "s"}`
+        }
       />
     </AppPageShell>
   )

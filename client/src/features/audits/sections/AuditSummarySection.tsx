@@ -1,9 +1,13 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 
-import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
-import { AppPageSection } from "@/components/layout/AppPageSection"
+import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
+import {
+  countSeverities,
+  severityItems,
+  SEVERITY_COLORS,
+} from "@/features/audits/utils/severityPresentation"
 import type { AuditDetail } from "@/types/audit"
 import { cn } from "@/lib/utils"
 
@@ -15,11 +19,7 @@ function AuditSummarySection({ audit }: AuditSummarySectionProps) {
   const showScoreComparison = audit.previousScore !== 0 || audit.scoreDelta !== 0
   const deltaPositive = audit.scoreDelta > 0
   const deltaNegative = audit.scoreDelta < 0
-  const DeltaIcon = deltaPositive
-    ? ArrowUpRight
-    : deltaNegative
-      ? ArrowDownRight
-      : Minus
+  const DeltaIcon = deltaPositive ? ArrowUpRight : deltaNegative ? ArrowDownRight : Minus
 
   const deltaColor = deltaPositive
     ? "text-[#86efac]"
@@ -32,105 +32,120 @@ function AuditSummarySection({ audit }: AuditSummarySectionProps) {
       ? "No change"
       : `${audit.scoreDelta > 0 ? "+" : ""}${audit.scoreDelta} pts`
 
-  const headerDate = audit.completedAtDate ?? audit.createdAt ?? audit.completedAt
-
-  const metrics = [
-    {
-      label: "Overall score",
-      value: String(audit.overallScore),
-      hint: "Growth score",
-    },
-    {
-      label: "Pages analyzed",
-      value: String(audit.pagesAnalyzed),
-      hint: "Discovered pages",
-    },
-    {
-      label: "Total findings",
-      value: String(audit.stats.totalFindings),
-      hint: `${audit.stats.pageFindingsCount} page · ${audit.stats.siteFindingsCount} site`,
-    },
-    {
-      label: "Recommendations",
-      value: String(audit.stats.totalRecommendations),
-      hint: "Prioritized actions",
-    },
-  ]
+  const severityCounts = countSeverities(audit.issues, audit.siteFindings)
+  const severityRows = severityItems(severityCounts)
+  const totalSeverityCount = severityRows.reduce((sum, row) => sum + row.count, 0)
 
   return (
-    <AppPageSection
-      eyebrow="Results"
-      title="Audit summary"
-      description="Key metrics and scope for this conversion audit."
+    <AuditReportSection
+      id="overview"
+      eyebrow="At a glance"
+      title="What happened"
+      description="A quick read on audit scope, finding severity, and score movement since your last run on this domain."
     >
-      <Card className="audit-summary-overview app-card-metric hover:translate-y-0">
-        <dl className="audit-summary-overview__grid">
-          <div className="audit-summary-overview__item">
-            <dt className="audit-summary-overview__label">Website URL</dt>
-            <dd className="audit-summary-overview__value audit-summary-overview__value--mono">
-              {audit.websiteUrl ?? audit.domain}
-            </dd>
-          </div>
-          <div className="audit-summary-overview__item">
-            <dt className="audit-summary-overview__label">Domain</dt>
-            <dd className="audit-summary-overview__value audit-summary-overview__value--mono">
-              {audit.domain}
-            </dd>
-          </div>
-          <div className="audit-summary-overview__item">
-            <dt className="audit-summary-overview__label">Status</dt>
-            <dd className="audit-summary-overview__value">
-              <AuditStatusBadge status={audit.status} />
-            </dd>
-          </div>
-          <div className="audit-summary-overview__item">
-            <dt className="audit-summary-overview__label">Audit date</dt>
-            <dd className="audit-summary-overview__value tabular-nums">{headerDate}</dd>
-          </div>
-        </dl>
-      </Card>
-
-      <div className="audit-summary-metrics grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <Card key={metric.label} className="audit-summary-metric app-card-metric hover:translate-y-0">
+      <div className="audit-overview-grid">
+        {severityRows.length > 0 ? (
+          <Card className="audit-overview-card app-card-metric hover:translate-y-0">
             <Text variant="muted" size="sm" className="max-w-none font-medium">
-              {metric.label}
+              Finding severity
             </Text>
-            <p className="audit-summary-metric__value">{metric.value}</p>
-            <Text variant="muted" size="sm" className="mt-1 max-w-none text-xs">
-              {metric.hint}
-            </Text>
-          </Card>
-        ))}
-      </div>
-
-      {showScoreComparison ? (
-        <div className="audit-report-summary-grid audit-report-summary-grid--with-comparison">
-          <Card className="app-card-metric hover:translate-y-0">
-            <Text variant="muted" size="sm" className="max-w-none font-medium">
-              Previous score
-            </Text>
-            <p className="mt-3 text-3xl font-medium tracking-tight tabular-nums text-foreground/85">
-              {audit.previousScore}
-            </p>
-          </Card>
-          <Card className="app-card-metric hover:translate-y-0">
-            <Text variant="muted" size="sm" className="max-w-none font-medium">
-              Score delta
-            </Text>
-            <p
-              className={cn(
-                "mt-3 flex items-center gap-1 text-3xl font-medium tracking-tight tabular-nums",
-                deltaColor
-              )}
+            <div
+              className="audit-severity-bar"
+              role="img"
+              aria-label={severityRows
+                .map((row) => `${row.count} ${row.severity}`)
+                .join(", ")}
             >
-              <DeltaIcon className="size-5 shrink-0" aria-hidden />
-              {deltaLabel}
-            </p>
+              {severityRows.map((row) => (
+                <span
+                  key={row.severity}
+                  className="audit-severity-bar__segment"
+                  style={{
+                    flexGrow: row.count,
+                    backgroundColor: SEVERITY_COLORS[row.severity],
+                  }}
+                  title={`${row.severity}: ${row.count}`}
+                />
+              ))}
+            </div>
+            <ul className="audit-severity-legend">
+              {severityRows.map((row) => (
+                <li key={row.severity} className="audit-severity-legend__item">
+                  <span
+                    className="audit-severity-legend__dot"
+                    style={{ backgroundColor: SEVERITY_COLORS[row.severity] }}
+                    aria-hidden
+                  />
+                  <span className="audit-severity-legend__label">{row.severity}</span>
+                  <span className="audit-severity-legend__count tabular-nums">{row.count}</span>
+                </li>
+              ))}
+            </ul>
+            <Text variant="muted" size="sm" className="mt-3 max-w-none text-xs">
+              {totalSeverityCount} total across page and site-wide findings
+            </Text>
           </Card>
-        </div>
-      ) : null}
-    </AppPageSection>
+        ) : null}
+
+        <Card className="audit-overview-card app-card-metric hover:translate-y-0">
+          <Text variant="muted" size="sm" className="max-w-none font-medium">
+            Coverage
+          </Text>
+          <dl className="audit-overview-stats">
+            <div className="audit-overview-stats__row">
+              <dt>Pages analyzed</dt>
+              <dd className="tabular-nums">{audit.pagesAnalyzed}</dd>
+            </div>
+            <div className="audit-overview-stats__row">
+              <dt>Page findings</dt>
+              <dd className="tabular-nums">{audit.stats.pageFindingsCount}</dd>
+            </div>
+            <div className="audit-overview-stats__row">
+              <dt>Site findings</dt>
+              <dd className="tabular-nums">{audit.stats.siteFindingsCount}</dd>
+            </div>
+            <div className="audit-overview-stats__row">
+              <dt>Recommendations</dt>
+              <dd className="tabular-nums">{audit.recommendations.length}</dd>
+            </div>
+          </dl>
+        </Card>
+
+        {showScoreComparison ? (
+          <Card className="audit-overview-card app-card-metric hover:translate-y-0">
+            <Text variant="muted" size="sm" className="max-w-none font-medium">
+              Score movement
+            </Text>
+            <div className="audit-overview-comparison">
+              <div className="audit-overview-comparison__item">
+                <span className="audit-overview-comparison__label">Previous</span>
+                <span className="audit-overview-comparison__value tabular-nums">
+                  {audit.previousScore}
+                </span>
+              </div>
+              <div className="audit-overview-comparison__item">
+                <span className="audit-overview-comparison__label">Change</span>
+                <span
+                  className={cn(
+                    "audit-overview-comparison__value audit-overview-comparison__value--delta tabular-nums",
+                    deltaColor
+                  )}
+                >
+                  <DeltaIcon className="size-4 shrink-0" aria-hidden />
+                  {deltaLabel}
+                </span>
+              </div>
+              <div className="audit-overview-comparison__item">
+                <span className="audit-overview-comparison__label">Current</span>
+                <span className="audit-overview-comparison__value tabular-nums">
+                  {audit.overallScore}
+                </span>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+      </div>
+    </AuditReportSection>
   )
 }
 
