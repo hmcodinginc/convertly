@@ -3,6 +3,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
 import { motion } from "framer-motion"
+import { FadeIn } from "@/components/motion/FadeIn"
 
 const launchPrinciples = [
   {
@@ -29,13 +30,15 @@ function TestimonialsSection() {
   return (
     <Section aria-labelledby="testimonials-title" containerClassName="marketing-container">
       <div className="marketing-section-stack">
-        <SectionHeader
-          centered
-          eyebrow="Approach"
-          title="Built around correctness and usable output"
-          titleId="testimonials-title"
-          description="These are the product principles guiding Convertly at launch."
-        />
+        <FadeIn>
+          <SectionHeader
+            centered
+            eyebrow="Approach"
+            title="Built around correctness and usable output"
+            titleId="testimonials-title"
+            description="These are the product principles guiding Convertly at launch."
+          />
+        </FadeIn>
 
         <div className="grid gap-6 md:grid-cols-3 mt-4">
           {launchPrinciples.map((t, idx) => (

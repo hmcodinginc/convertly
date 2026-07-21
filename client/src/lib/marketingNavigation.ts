@@ -4,6 +4,7 @@ export const MARKETING_NAV_ITEMS = [
   { label: "Pricing", sectionId: "pricing-title" },
 ] as const
 
+
 export type MarketingSectionId =
   | (typeof MARKETING_NAV_ITEMS)[number]["sectionId"]
   | "home-hero-title"
