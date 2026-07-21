@@ -61,7 +61,7 @@ function useLogoutWithAuditGuard(options: UseLogoutWithAuditGuardOptions = {}) {
         if (!isLoggingOut) setConfirmOpen(false)
       }}
       title="Audit is currently running"
-      description="Logging out may interrupt the audit."
+      description="Logging out stops the run and saves its configuration as a draft."
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button
@@ -78,14 +78,15 @@ function useLogoutWithAuditGuard(options: UseLogoutWithAuditGuardOptions = {}) {
             disabled={isLoggingOut}
             onClick={() => void performLogout()}
           >
-            {isLoggingOut ? "Logging out…" : "Logout Anyway"}
+            {isLoggingOut ? "Logging out…" : "Save Draft & Logout"}
           </Button>
         </div>
       }
     >
       <Text size="sm" className="max-w-none leading-6 text-foreground/80">
-        An audit is still in progress. If you log out now, Convertly may not be able to finish
-        it. You can stay signed in and wait, or log out anyway and run the audit again later.
+        An audit is still in progress and cannot continue after you log out. Convertly will
+        save its configuration as a draft — you can restart it from your dashboard next time
+        you sign in. No audit allowance is used for the interrupted run.
       </Text>
     </Modal>
   )

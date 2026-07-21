@@ -306,6 +306,8 @@ function DashboardPage() {
         <OnboardingCard entitlement={entitlement} />
       ) : null}
 
+      <DraftAuditsSection drafts={data.drafts} onChanged={reload} />
+
       {data.audits.length > 0 ? (
         <CurrentAuditSelector
           audits={data.audits}
@@ -338,8 +340,6 @@ function DashboardPage() {
           />
         </>
       )}
-
-      <DraftAuditsSection drafts={data.drafts} onChanged={reload} />
 
       <RecentAuditsSection audits={data.audits} onDeleteRequest={setDeleteTarget} />
 

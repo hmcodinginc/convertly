@@ -537,6 +537,10 @@ export type Database = {
         Args: { p_audit_id: string }
         Returns: boolean
       }
+      convert_my_running_audits_to_drafts: {
+        Args: Record<string, never>
+        Returns: number
+      }
       fail_stale_audits: {
         Args: Record<string, never>
         Returns: number
