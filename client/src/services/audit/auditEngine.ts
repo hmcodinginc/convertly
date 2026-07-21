@@ -10,6 +10,11 @@ import {
 } from "@/services/audit/scoring/calculateAuditScore"
 import type { ScoreCategory } from "@/services/audit/scoring/calculateAuditScore"
 import { delay } from "@/services/internal/delay"
+import {
+  AuditEngineAbortedError,
+  currentEngineEpoch,
+  throwIfEngineAborted,
+} from "@/services/audit/auditEngineAbort"
 import { shouldUseSupabaseAudits } from "@/lib/env"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import {
@@ -150,6 +155,7 @@ function buildComputedScores(
 }
 
 export async function runAuditEngine(auditId: string): Promise<void> {
+  const runEpoch = currentEngineEpoch()
   const session = await getSessionById(auditId)
   if (
     !session ||
@@ -164,12 +170,14 @@ export async function runAuditEngine(auditId: string): Promise<void> {
   try {
     const isPageSpecific = session.auditType === "page-specific"
 
+    throwIfEngineAborted(runEpoch)
     await recordPhase(
       session,
       "crawling",
       isPageSpecific ? "Auditing target page" : "Discovering public pages"
     )
     await delay(PHASE_DELAYS_MS.crawling)
+    throwIfEngineAborted(runEpoch)
 
     const fetchContext = createAuditFetchContext()
     const { pages: discovered, crawlDiagnostics } = await mapDiscoveredPages(
@@ -178,6 +186,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       session.auditType,
       fetchContext
     )
+    throwIfEngineAborted(runEpoch)
 
     if (discovered.length === 0) {
       const detail =
@@ -201,8 +210,10 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     )
 
     await delay(PHASE_DELAYS_MS.analyzing)
+    throwIfEngineAborted(runEpoch)
 
     const pageSnapshots = await fetchPageContentSnapshots(savedPages, fetchContext)
+    throwIfEngineAborted(runEpoch)
 
     const pagesForAnalysis = await Promise.all(
       savedPages.map(async (page) => {
@@ -240,6 +251,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       },
       {
         onPageAnalyzed: async (snapshot, findingCount) => {
+          throwIfEngineAborted(runEpoch)
           await createHistoryEvent(
             auditId,
             "analyzing",
@@ -248,6 +260,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
         },
       }
     )
+    throwIfEngineAborted(runEpoch)
 
     if (scoredFindings.length > 0) {
       const now = new Date().toISOString()
@@ -326,6 +339,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
         : ""
 
     await delay(PHASE_DELAYS_MS.finalizing)
+    throwIfEngineAborted(runEpoch)
 
     await createHistoryEvent(
       auditId,
@@ -346,6 +360,12 @@ export async function runAuditEngine(auditId: string): Promise<void> {
     }
     await auditListRepository.syncAuditFromSession(auditId)
   } catch (error) {
+    if (error instanceof AuditEngineAbortedError) {
+      // Logout aborted this run. The row was converted to a draft (or will be
+      // reclaimed by the stale watchdog) — write nothing more.
+      return
+    }
+
     const message =
       error instanceof Error ? error.message : "Audit session failed unexpectedly"
 

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { AppPageShell } from "@/components/layout/AppPageShell"
 import { AuditReportBody } from "@/features/audits/components/AuditReportBody"
 import { AuditReportSkeleton } from "@/features/audits/components/AuditReportSkeleton"
+import { DraftAuditScreen } from "@/features/audits/components/DraftAuditScreen"
 import { useAsyncData } from "@/hooks/useAsyncData"
 import { useVertlyPageContext } from "@/features/vertly/hooks/useVertly"
 import { buildVertlyAuditSnapshotFromDetail } from "@/features/vertly/routing/buildVertlyAuditSnapshot"
@@ -112,11 +113,17 @@ function AuditDetailContent({
   const running = isAuditInProgress(audit.status)
   const [showExecution, setShowExecution] = useState(running)
 
+  const isDraft = audit.status === "draft"
+
   useEffect(() => {
     if (running) {
       setShowExecution(true)
     }
   }, [running, audit.id])
+
+  if (isDraft) {
+    return <DraftAuditScreen audit={audit} auditType={auditType} />
+  }
 
   if (running && showExecution) {
     return (

@@ -68,6 +68,26 @@ import type {
 
 const SAMPLE_AUDIT_ID = "audit-1"
 
+/**
+ * The database is authoritative for audit-start entitlement (atomic trigger).
+ * Map its raised errors to the client-facing AuditLimitError.
+ */
+function rethrowAuditStartError(error: unknown): never {
+  const message = error instanceof Error ? error.message : ""
+
+  if (message.includes("AUDIT_LIMIT_REACHED")) {
+    throw new AuditLimitError("You have used all audits included in your plan.")
+  }
+  if (message.includes("AUDIT_SUBSCRIPTION_INACTIVE")) {
+    throw new AuditLimitError("Your subscription is not active.")
+  }
+  if (message.includes("AUDIT_SUBSCRIPTION_MISSING")) {
+    throw new AuditLimitError("Subscription not found. Visit billing to restore audit access.")
+  }
+
+  throw error instanceof Error ? error : new Error("Unable to start audit. Please try again.")
+}
+
 async function resolveUserId(): Promise<string> {
   const session = getCachedAuthSession() ?? (await authService.getSession())
   return session?.userId ?? "anonymous"
@@ -205,12 +225,20 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
       throw new Error("Draft not found.")
     }
 
-    const updated = await updateSessionFields(input.draftId, {
-      websiteUrl: validation.sanitizedUrl,
-      auditType,
-      status: "pending",
-      errorMessage: null,
-    })
+    // The restart reuses the draft's row id — drop any detail cached under it.
+    invalidateCompletedAuditDetail(input.draftId)
+
+    let updated: AuditSession | null
+    try {
+      updated = await updateSessionFields(input.draftId, {
+        websiteUrl: validation.sanitizedUrl,
+        auditType,
+        status: "pending",
+        errorMessage: null,
+      })
+    } catch (error) {
+      rethrowAuditStartError(error)
+    }
 
     if (!updated) {
       throw new Error("Unable to start audit from draft.")
@@ -218,12 +246,16 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
 
     auditSession = updated
   } else {
-    auditSession = await createSession(
-      userId,
-      validation.sanitizedUrl,
-      workspaceId,
-      { auditType }
-    )
+    try {
+      auditSession = await createSession(
+        userId,
+        validation.sanitizedUrl,
+        workspaceId,
+        { auditType }
+      )
+    } catch (error) {
+      rethrowAuditStartError(error)
+    }
   }
 
   if (shouldUseSupabaseAudits()) {

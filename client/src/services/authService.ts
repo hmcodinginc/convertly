@@ -1,7 +1,9 @@
 import { clearAllPaymentClientState } from "@/lib/checkoutPersistence"
 import { clearVertlyLocalCache } from "@/features/vertly/services/vertlyPersistence"
 import { getInAppPasswordResetRedirectUrl } from "@/lib/authRedirects"
-import { shouldUseLocalAuth } from "@/lib/env"
+import { shouldUseLocalAuth, shouldUseSupabaseAudits } from "@/lib/env"
+import { abortAuditEngines } from "@/services/audit/auditEngineAbort"
+import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import {
   bootstrapPasswordRecoveryFromUrl,
   clearPasswordRecovery,
@@ -433,6 +435,11 @@ export async function completePasswordRecovery(
 export async function logout(): Promise<void> {
   const session = await getSession()
 
+  // Stop any in-flight engine run first: a zombie engine on the login page
+  // keeps issuing failing network calls (disrupting Turnstile initialization)
+  // and races the draft conversion below.
+  abortAuditEngines()
+
   clearAllPaymentClientState()
   clearVertlyLocalCache(session?.userId)
 
@@ -446,7 +453,17 @@ export async function logout(): Promise<void> {
 
   }
 
-
+  // A run interrupted by logout can never resume (the engine runs client-side).
+  // Convert in-flight audits to drafts while still authenticated so the user
+  // can restart them later. Best-effort: the stale watchdog covers failures.
+  if (shouldUseSupabaseAudits()) {
+    try {
+      const supabase = getSupabaseClient()
+      await supabase.rpc("convert_my_running_audits_to_drafts")
+    } catch {
+      // Non-fatal — abandoned runs are failed by the stale watchdog instead.
+    }
+  }
 
   resetPasswordRecoveryState()
 
