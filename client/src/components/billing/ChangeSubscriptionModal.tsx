@@ -44,8 +44,8 @@ function ChangeSubscriptionModal({
     >
       <div className="space-y-4">
         <Text size="sm" className="max-w-none leading-6 text-foreground/90">
-          Due to Razorpay subscription rules for recurring domestic card payments, your
-          current subscription cannot be changed directly.
+          Due to Razorpay&apos;s rules for recurring payment mandates (cards, UPI, and
+          eMandate), your current subscription cannot be changed directly.
         </Text>
         <Text size="sm" className="max-w-none leading-6 text-muted">
           Your current subscription will remain active until {renewalLabel}. You can choose

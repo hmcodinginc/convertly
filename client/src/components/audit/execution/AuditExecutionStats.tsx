@@ -63,7 +63,7 @@ const AuditExecutionStats = memo(function AuditExecutionStats({
     { label: "Critical issues", value: metrics.criticalIssues },
     { label: "High issues", value: metrics.highIssues },
     { label: "Medium issues", value: metrics.mediumIssues },
-    { label: "Screenshots captured", value: metrics.screenshotsCaptured },
+    { label: "Low issues", value: metrics.lowIssues },
   ]
 
   return (

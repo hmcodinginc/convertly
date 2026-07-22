@@ -5,6 +5,7 @@ import { RENDER_CONFIDENCE_UX_THRESHOLD } from "@/services/audit/intelligence/re
 import {
   isConversionDomRule,
   isDomDependentRule,
+  isFormDetectionRule,
   isRenderSensitiveRule,
 } from "@/services/audit/intelligence/rendering/renderSensitiveRules"
 import type { WebsiteIntent } from "@/services/audit/intelligence/websiteIntentTypes"
@@ -145,7 +146,15 @@ export function applyRenderReliabilityToFindings(
   const { pageConfidence, score: siteScore, signals } = context.siteRenderConfidence
 
   return findings.map((finding) => {
-    if (!isRenderSensitiveRule(finding.ruleId)) {
+    const pageScore = pageRenderScore(finding, pageConfidence, siteScore)
+    const pageSignals = finding.pageId
+      ? pageConfidence[finding.pageId]?.signals ?? signals
+      : signals
+    const lowConfidenceForm =
+      isFormDetectionRule(finding.ruleId) && finding.confidence > 0 && finding.confidence < 65
+    const renderSensitive = isRenderSensitiveRule(finding.ruleId)
+
+    if (!renderSensitive && !lowConfidenceForm) {
       return {
         ...finding,
         verificationStatus: "confirmed" as const,
@@ -155,13 +164,14 @@ export function applyRenderReliabilityToFindings(
       }
     }
 
-    const pageScore = pageRenderScore(finding, pageConfidence, siteScore)
-    const pageSignals = finding.pageId
-      ? pageConfidence[finding.pageId]?.signals ?? signals
-      : signals
-    const suppressRec = shouldSuppressRecommendation(finding, context, pageScore)
+    const suppressRec =
+      lowConfidenceForm || shouldSuppressRecommendation(finding, context, pageScore)
 
-    if (pageScore >= RENDER_CONFIDENCE_UX_THRESHOLD && !suppressRec) {
+    if (
+      !lowConfidenceForm &&
+      pageScore >= RENDER_CONFIDENCE_UX_THRESHOLD &&
+      !suppressRec
+    ) {
       return {
         ...finding,
         verificationStatus: "confirmed" as const,
@@ -172,9 +182,23 @@ export function applyRenderReliabilityToFindings(
       }
     }
 
-    const reason = buildVerificationReason(pageScore, pageSignals, context.highRiskPlatform)
+    const reason = lowConfidenceForm
+      ? "Authentication UI appears JavaScript- or OAuth-based — a standard HTML form was not confidently detected"
+      : buildVerificationReason(pageScore, pageSignals, context.highRiskPlatform)
     const meta = getRuleMetadata(finding.ruleId)
     const baseTitle = meta?.title ?? finding.title
+    const formSoftened = isFormDetectionRule(finding.ruleId)
+    const softenedTitle = formSoftened
+      ? baseTitle.replace(/^Missing /i, "").replace(/^No /i, "")
+      : baseTitle
+    const title = finding.title.startsWith(COULD_NOT_VERIFY_TITLE_PREFIX)
+      ? finding.title
+      : formSoftened
+        ? `${softenedTitle} could not be confidently detected`
+        : `${COULD_NOT_VERIFY_TITLE_PREFIX}${baseTitle}`
+    const description = formSoftened
+      ? `${MANUAL_VERIFICATION_LABEL}. This page appears to rely on JavaScript or a custom/OAuth login flow — a standard HTML form was not verified. ${reason}. A reachable page does not guarantee a detectable HTML form.`
+      : `${MANUAL_VERIFICATION_LABEL}. This is not a confirmed issue — the engine could not verify the DOM. ${reason}.`
 
     return {
       ...finding,
@@ -183,11 +207,9 @@ export function applyRenderReliabilityToFindings(
       excludeFromScoring: true,
       suppressRecommendation: true,
       confidence: Math.min(finding.confidence, Math.round(pageScore * 100)),
-      title: finding.title.startsWith(COULD_NOT_VERIFY_TITLE_PREFIX)
-        ? finding.title
-        : `${COULD_NOT_VERIFY_TITLE_PREFIX}${baseTitle}`,
+      title,
       verificationReason: reason,
-      description: `${MANUAL_VERIFICATION_LABEL}. This is not a confirmed issue — the engine could not verify the DOM. ${reason}.`,
+      description,
       recommendation: suppressRec
         ? `${MANUAL_VERIFICATION_LABEL} — recommendation suppressed (${reason}).`
         : `${MANUAL_VERIFICATION_LABEL} — ${reason}. Verify manually before acting.`,

@@ -9,7 +9,7 @@ export const AUDIT_EXECUTION_STAGES: AuditExecutionStageDefinition[] = [
   { id: "preparing-workspace", label: "Preparing workspace" },
   { id: "validating-website", label: "Validating website" },
   { id: "discovering-pages", label: "Discovering pages" },
-  { id: "capturing-screenshots", label: "Capturing screenshots" },
+  { id: "capturing-screenshots", label: "Collecting page snapshots" },
   { id: "rendering-dom", label: "Rendering DOM" },
   { id: "detecting-navigation", label: "Detecting navigation" },
   { id: "detecting-ctas", label: "Detecting CTAs" },

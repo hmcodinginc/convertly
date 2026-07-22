@@ -29,7 +29,7 @@ function RecommendationCards({
       <EmptyState
         icon={Sparkles}
         title="No recommendations yet"
-        description="Run an audit to generate AI-powered conversion recommendations for your funnel."
+        description="Run an audit to generate prioritized conversion recommendations for your funnel."
         action={{ label: "Run audit", to: emptyActionTo }}
       />
     )

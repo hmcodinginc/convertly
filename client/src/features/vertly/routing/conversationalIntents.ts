@@ -54,7 +54,7 @@ const CONVERSATIONAL_INTENTS: ConversationalIntent[] = [
     ],
     patterns: [/^(hi|hello|hey|yo|sup|howdy)\b/, /^good (morning|afternoon|evening)\b/],
     response: reply(
-      "Hey — good to see you. I'm **Vertly**, Convertly's AI Product Specialist.\n\n" +
+      "Hey — good to see you. I'm **Vertly**, Convertly's product specialist.\n\n" +
         "Ask me about audits, reports, your plan, billing, or workspace."
     ),
   },
@@ -92,7 +92,7 @@ const CONVERSATIONAL_INTENTS: ConversationalIntent[] = [
     ],
     patterns: [/\bwho (are|is) (you|vertly)\b/, /\bwhat (are|is) (you|vertly)\b/, /\btell me about yourself\b/],
     response: reply(
-      "I'm **Vertly**, Convertly's AI Product Specialist.\n\n" +
+      "I'm **Vertly**, Convertly's product specialist.\n\n" +
         "I help you understand audits, reports, dashboards, billing, workspaces, and how to improve your website with Convertly.\n\n" +
         "I'm focused on Convertly — not a general-purpose chatbot."
     ),
@@ -265,8 +265,9 @@ const CONVERSATIONAL_INTENTS: ConversationalIntent[] = [
     exact: ["what is growth score", "whats growth score", "explain growth score"],
     patterns: [/\bwhat('?s| is) (the )?growth score\b/, /\bexplain (the )?growth score\b/],
     response: reply(
-      "**Growth Score** is Convertly's overall conversion-readiness score for an audit.\n\n" +
-        "It rolls up category performance and findings into one number you can track over time."
+      "**Growth Score** measures overall conversion readiness and weighted business impact. It is not based solely on the number of issues.\n\n" +
+        "Higher-weight conversion blockers influence the score more than many low-impact findings.\n\n" +
+        "Track it over re-audits to measure progress after you ship fixes."
     ),
   },
   {
@@ -399,7 +400,7 @@ const CONVERSATIONAL_INTENTS: ConversationalIntent[] = [
     id: "name",
     exact: ["whats your name", "what is your name", "do you have a name"],
     patterns: [/\bwhat('?s| is) your name\b/, /\bdo you have a name\b/],
-    response: reply("I'm **Vertly** — Convertly's AI Product Specialist."),
+    response: reply("I'm **Vertly** — Convertly's product specialist."),
   },
   {
     id: "bored",

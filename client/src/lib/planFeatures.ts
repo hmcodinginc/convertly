@@ -14,7 +14,7 @@ export function getPlanFeatureList(planId: EffectivePlanId): string[] {
     auditLabel,
     "Full Funnel Audit",
     "Page Specific Audit",
-    "AI Recommendations",
+    "Prioritized Recommendations",
     "PDF Reports",
   ]
 }

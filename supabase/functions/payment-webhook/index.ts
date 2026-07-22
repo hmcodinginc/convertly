@@ -12,9 +12,12 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405)
   }
 
+  let eventType = "unknown"
+
   try {
     const provider = getPaymentProvider()
     const event = await provider.verifyWebhook(req)
+    eventType = event.eventType
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")
     const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY")
@@ -32,7 +35,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ received: true }, 200)
   } catch (error) {
     const message = error instanceof Error ? error.message : "Webhook handler failed"
-    console.error(message)
+    // Structured log so failures are searchable in Supabase function logs.
+    console.error(
+      JSON.stringify({ fn: "payment-webhook", eventType, error: message })
+    )
     return jsonResponse({ error: message }, 400)
   }
 })

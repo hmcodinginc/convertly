@@ -15,6 +15,7 @@ import {
   userHasAudits as userHasAuditsForUser,
 } from "@/services/audit/dashboardAnalytics"
 import { startAuditEngine } from "@/services/audit/auditEngine"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import { delay } from "@/services/internal/delay"
 import * as auditDetailRepository from "@/services/internal/auditDetailRepository"
 import * as auditListRepository from "@/services/internal/auditListRepository"
@@ -271,6 +272,11 @@ export async function createAudit(input: CreateAuditInput): Promise<Audit> {
   }
 
   startAuditEngine(auditSession.id)
+  trackProductEvent("audit_started", {
+    auditId: auditSession.id,
+    auditType: resolveStoredAuditType(input.auditType),
+    restartedFromDraft: Boolean(input.draftId),
+  })
 
   return listEntry
 }

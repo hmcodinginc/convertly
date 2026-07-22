@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 const trustCards = [
   {
-    title: "AI-first growth workflows",
+    title: "Insight-first growth workflows",
     description: "Turn raw analytics into precise, ranked opportunities without adding process weight.",
     icon: (
       <svg className="size-5 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

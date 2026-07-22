@@ -62,7 +62,7 @@ function HeroSection() {
                 className="inline-flex w-fit max-w-none items-center rounded-full border border-[color-mix(in_srgb,var(--accent)_26%,var(--border))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_90%,transparent),color-mix(in_srgb,var(--surface)_80%,transparent))] px-3.5 py-1.5 text-[0.7rem] font-medium tracking-[0.16em] uppercase text-foreground/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_color-mix(in_srgb,var(--accent)_12%,transparent)]"
               >
                 <span className="mr-2 inline-block size-1.5 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)]" />
-                AI GROWTH INTELLIGENCE
+                GROWTH INTELLIGENCE
               </Text>
             </FadeIn>
 
@@ -245,7 +245,7 @@ function HeroSection() {
                             <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z" />
                           </svg>
                           <Text size="sm" className="max-w-none text-[0.72rem] font-bold tracking-wider uppercase text-foreground/75">
-                            AI Recommendation
+                            Top Recommendation
                           </Text>
                         </div>
                         <span className="text-[0.66rem] font-bold tracking-wider text-[var(--accent)] uppercase">NEXT</span>

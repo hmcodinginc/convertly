@@ -19,7 +19,7 @@ export const AUTH_SHOWCASE_SLIDES = [
   },
   {
     id: "recommendations",
-    eyebrow: "AI recommendations",
+    eyebrow: "Recommendations",
     title: "Actionable fixes, not generic advice",
     description:
       "Convertly turns findings into prioritized experiments with estimated lift and clear implementation direction.",

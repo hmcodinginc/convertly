@@ -51,7 +51,7 @@ const recommendationMeta: Record<
 
 const workflowSteps = [
   { step: "01", label: "Website", detail: "Connect your URL" },
-  { step: "02", label: "AI Analysis", detail: "Map friction & intent" },
+  { step: "02", label: "Automated Analysis", detail: "Map friction & intent" },
   { step: "03", label: "Prioritized Actions", detail: "Rank by impact" },
   { step: "04", label: "Results", detail: "Track conversion lift" },
 ] as const

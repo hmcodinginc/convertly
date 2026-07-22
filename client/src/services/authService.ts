@@ -3,6 +3,7 @@ import { clearVertlyLocalCache } from "@/features/vertly/services/vertlyPersiste
 import { getInAppPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import { shouldUseLocalAuth, shouldUseSupabaseAudits } from "@/lib/env"
 import { abortAuditEngines } from "@/services/audit/auditEngineAbort"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import {
   bootstrapPasswordRecoveryFromUrl,
@@ -277,7 +278,7 @@ function buildAccountFromSession(session: AuthSession): AccountInfo {
 
     createdAt: session.createdAt,
 
-    plan: "Free",
+    plan: "",
 
     authProvider: "Email",
 
@@ -327,7 +328,9 @@ export async function login(input: LoginInput): Promise<AuthResult> {
 
 
 
-  return supabaseAuth.signInWithSupabase(input)
+  const result = await supabaseAuth.signInWithSupabase(input)
+  trackProductEvent("login")
+  return result
 
 }
 
@@ -343,7 +346,9 @@ export async function signup(input: SignupInput): Promise<AuthResult> {
 
 
 
-  return supabaseAuth.signUpWithSupabase(input)
+  const result = await supabaseAuth.signUpWithSupabase(input)
+  trackProductEvent("signup")
+  return result
 
 }
 

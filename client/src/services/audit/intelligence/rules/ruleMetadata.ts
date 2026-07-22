@@ -136,6 +136,8 @@ export const RULE_METADATA: RuleMetadata[] = [
   // SEO & metadata
   meta("seo-missing-canonical", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.6, tags: ["seo"], title: "Missing canonical URL" }),
   meta("seo-missing-og-tags", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.58, tags: ["seo"], title: "Missing Open Graph tags" }),
+  meta("seo-missing-twitter-cards", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.52, tags: ["seo"], title: "Missing Twitter Card metadata" }),
+  meta("seo-missing-schema", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.55, tags: ["seo"], title: "Missing structured data (Schema.org)" }),
   meta("seo-missing-lang", { scope: "page", packIds: ["shared.technical"], category: "technical", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.68, tags: ["seo", "accessibility"], title: "Missing html lang attribute" }),
 
   // Performance & technical
@@ -174,6 +176,10 @@ export const RULE_METADATA: RuleMetadata[] = [
   meta("site-missing-services-link", { scope: "site", packIds: ["site.navigation-trust"], category: "trust", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.78, tags: ["site"], title: "Missing services page" }),
   meta("site-missing-pricing-link", { scope: "site", packIds: ["site.navigation-trust"], category: "conversion", severity: "medium", scoreCategory: "conversion", businessImpact: "medium", weight: 0.8, tags: ["site", "pricing"], title: "Missing pricing page link" }),
   meta("site-missing-blog-link", { scope: "site", packIds: ["site.navigation-trust"], category: "ux", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.58, tags: ["site", "blog"], title: "Missing blog or resources link" }),
+  meta("site-missing-robots-txt", { scope: "site", packIds: ["site.navigation-trust"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.5, tags: ["site", "seo"], title: "Missing robots.txt" }),
+  meta("site-missing-sitemap", { scope: "site", packIds: ["site.navigation-trust"], category: "technical", severity: "low", scoreCategory: "ux", businessImpact: "low", weight: 0.52, tags: ["site", "seo"], title: "Missing sitemap.xml" }),
+  meta("site-unreachable-internal-pages", { scope: "site", packIds: ["site.navigation-trust"], category: "technical", severity: "medium", scoreCategory: "ux", businessImpact: "medium", weight: 0.72, tags: ["site", "seo"], title: "Unreachable internal pages discovered" }),
+  meta("site-mixed-content", { scope: "site", packIds: ["site.navigation-trust"], category: "technical", severity: "medium", scoreCategory: "trust", businessImpact: "medium", weight: 0.7, tags: ["site", "security"], title: "Mixed content (HTTP resources on HTTPS)" }),
 ]
 
 const metadataById = new Map(RULE_METADATA.map((entry) => [entry.id, entry]))

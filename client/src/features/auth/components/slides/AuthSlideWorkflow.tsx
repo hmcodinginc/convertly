@@ -15,7 +15,7 @@ const workflowSteps = [
   },
   {
     icon: Sparkles,
-    label: "AI analysis",
+    label: "Automated analysis",
     detail: "Map friction, intent gaps, and trust signals",
   },
   {

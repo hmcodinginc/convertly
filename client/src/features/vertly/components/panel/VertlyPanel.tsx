@@ -145,7 +145,7 @@ function VertlyPanel({
             </span>
             <div>
               <p className="vertly-panel__title">Vertly</p>
-              <p className="vertly-panel__subtitle">AI Product Specialist</p>
+              <p className="vertly-panel__subtitle">Product Specialist</p>
             </div>
           </div>
           <button

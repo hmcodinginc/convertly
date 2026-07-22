@@ -1,4 +1,5 @@
 import { createLogger } from "@/lib/logger"
+import { captureMonitoredError } from "@/lib/monitoring"
 
 const toastLogger = createLogger("toast")
 
@@ -61,6 +62,7 @@ export function showErrorToast(title: string, error: unknown): void {
   toastLogger.error(title, {
     error: error instanceof Error ? error.message : String(error),
   })
+  captureMonitoredError(error, { toastTitle: title })
   showToast({
     variant: "error",
     title,

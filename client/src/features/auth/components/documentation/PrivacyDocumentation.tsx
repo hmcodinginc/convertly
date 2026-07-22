@@ -65,9 +65,9 @@ function PrivacyDocumentation() {
       <DocumentationSection id="audit-data" title="Audit Data" icon={FileSearch}>
         <p>
           When you run an audit, Convertly discovers and analyzes publicly reachable pages from the
-          URL you submit. This may include page titles, DOM structure, metadata, screenshots, and
-          derived findings. Audit artifacts may be stored in your workspace history while your
-          account is active.
+          URL you submit. This may include page titles, DOM structure, metadata, and derived
+          findings. Audit artifacts may be stored in your workspace history while your account is
+          active.
         </p>
         <Callout variant="info" title="Your responsibility">
           Do not submit URLs containing credentials, private intranet addresses, personal data you

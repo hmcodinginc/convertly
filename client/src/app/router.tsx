@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { AuthSessionProvider } from "@/components/auth/AuthSessionProvider"
+import { ScrollToTop } from "@/components/routing/ScrollToTop"
 import { GuestRoute } from "@/components/auth/GuestRoute"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
@@ -34,6 +35,7 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <AuthSessionProvider>
+        <ScrollToTop />
         <Routes>
         <Route element={<MarketingLayout />}>
           <Route path={ROUTES.home} element={<HomePage />} />

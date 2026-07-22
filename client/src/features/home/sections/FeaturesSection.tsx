@@ -242,7 +242,7 @@ const features = [
     visual: "queue",
   },
   {
-    title: "AI Guidance",
+    title: "Actionable Guidance",
     description:
       "Turn findings into concise recommendations with clear ownership and implementation direction.",
     gridClassName: "sm:col-span-1 lg:col-span-1",

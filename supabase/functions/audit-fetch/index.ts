@@ -128,10 +128,21 @@ async function fetchRemotePage(url: string): Promise<FetchResult> {
     }
 
     const contentType = response.headers.get("content-type") ?? ""
+    const path = new URL(finalUrl).pathname.toLowerCase()
+    const allowPlainText =
+      path === "/robots.txt" ||
+      path.endsWith("/robots.txt") ||
+      (path.includes("sitemap") && (path.endsWith(".xml") || path.endsWith(".txt")))
+
     const isHtml =
       contentType.includes("text/html") || contentType.includes("application/xhtml")
+    const isText =
+      contentType.includes("text/plain") ||
+      contentType.includes("text/xml") ||
+      contentType.includes("application/xml") ||
+      contentType.includes("application/rss")
 
-    if (!isHtml) {
+    if (!isHtml && !(allowPlainText && (isText || contentType === ""))) {
       return {
         ok: false,
         status: response.status,

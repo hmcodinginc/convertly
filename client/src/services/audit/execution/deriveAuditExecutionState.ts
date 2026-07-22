@@ -34,17 +34,9 @@ function getAnalyzedPathsFromHistory(history: AuditSessionData["history"]): Set<
   return paths
 }
 
-function countScreenshotsCaptured(pages: AuditSessionData["pages"]): number {
-  return pages.reduce((count, page) => {
-    const desktop = page.screenshots.desktop.captureStatus === "captured" ? 1 : 0
-    const mobile = page.screenshots.mobile.captureStatus === "captured" ? 1 : 0
-    return count + desktop + mobile
-  }, 0)
-}
-
 function countFindingsBySeverity(
   findings: AuditSessionData["findings"],
-  severity: "critical" | "high" | "medium"
+  severity: "critical" | "high" | "medium" | "low"
 ): number {
   return findings.filter((finding) => finding.severity === severity).length
 }
@@ -123,7 +115,7 @@ function buildMetrics(data: AuditSessionData): AuditExecutionMetrics {
     criticalIssues: countFindingsBySeverity(findings, "critical"),
     highIssues: countFindingsBySeverity(findings, "high"),
     mediumIssues: countFindingsBySeverity(findings, "medium"),
-    screenshotsCaptured: countScreenshotsCaptured(data.pages),
+    lowIssues: countFindingsBySeverity(findings, "low"),
   }
 }
 

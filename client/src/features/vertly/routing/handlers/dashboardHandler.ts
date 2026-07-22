@@ -67,6 +67,9 @@ export function handleDashboardRoute(
     suggestions: [
       { id: "db-metrics", label: "Explain metrics", prompt: "Explain metrics." },
       { id: "db-fix", label: "What to fix first", prompt: "Which issue should I fix first?" },
+      { id: "db-growth", label: "Growth Score", prompt: "What is Growth Score?" },
+      { id: "db-queue", label: "Opportunity queue", prompt: "What is the opportunity queue?" },
+      { id: "db-usage", label: "Audits remaining", prompt: "How many audits do I have left?" },
     ],
   }
 }

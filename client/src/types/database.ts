@@ -449,6 +449,27 @@ export type Database = {
         }
         Relationships: []
       }
+      product_events: {
+        Row: {
+          id: string
+          user_id: string
+          event: string
+          properties: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          event: string
+          properties?: Json
+          created_at?: string
+        }
+        Update: {
+          event?: string
+          properties?: Json
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           user_id: string

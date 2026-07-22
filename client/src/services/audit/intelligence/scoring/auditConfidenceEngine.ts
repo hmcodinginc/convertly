@@ -54,16 +54,6 @@ function confidenceLabel(tier: "High" | "Medium" | "Low"): string {
   return `${tier} confidence`
 }
 
-function screenshotSuccessRate(pages: AuditPage[]): number {
-  if (pages.length === 0) return 50
-  const withPlaceholder = pages.filter(
-    (page) =>
-      page.screenshots.desktop.captureStatus !== "pending" ||
-      page.screenshots.mobile.captureStatus !== "pending"
-  ).length
-  return (withPlaceholder / pages.length) * 100
-}
-
 /**
  * Audit confidence from measurable crawl, render, and analysis signals.
  * Poor DOM quality reduces confidence — it does not directly reduce scores.
@@ -124,12 +114,13 @@ export function calculateAuditConfidenceFromSignals(input: {
       ? 85
       : Math.min(100, (input.executedRuleCount / input.applicableRuleCount) * 100)
 
-  const screenshotRate = screenshotSuccessRate(input.pages)
+  // Screenshot capture is not implemented; render quality stands on its own
+  // rather than being blended with a fabricated screenshot success signal.
   const renderConfidenceComponent = (input.renderConfidenceScore ?? 0.75) * 100
 
   const confidenceScore = clampConfidence(
     crawlCompleteness * SIGNAL_WEIGHTS.crawlCompleteness +
-      ((renderQuality + screenshotRate * 0.3) / 1.3) * SIGNAL_WEIGHTS.renderQuality +
+      renderQuality * SIGNAL_WEIGHTS.renderQuality +
       domExtraction * SIGNAL_WEIGHTS.domExtraction +
       metadataCompleteness * SIGNAL_WEIGHTS.metadataCompleteness +
       analysisDepth * SIGNAL_WEIGHTS.analysisDepth +

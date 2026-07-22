@@ -36,7 +36,7 @@ export type AuditExecutionMetrics = {
   criticalIssues: number
   highIssues: number
   mediumIssues: number
-  screenshotsCaptured: number
+  lowIssues: number
 }
 
 export type AuditExecutionStatus = AuditSessionStatus | "completing"

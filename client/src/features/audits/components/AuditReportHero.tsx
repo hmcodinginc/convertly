@@ -103,11 +103,12 @@ function AuditReportHero({ audit, actions }: AuditReportHeroProps) {
         >
           <p className="audit-report-score-panel__value">{audit.overallScore}</p>
           <p className="audit-report-score-panel__label">Growth Score</p>
+          <p className="audit-report-score-panel__hint">
+            Measures conversion readiness and weighted business impact — not issue count alone.
+          </p>
           {explanation?.scoreBand ? (
             <p className="audit-report-score-panel__band">{explanation.scoreBand}</p>
-          ) : (
-            <p className="audit-report-score-panel__hint">Weighted conversion health</p>
-          )}
+          ) : null}
           {typeof meta.growthPotential === "number" ? (
             <p className="audit-report-score-panel__potential">
               Potential {meta.growthPotential}

@@ -458,6 +458,29 @@ export const PAGE_DETECTORS: Record<string, PageDetector> = {
 
   "login-missing-form": (c) => {
     if (c.metrics.formCount > 0) return pass()
+    const html = c.document.documentElement.innerHTML
+    const oauthSignals =
+      /oauth|sign in with|continue with google|continue with apple|continue with github|passkey|webauthn|accounts\.google|appleid\.apple/i.test(
+        html
+      ) ||
+      Boolean(
+        c.document.querySelector(
+          "a[href*='oauth' i], a[href*='accounts.google' i], button[data-provider], [class*='oauth' i], [class*='social-login' i]"
+        )
+      )
+    const jsShell =
+      c.metrics.visibleTextLength < 80 && c.document.querySelectorAll("script").length >= 8
+    if (oauthSignals || jsShell) {
+      return fail(58, [
+        { label: "Forms", value: "0" },
+        {
+          label: "Auth pattern",
+          value: oauthSignals
+            ? "OAuth / social / passkey signals detected — HTML form may not be present"
+            : "Page looks script-driven — form may render after JS hydration",
+        },
+      ])
+    }
     return fail(86, [{ label: "Forms", value: String(c.metrics.formCount) }])
   },
 
@@ -566,11 +589,49 @@ export const PAGE_DETECTORS: Record<string, PageDetector> = {
   },
 
   "seo-missing-og-tags": (c) => {
-    const hasOg = Boolean(
-      c.document.querySelector("meta[property='og:title' i], meta[property='og:description' i]")
+    const hasTitle = Boolean(c.document.querySelector("meta[property='og:title' i]"))
+    const hasDescription = Boolean(
+      c.document.querySelector("meta[property='og:description' i]")
     )
-    if (hasOg) return pass()
-    return fail(62, [{ label: "Open Graph", value: "og:title or og:description missing" }])
+    const hasImage = Boolean(c.document.querySelector("meta[property='og:image' i]"))
+    if (hasTitle && hasDescription && hasImage) return pass()
+    if (!hasTitle && !hasDescription) {
+      return fail(62, [{ label: "Open Graph", value: "og:title and og:description missing" }])
+    }
+    const missing = [
+      !hasTitle ? "og:title" : null,
+      !hasDescription ? "og:description" : null,
+      !hasImage ? "og:image" : null,
+    ].filter(Boolean)
+    return fail(58, [{ label: "Open Graph incomplete", value: missing.join(", ") }])
+  },
+
+  "seo-missing-twitter-cards": (c) => {
+    const hasCard = Boolean(
+      c.document.querySelector(
+        "meta[name='twitter:card' i], meta[property='twitter:card' i]"
+      )
+    )
+    const hasTitle = Boolean(
+      c.document.querySelector(
+        "meta[name='twitter:title' i], meta[property='twitter:title' i]"
+      )
+    )
+    if (hasCard || hasTitle) return pass()
+    return fail(56, [{ label: "Twitter Card", value: "twitter:card / twitter:title not found" }])
+  },
+
+  "seo-missing-schema": (c) => {
+    const hasJsonLd = Boolean(
+      c.document.querySelector("script[type='application/ld+json']")
+    )
+    const hasMicrodata = Boolean(
+      c.document.querySelector("[itemscope], [itemtype]")
+    )
+    if (hasJsonLd || hasMicrodata) return pass()
+    return fail(60, [
+      { label: "Structured data", value: "No JSON-LD or microdata schema detected" },
+    ])
   },
 
   "seo-missing-lang": (c) => {

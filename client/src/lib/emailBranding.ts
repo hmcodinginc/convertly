@@ -11,7 +11,7 @@ export const EMAIL_BRANDING = {
   },
   product: {
     name: "Convertly",
-    tagline: "AI Conversion Intelligence",
+    tagline: "Conversion Intelligence",
     appUrl: "https://convertly.app",
     logoAlt: "Convertly logo",
   },

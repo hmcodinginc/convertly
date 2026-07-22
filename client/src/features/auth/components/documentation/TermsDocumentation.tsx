@@ -28,7 +28,7 @@ function TermsDocumentation() {
 
       <p className="auth-doc__intro">
         These Terms &amp; Conditions (&quot;Terms&quot;) govern your access to and use of Convertly,
-        a software-as-a-service (SaaS) AI-assisted conversion audit platform owned and operated by{" "}
+        a software-as-a-service (SaaS) automated conversion audit platform owned and operated by{" "}
         {LEGAL_ENTITY_NAME}. By creating an account or using Convertly, you agree to these Terms.
       </p>
 
@@ -48,7 +48,7 @@ function TermsDocumentation() {
         </p>
         <p>
           All intellectual property in Convertly — including software, audit engine, branding,
-          documentation, and AI-generated report formats — remains the exclusive property of{" "}
+          documentation, and generated report formats — remains the exclusive property of{" "}
           {LEGAL_ENTITY_NAME}.
         </p>
       </DocumentationSection>
@@ -126,9 +126,9 @@ function TermsDocumentation() {
         </LegalNotice>
       </DocumentationSection>
 
-      <DocumentationSection id="ai-disclaimer" title="AI & Audit Outputs" icon={Shield}>
+      <DocumentationSection id="ai-disclaimer" title="Automated Audit Outputs" icon={Shield}>
         <p>
-          Convertly uses automated and AI-assisted analysis to generate scores, findings, and
+          Convertly uses automated, rules-based analysis to generate scores, findings, and
           recommendations. Outputs are advisory and based on publicly reachable page data at the time
           of the audit. They do not constitute legal, financial, or professional advice.
         </p>

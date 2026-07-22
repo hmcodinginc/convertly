@@ -31,6 +31,7 @@ export type SiteRuleContext = {
   session: AuditSession
   pages: AuditPage[]
   pageSnapshots: PageContentSnapshot[]
+  technicalProbes?: import("@/services/audit/intelligence/detectors/siteTechnicalProbes").SiteTechnicalProbes
 }
 
 export type IntelligenceRuleContext = PageRuleContext | SiteRuleContext

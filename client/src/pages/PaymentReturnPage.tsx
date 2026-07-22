@@ -17,6 +17,7 @@ import { markPremiumActivated } from "@/lib/premiumWelcomePersistence"
 import { billingReflectsPurchasedUpgrade } from "@/lib/paymentActivation"
 import { resolvePaymentReturnEntry } from "@/lib/paymentSession"
 import { ROUTES } from "@/lib/routes"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import type { SubscriptionPlanId } from "@/lib/billingPlans"
 import * as billingService from "@/services/billingService"
 
@@ -89,6 +90,10 @@ function PaymentReturnPage() {
         activatedAt: Date.now(),
       })
       persistPaymentNotice(userId, "subscription_activated", planName)
+      trackProductEvent("plan_activated", {
+        planId,
+        previousPlanId: entry.pending?.previousPlanId ?? "free",
+      })
       disposePaymentSession("success")
       void refreshSession()
     },

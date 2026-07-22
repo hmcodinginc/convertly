@@ -24,3 +24,8 @@ verify_jwt = true
 
 [functions.payment-webhook]
 verify_jwt = false
+
+# JWT is validated in-function for user actions; the weekly digest is
+# invoked by cron with the NOTIFICATIONS_CRON_SECRET header instead.
+[functions.email-notifications]
+verify_jwt = false

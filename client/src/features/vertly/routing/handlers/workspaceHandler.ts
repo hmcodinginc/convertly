@@ -68,6 +68,8 @@ export function handleWorkspaceRoute(
     suggestions: [
       { id: "ws-counted", label: "Why counted?", prompt: "Why was this audit counted?" },
       { id: "ws-ledger", label: "Audit ledger", href: ROUTES.workspace },
+      { id: "ws-reset", label: "Allowance reset", prompt: "When does my allowance reset?" },
+      { id: "ws-remaining", label: "Audits left", prompt: "How many audits do I have left?" },
     ],
   }
 }

@@ -24,6 +24,7 @@ export type SiteDetectorContext = {
   pageSnapshots: PageContentSnapshot[]
   combinedHtml: string
   homepage: PageContentSnapshot | null
+  technicalProbes?: import("@/services/audit/intelligence/detectors/siteTechnicalProbes").SiteTechnicalProbes
 }
 
 export function buildPageDetectorContext(context: PageRuleContext): PageDetectorContext | null {
@@ -48,6 +49,7 @@ export function buildSiteDetectorContext(context: SiteRuleContext): SiteDetector
     pageSnapshots: context.pageSnapshots,
     combinedHtml: getSuccessfulHtml(context.pageSnapshots),
     homepage: getHomepageSnapshot(context.pageSnapshots),
+    technicalProbes: context.technicalProbes,
   }
 }
 

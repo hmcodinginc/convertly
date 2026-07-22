@@ -20,6 +20,7 @@ import {
   shouldOfferPendingPlanCheckout,
 } from "@/lib/subscriptionHelpers"
 import { assertBusinessFoundationEnabled } from "@/lib/businessFoundation"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import { ensureBusinessFoundation } from "@/services/businessBootstrapService"
 import * as paymentClient from "@/services/payment/paymentClient"
 import { openRazorpaySubscriptionCheckout } from "@/services/payment/razorpayCheckout"
@@ -155,6 +156,7 @@ export async function createCheckoutSession(
   assertBusinessFoundationEnabled()
   await ensureBusinessFoundation(userId)
   const paidPlan = pricingService.assertPaidCheckoutPlan(planId)
+  trackProductEvent("checkout_started", { planId: paidPlan })
   return paymentClient.invokeCheckout(paidPlan)
 }
 

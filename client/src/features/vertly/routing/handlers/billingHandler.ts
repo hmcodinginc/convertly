@@ -92,7 +92,9 @@ export function handleBillingRoute(
     suggestions: [
       { id: "bl-plans", label: "Compare plans", prompt: "What plans does Convertly offer?" },
       { id: "bl-usage", label: "My allowance", prompt: "How many audits do I have left?" },
-      { id: "bl-upgrade", label: "View billing", href: ROUTES.billing },
+      { id: "bl-mine", label: "My plan", prompt: "What plan am I on?" },
+      { id: "bl-upgrade", label: "Should I upgrade?", prompt: "Should I upgrade?" },
+      { id: "bl-billing", label: "View billing", href: ROUTES.billing },
     ],
   }
 }
