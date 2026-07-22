@@ -168,6 +168,22 @@
   }
 }
 
+.marketing-hero-section {
+  padding-block-start: 1rem !important;
+}
+
+@media (min-width: 640px) {
+  .marketing-hero-section {
+    padding-block-start: 1.5rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .marketing-hero-section {
+    padding-block-start: 2rem !important;
+  }
+}
+
 /* Hero — center copy + card below lg (two-column desktop keeps left alignment) */
 @media (max-width: 1023px) {
   .marketing-hero-grid {
@@ -302,7 +318,7 @@
 @media (min-width: 1024px) {
   .marketing-features-grid {
     align-items: stretch;
-    grid-auto-rows: 1fr;
+    grid-auto-rows: auto;
   }
 
   .marketing-features-grid > * {
