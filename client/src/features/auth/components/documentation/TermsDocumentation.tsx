@@ -70,8 +70,18 @@ function TermsDocumentation() {
           <li>Attempt unauthorized access, scraping, reverse engineering, or interference with the platform</li>
           <li>Resell, sublicense, or misrepresent audit outputs as guaranteed business outcomes</li>
           <li>Use Convertly for unlawful, harmful, abusive, or infringing purposes</li>
+          <li>
+            Use Convertly to copy, redistribute, or commercially exploit third-party website content,
+            Open Graph images, logos, or trademarks beyond the limited display inside your own
+            Convertly reports
+          </li>
           <li>Violate the Information Technology Act, 2000 or other applicable Indian law</li>
         </ul>
+        <LegalNotice>
+          By submitting a URL, you represent that you have lawful authority to request analysis of
+          that website and that displaying publicly published metadata (including Open Graph images)
+          in your private audit report does not violate third-party rights or the site&apos;s terms.
+        </LegalNotice>
       </DocumentationSection>
 
       <DocumentationSection id="accounts" title="Accounts & Security" icon={Lock}>
@@ -139,16 +149,72 @@ function TermsDocumentation() {
         </p>
       </DocumentationSection>
 
-      <DocumentationSection id="ip" title="Intellectual Property" icon={Shield}>
+      <DocumentationSection id="third-party-content" title="Third-Party Website Content & Page Previews" icon={Globe}>
         <p>
-          Convertly, its branding, software, audit engine, user interface, and documentation are owned
-          by {LEGAL_ENTITY_NAME}. All rights not expressly granted are reserved.
+          When you run an audit, Convertly may read publicly reachable HTML and metadata from the
+          URL you submit. Reports may display a limited &quot;Page Preview&quot; using Open Graph
+          image URLs (<code>og:image</code>), favicons, titles, and similar metadata that the audited
+          website itself publishes for social and browser previews.
         </p>
         <p>
-          You retain ownership of your website content and data you submit. We grant you a limited,
-          non-exclusive, non-transferable, revocable license to use Convertly for internal business
-          purposes during an active subscription or trial. You may not copy, modify, or create
-          derivative works of the platform except as permitted by law.
+          Those images and marks remain the property of their respective owners.{" "}
+          {LEGAL_ENTITY_NAME} does <strong>not</strong> claim ownership of third-party website
+          content, Open Graph assets, logos, trademarks, or creative works shown in Page Previews.
+          Convertly does not sell, license, or redistribute those assets as a standalone product. The
+          preview is a reference thumbnail inside your audit report, loaded from the original HTTPS
+          URL published by the website (we do not purport to transfer copyright to you or to us).
+        </p>
+        <p>
+          Page Previews are not live screenshots or independent captures created by Convertly. Image
+          availability, accuracy, and licensing depend entirely on the audited site. If an image fails
+          to load or is removed by its host, Convertly may show an empty state instead.
+        </p>
+        <LegalNotice>
+          You are solely responsible for ensuring that each audited site may be analyzed and that
+          its publicly published preview assets may be displayed in your Convertly workspace. If a
+          rights holder objects to a preview, stop auditing that URL and contact us so we can
+          disable related display where reasonably practicable.
+        </LegalNotice>
+      </DocumentationSection>
+
+      <DocumentationSection id="ip" title="Intellectual Property" icon={Shield}>
+        <p>
+          Convertly, its branding, software, audit engine, user interface, documentation, Growth
+          Score methodology presentation, and report layouts are owned by {LEGAL_ENTITY_NAME}. All
+          rights not expressly granted are reserved.
+        </p>
+        <p>
+          You retain ownership of your own website content and data you submit. Third-party content
+          discovered during audits (including Open Graph images and other public metadata) remains
+          owned by the applicable third parties. Nothing in these Terms transfers ownership of that
+          third-party content to you or to {LEGAL_ENTITY_NAME}.
+        </p>
+        <p>
+          We grant you a limited, non-exclusive, non-transferable, revocable license to use
+          Convertly for internal business purposes during an active subscription or trial. You may
+          not copy, modify, or create derivative works of the platform except as permitted by law.
+          Audit report exports are licensed for your internal use only and must not be used to claim
+          ownership of third-party creative assets shown therein.
+        </p>
+      </DocumentationSection>
+
+      <DocumentationSection id="copyright-complaints" title="Copyright & Rights Complaints" icon={Scale}>
+        <p>
+          If you believe material displayed through Convertly (including a Page Preview image URL
+          associated with an audit) infringes your copyright or other IP rights, notify us at{" "}
+          <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="text-[var(--accent)] hover:underline">
+            {LEGAL_CONTACT_EMAIL}
+          </a>{" "}
+          with: (1) identification of the work claimed to be infringed; (2) the Convertly report URL
+          or audit identifier and the third-party image/page URL at issue; (3) your contact details;
+          and (4) a good-faith statement that the use is not authorized by the rights holder.
+        </p>
+        <p>
+          Upon a valid notice, we may remove or disable access to the disputed preview display and,
+          where appropriate, notify the user who submitted the audit. Repeat or abusive complaints
+          may be disregarded. This process is provided without admitting liability and without
+          waiving any defenses available under Indian law, including intermediary safe-harbour
+          provisions under the Information Technology Act, 2000 where applicable.
         </p>
       </DocumentationSection>
 
@@ -170,6 +236,12 @@ function TermsDocumentation() {
           recommendations.
         </p>
         <p>
+          Without limiting the foregoing, {LEGAL_ENTITY_NAME} is not liable for copyright,
+          trademark, or other IP claims arising from third-party website content, Open Graph images,
+          logos, or metadata displayed because you submitted a URL for analysis, except to the extent
+          liability cannot be excluded under mandatory law.
+        </p>
+        <p>
           Our aggregate liability for any claim relating to the service shall not exceed the fees
           paid by you to {LEGAL_ENTITY_NAME} in the twelve (12) months preceding the claim, except
           where liability cannot be limited under mandatory law.
@@ -178,10 +250,14 @@ function TermsDocumentation() {
 
       <DocumentationSection id="indemnity" title="Indemnity" icon={Scale}>
         <p>
-          You agree to indemnify and hold harmless {LEGAL_ENTITY_NAME} from claims, losses, and
-          expenses (including reasonable legal fees) arising from your misuse of Convertly, violation
-          of these Terms, unauthorized audits, or infringement of third-party rights through your
-          use of the service.
+          You agree to defend, indemnify, and hold harmless {LEGAL_ENTITY_NAME} and its officers,
+          employees, and agents from and against claims, losses, damages, liabilities, and expenses
+          (including reasonable legal fees) arising out of or related to: (a) your misuse of
+          Convertly; (b) your violation of these Terms; (c) audits you request without adequate
+          authority; (d) your reliance on audit outputs; or (e) any allegation that analysis or
+          display of a website you submitted — including its Open Graph images, logos, trademarks,
+          or other public content shown in Page Previews or reports — infringes or misappropriates
+          third-party intellectual property or other rights.
         </p>
       </DocumentationSection>
 

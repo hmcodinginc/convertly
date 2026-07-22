@@ -7,7 +7,7 @@ import { ROUTES } from "@/lib/routes"
 
 function DashboardSidebar() {
   return (
-    <aside className="hidden h-screen w-[15.5rem] shrink-0 flex-col border-r border-[color-mix(in_srgb,var(--border)_65%,transparent)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] lg:sticky lg:top-0 lg:flex">
+    <aside className="hidden h-dvh w-[15.5rem] shrink-0 flex-col border-r border-[color-mix(in_srgb,var(--border)_65%,transparent)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] lg:sticky lg:top-0 lg:flex">
       <div className="flex h-[4.5rem] shrink-0 items-center border-b border-[color-mix(in_srgb,var(--border)_65%,transparent)] px-5">
         <ConvertlyNavLogoLink to={ROUTES.dashboard} end />
       </div>

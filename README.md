@@ -28,6 +28,7 @@ Lightweight technical checks (H1, ALT, robots/sitemap, OG/Twitter cards, schema 
 - **Conversion audits** — Page discovery, static + rendered acquisition, intent-aware rule packs
 - **Growth Score (Intelligence v4)** — Weighted conversion impact (not issue count); category breakdowns and confidence
 - **SPA-aware reliability** — Softens form/DOM findings when render confidence is low or OAuth/JS shells are detected
+- **Page Preview (Open Graph)** — Report cards show the page’s `og:image` (and favicon when present) as a supporting thumbnail — not a live screenshot or capture pipeline
 - **Recommendations + playbooks** — Rule-linked fixes with implementation guidance
 - **Live execution UI** — Stage timeline, progress, bot-protection handling
 - **Exports** — PDF and structured report exports
@@ -36,7 +37,7 @@ Lightweight technical checks (H1, ALT, robots/sitemap, OG/Twitter cards, schema 
 
 - **Marketing** — Home, sample report; Vertly on public pages
 - **Dashboard** — Metrics, opportunity queue, recommendations, drafts
-- **Audits** — History, detail reports, live execution, report actions
+- **Audits** — History, detail reports with equal-height page cards, live execution, report actions
 - **Vertly** — Rule-based Convertly product specialist (message-first routing + page context; not a general LLM chatbot)
 - **Workspace** — Usage, audit ledger, domains
 - **Billing** — Free / Starter / Growth / Scale via Razorpay (Stripe-ready abstraction)
@@ -72,10 +73,13 @@ Full detail: [`Architecture.md`](./Architecture.md).
 Website → Discovery → Acquisition (static / render)
        → Website intent → Page intent → Applicability
        → Rule execution → Render reliability → Scoring → Recommendations
-       → Snapshot → Persistence → Entitlement consume → Optional email
+       → Snapshot (scores, intents, optional pagePreviews from og:image/favicon)
+       → Persistence → Entitlement consume → Optional email
 ```
 
 Audits run **in the browser tab**. Keep the tab open until completion.
+
+**Page Preview:** During analysis, HTTPS `og:image` / favicon URLs already present in the parsed DOM are stored on the intelligence snapshot (`pagePreviews`) and rendered in the report as lazy-loaded thumbnails. Missing or broken images fall back to an empty state. This does **not** use screenshot APIs, storage buckets, or extra crawl requests at report time.
 
 ### Vertly
 
@@ -156,7 +160,7 @@ Set `VITE_AUDIT_RENDER_URL` in `client/.env` (see `client/.env.example`).
 | `VITE_SUPABASE_ANON_KEY` | Anon (public) key |
 | `VITE_APP_URL` | Public app origin for auth/billing redirects (no trailing slash) |
 | `VITE_USE_LOCAL_AUTH` | `true` localStorage auth; `false` for production |
-| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile (optional) |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile (required in production builds) |
 | `VITE_AUDIT_RENDER_URL` | Optional local render worker |
 | `VITE_SENTRY_DSN` | Optional Sentry DSN (production only) |
 
@@ -237,6 +241,7 @@ Follow [`LAUNCH-CHECKLIST.md`](./LAUNCH-CHECKLIST.md) for Razorpay live cutover,
 ### Shipped
 
 - Conversion audit engine + Growth Score + confidence / SPA softening
+- Open Graph **Page Preview** on report page cards (metadata thumbnails, not screenshots)
 - Business foundation, billing, workspace ledger
 - Vertly Convertly-only routing + expanded context suggestions
 - Live execution, sample report, notifications plumbing
@@ -247,6 +252,8 @@ Follow [`LAUNCH-CHECKLIST.md`](./LAUNCH-CHECKLIST.md) for Razorpay live cutover,
 - Team invitations / org workspaces
 - Optional hosted LLM provider for Vertly (routing unchanged)
 - Stronger crawl for geo-restricted / heavily blocked sites
+- Real screenshot capture pipeline (placeholders today — separate from Page Preview)
+- Server-side audit job runner (replace browser-tab engine)
 - Razorpay live-mode cutover after QA (see launch checklist)
 
 ---

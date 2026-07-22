@@ -266,16 +266,17 @@
 .audit-overview-grid {
   display: grid;
   gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .audit-overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .audit-overview-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1082,6 +1083,12 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.audit-page-grid > * {
+  min-width: 0;
+  height: 100%;
 }
 
 .audit-overview-grid {
@@ -1106,13 +1113,11 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .audit-overview-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-}
 
-@media (min-width: 1024px) {
   .audit-score-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.25rem;
@@ -1128,7 +1133,29 @@
 
 /* ── Responsive: width breakpoints ─────────────────────── */
 
-@media (max-width: 1279px) {
+@media (max-width: 1023px) {
+  .audit-report-nav {
+    /* Sit below sticky DashboardTopBar (h-14) when document scrolls */
+    top: 3.5rem;
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .audit-report-page .app-section {
+    scroll-margin-top: 7.5rem;
+  }
+
+  .sample-report-body .audit-report-nav {
+    /* Marketing Navbar: pt-3 + h-14 */
+    top: 4.25rem;
+  }
+
+  .sample-report-body.audit-report-page .app-section {
+    scroll-margin-top: 8.25rem;
+  }
+}
+
+@media (max-width: 1279px) and (min-width: 1024px) {
   .audit-report-nav {
     top: 0;
     margin-inline: -0.25rem;
@@ -1302,19 +1329,6 @@
     padding: 1.125rem;
   }
 
-  .audit-page-card__metrics {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.875rem;
-  }
-
-  .audit-page-card__metrics-body {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.625rem 1rem;
-  }
-
   .audit-score-insight__summary-body {
     flex-direction: column;
     align-items: flex-start;
@@ -1357,6 +1371,10 @@
 }
 
 @media (max-height: 640px) {
+  .audit-report-nav {
+    position: static;
+  }
+
   .audit-report-page .app-section {
     scroll-margin-top: 3.5rem;
   }

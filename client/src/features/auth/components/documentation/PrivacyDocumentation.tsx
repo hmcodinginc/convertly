@@ -65,14 +65,23 @@ function PrivacyDocumentation() {
       <DocumentationSection id="audit-data" title="Audit Data" icon={FileSearch}>
         <p>
           When you run an audit, Convertly discovers and analyzes publicly reachable pages from the
-          URL you submit. This may include page titles, DOM structure, metadata, and derived
-          findings. Audit artifacts may be stored in your workspace history while your account is
-          active.
+          URL you submit. This may include page titles, DOM structure, metadata (such as Open Graph
+          tags), technical signals, and derived findings. Audit artifacts may be stored in your
+          workspace history while your account is active.
+        </p>
+        <p>
+          <strong>Page Preview metadata.</strong> To help you identify pages in a report, Convertly
+          may store and display the publicly published Open Graph image URL (<code>og:image</code>)
+          and favicon URL found in the page&apos;s HTML. The image itself is typically loaded by your
+          browser from the third-party host that published it. We do not claim ownership of those
+          images or marks. Where an image URL is unavailable or blocked, we show a placeholder
+          instead of downloading or rehosting the asset as a Convertly-owned file.
         </p>
         <Callout variant="info" title="Your responsibility">
           Do not submit URLs containing credentials, private intranet addresses, personal data you
           are not authorized to process, or content that violates applicable law. You must have
-          lawful authority to audit each submitted website.
+          lawful authority to audit each submitted website and to view its publicly published preview
+          assets in your Convertly account.
         </Callout>
       </DocumentationSection>
 
@@ -123,6 +132,13 @@ function PrivacyDocumentation() {
           confidentiality and security obligations. Some providers may process data outside India;
           where cross-border transfer occurs, we take steps consistent with applicable law and
           contractual safeguards.
+        </p>
+        <p>
+          Separately, audited websites and their CDNs may receive ordinary browser requests when a
+          Page Preview image or favicon is displayed in your report. Those requests go to the
+          third-party hosts that published the assets; {LEGAL_ENTITY_NAME} does not control their
+          privacy practices. Review each site&apos;s policies if you need details about how they
+          handle such requests.
         </p>
       </DocumentationSection>
 

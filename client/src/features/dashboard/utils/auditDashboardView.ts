@@ -43,8 +43,24 @@ export function sortAuditsNewestFirst(audits: Audit[]): Audit[] {
     const aCompleted = a.status === "completed" || a.status === "Completed"
     const bCompleted = b.status === "completed" || b.status === "Completed"
     if (aCompleted !== bCompleted) return aCompleted ? -1 : 1
-    return b.completedAt.localeCompare(a.completedAt) * -1
+
+    const aTime = auditRecencyMs(a)
+    const bTime = auditRecencyMs(b)
+    if (aTime !== bTime) return bTime - aTime
+
+    return b.id.localeCompare(a.id)
   })
+}
+
+function auditRecencyMs(audit: Audit): number {
+  if (audit.updatedAtIso) {
+    const iso = Date.parse(audit.updatedAtIso)
+    if (!Number.isNaN(iso)) return iso
+  }
+
+  // Fallback for formatted display strings: "Jul 21, 2024 • 04:05 PM"
+  const parsed = Date.parse(audit.completedAt.replace(" • ", " "))
+  return Number.isNaN(parsed) ? 0 : parsed
 }
 
 export function getDefaultSelectedAuditId(audits: Audit[]): string | null {

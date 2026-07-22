@@ -53,13 +53,20 @@
 
   .app-toolbar__actions {
     display: flex;
+    flex-wrap: wrap;
     width: 100%;
     gap: 0.5rem;
   }
 
   .app-toolbar__actions > * {
-    flex: 1 1 0;
+    flex: 1 1 calc(50% - 0.25rem);
     min-width: 0;
+  }
+
+  .app-toolbar__actions button {
+    white-space: normal;
+    height: auto;
+    min-height: 2.25rem;
   }
 }
 
@@ -271,6 +278,13 @@
 @media (max-height: 760px) {
   .app-page--execution {
     padding-block: 0.5rem;
+  }
+}
+
+/* Short landscape / short viewports — don't force tall plan cards */
+@media (max-height: 500px) {
+  .billing-plan-card {
+    min-height: 0 !important;
   }
 }
 

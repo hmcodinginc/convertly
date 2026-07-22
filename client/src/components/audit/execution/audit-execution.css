@@ -226,7 +226,9 @@
 }
 
 .audit-exec-progress__meta {
-  min-width: 12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 100%;
 }
 
 .audit-exec-progress__task {

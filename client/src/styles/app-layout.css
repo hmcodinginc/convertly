@@ -909,49 +909,88 @@
 .audit-page-card {
   display: flex;
   flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.audit-page-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: start;
+}
+
+.audit-page-card__primary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   min-width: 0;
 }
 
-@media (min-width: 640px) {
-  .audit-page-card {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1.25rem;
-  }
+.audit-page-card__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4375rem;
+  min-width: 0;
 }
 
-.audit-page-card__header {
+.audit-page-card__title-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.625rem;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.audit-page-card__favicon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+  border-radius: 0.2rem;
+  object-fit: contain;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
 }
 
 .audit-page-card__title {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.02em;
   color: var(--foreground);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  /* Reserve two lines so every card header shares the same height */
+  min-height: calc(1.35em * 2);
 }
 
-.audit-page-card__url,
 .audit-page-card__path {
+  margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--muted);
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .audit-page-card__meta-row {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 0.375rem;
-  margin-top: 0.25rem;
+  min-height: 1.5rem;
 }
 
 .audit-page-card__meta-chip {
@@ -959,18 +998,48 @@
   font-weight: 500;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
   padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+.audit-page-card__metrics {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.audit-page-card__metrics-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.audit-page-card__stat {
+  text-align: left;
+}
+
+.audit-page-card__stat-value {
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
 }
 
 .audit-page-card__severity {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
-  margin-top: 0.5rem;
+  margin-top: 0;
 }
 
 .audit-page-card__severity-chip {
@@ -982,62 +1051,203 @@
 }
 
 .audit-page-card__categories {
-  margin-top: 0;
+  margin: 0;
   font-size: 0.75rem;
   line-height: 1.45;
   color: var(--muted);
 }
 
-/* Page card v2 — stacked layout for consistent scanability */
-.audit-page-card--v2 {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  height: 100%;
+.audit-page-card__footer {
+  margin-top: auto;
+  padding-top: 0.875rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
 }
 
-@media (min-width: 640px) {
-  .audit-page-card--v2 {
-    flex-direction: column;
-    align-items: stretch;
+/*
+  Compact supporting thumbnail in the footer.
+  Fixed size so OG brand art cannot dominate; empty state shares dimensions.
+*/
+.audit-page-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  width: 9.75rem;
+  max-width: 100%;
+}
+
+.audit-page-preview__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.audit-page-preview__label {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted-foreground) 82%, transparent);
+}
+
+.audit-page-preview__info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
+  cursor: help;
+}
+
+.audit-page-preview__info:hover,
+.audit-page-preview__info:focus-visible {
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  outline: none;
+}
+
+.audit-page-preview__info:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring, var(--border)) 70%, transparent);
+}
+
+.audit-page-preview__info::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 30;
+  width: max-content;
+  max-width: 14.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--popover, var(--surface)) 96%, #0a0a0a);
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 450;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, #000 28%, transparent),
+    0 8px 20px color-mix(in srgb, #000 18%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.audit-page-preview__info:hover::after,
+.audit-page-preview__info:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.audit-page-preview__frame {
+  width: 9.75rem;
+  max-width: 100%;
+  height: 3.25rem;
+  overflow: hidden;
+  border-radius: calc(var(--radius-md) - 2px);
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 14%, transparent);
+}
+
+.audit-page-preview__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.92;
+}
+
+.audit-page-preview__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  height: 100%;
+  padding: 0 0.5rem;
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+
+.audit-page-preview__empty-glyph {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--muted-foreground) 78%, transparent);
+}
+
+.audit-page-preview__empty-title {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  text-align: center;
+  white-space: normal;
+}
+
+/* Side-by-side primary + metrics on comfortable widths */
+@media (min-width: 480px) {
+  .audit-page-card__body {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1.25rem;
+    row-gap: 0;
+  }
+
+  .audit-page-card__metrics {
+    justify-self: end;
+    max-width: 11.5rem;
   }
 }
 
-.audit-page-card--v2 .audit-page-card__title {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+@media (min-width: 640px) {
+  .audit-page-card__metrics {
+    max-width: 12.5rem;
+  }
 }
 
-.audit-page-card__top {
-  min-width: 0;
+/* Narrow phones: metrics under primary, still above pinned footer */
+@media (max-width: 479px) {
+  .audit-page-card__metrics {
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 36%, transparent);
+  }
+
+  .audit-page-card__metrics-body {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.875rem;
+  }
 }
 
-.audit-page-card__metrics {
+/* Short viewports: slightly tighter thumb */
+@media (max-height: 700px) {
+  .audit-page-preview__frame {
+    height: 2.75rem;
+  }
+
+  .audit-page-card__footer {
+    padding-top: 0.625rem;
+  }
+}
+
+/* Page card equal-height grid */
+.audit-page-card--v2 {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 42%, transparent);
-}
-
-.audit-page-card__metrics-body {
-  display: flex;
-  min-width: 0;
-  flex: 1;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.audit-page-card--v2 .audit-page-card__severity {
-  margin-top: 0;
-}
-
-.audit-page-card--v2 .audit-page-card__stat {
-  text-align: left;
+  height: 100%;
 }
 
 .audit-page-card__stats {
@@ -1064,19 +1274,6 @@
     padding: 1.5rem;
   }
 
-  .audit-page-card__stats {
-    align-self: center;
-    gap: 1.5rem;
-    min-width: 7.5rem;
-    padding-inline: 0.25rem;
-  }
-
-  .audit-page-card__stat {
-    flex: 1;
-    min-width: 3.25rem;
-    text-align: center;
-  }
-
   .audit-report-layout__main .app-section {
     gap: 1.75rem;
   }
@@ -1090,19 +1287,6 @@
   .audit-score-grid {
     gap: 1.5rem;
   }
-}
-
-.audit-page-card__stat {
-  text-align: right;
-}
-
-.audit-page-card__stat-value {
-  font-size: 1.5rem;
-  font-weight: 500;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: var(--foreground);
 }
 
 .audit-metadata-value {
@@ -1176,6 +1360,30 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1.25rem;
+  }
+}
+
+.dashboard-recent-audits__history-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.dashboard-recent-audits__history-link:hover {
+  color: var(--foreground);
+}
+
+@media (min-width: 640px) {
+  .dashboard-recent-audits__history-link {
+    align-self: center;
+    min-height: 0;
   }
 }
 

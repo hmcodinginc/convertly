@@ -1,5 +1,5 @@
 import { FileSearch } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 import { AuditStatusBadge } from "@/components/audit/AuditStatusBadge"
 import {
@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { AppPageSection } from "@/components/layout/AppPageSection"
 import { Card } from "@/components/surfaces/Card"
 import { RecentAuditRowActions } from "@/features/dashboard/components/RecentAuditRowActions"
+import { sortAuditsNewestFirst } from "@/features/dashboard/utils/auditDashboardView"
 import { ROUTES, auditDetailPath } from "@/lib/routes"
 import type { Audit } from "@/types/audit"
 
@@ -25,7 +26,8 @@ type RecentAuditsSectionProps = {
 
 function RecentAuditsSection({ audits, onDeleteRequest }: RecentAuditsSectionProps) {
   const navigate = useNavigate()
-  const recentAudits = audits.slice(0, 5)
+  const recentAudits = sortAuditsNewestFirst(audits).slice(0, 5)
+  const hasMore = audits.length > 0
 
   return (
     <AppPageSection
@@ -33,6 +35,13 @@ function RecentAuditsSection({ audits, onDeleteRequest }: RecentAuditsSectionPro
       eyebrow="Activity"
       title="Recent audits"
       description="Jump back into your latest conversion reports."
+      actions={
+        hasMore ? (
+          <Link to={ROUTES.audits} className="dashboard-recent-audits__history-link">
+            View audit history →
+          </Link>
+        ) : null
+      }
     >
       {recentAudits.length === 0 ? (
         <EmptyState

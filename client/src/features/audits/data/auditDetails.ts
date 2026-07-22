@@ -88,10 +88,46 @@ function buildScoreBreakdown(overall: number): ScoreBreakdownItem[] {
 
 function buildPageFindings(overall: number): PageFinding[] {
   const pages: Omit<PageFinding, "status">[] = [
-    { id: "home", label: "Homepage", path: "/", score: overall + 4, issuesCount: 2 },
-    { id: "pricing", label: "Pricing", path: "/pricing", score: overall - 6, issuesCount: 4 },
-    { id: "signup", label: "Signup", path: "/signup", score: overall - 12, issuesCount: 5 },
-    { id: "checkout", label: "Checkout", path: "/checkout", score: overall - 8, issuesCount: 3 },
+    {
+      id: "home",
+      label: "Homepage",
+      path: "/",
+      url: "https://example.com/",
+      score: overall + 4,
+      issuesCount: 2,
+      // Sample report only — illustrates Open Graph preview when metadata exists
+      openGraphImage:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&h=630&q=80",
+      faviconUrl: "/favicon.svg",
+    },
+    {
+      id: "pricing",
+      label: "Pricing",
+      path: "/pricing",
+      url: "https://example.com/pricing",
+      score: overall - 6,
+      issuesCount: 4,
+      openGraphImage: null,
+      faviconUrl: null,
+    },
+    {
+      id: "signup",
+      label: "Signup",
+      path: "/signup",
+      url: "https://example.com/signup",
+      score: overall - 12,
+      issuesCount: 5,
+      openGraphImage: null,
+      faviconUrl: "/favicon.svg",
+    },
+    {
+      id: "checkout",
+      label: "Checkout",
+      path: "/checkout",
+      url: "https://example.com/checkout",
+      score: overall - 8,
+      issuesCount: 3,
+    },
   ]
 
   return pages.map((page) => ({

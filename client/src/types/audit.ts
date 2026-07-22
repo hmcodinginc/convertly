@@ -11,7 +11,10 @@ export type Audit = {
   name: string
   domain: string
   websiteUrl?: string
+  /** Display timestamp (formatted) */
   completedAt: string
+  /** ISO timestamp for reliable sorting — optional on legacy/mock rows */
+  updatedAtIso?: string
   pagesScanned: number
   conversionScore: number
   status: AuditStatus
@@ -118,6 +121,10 @@ export type PageFinding = {
   status: PageFindingStatus
   severityBreakdown?: PageSeverityBreakdown
   categoryBreakdown?: PageCategoryCount[]
+  /** Absolute https Open Graph preview image when captured during the audit */
+  openGraphImage?: string | null
+  /** Absolute https favicon when captured during the audit */
+  faviconUrl?: string | null
 }
 
 export type ScoreImpactItem = {
