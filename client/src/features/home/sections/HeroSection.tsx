@@ -47,14 +47,36 @@ function HeroSection() {
   return (
     <Section
       aria-labelledby="home-hero-title"
-      className="marketing-hero-section relative flex min-h-0 items-center overflow-hidden pb-6 pt-4 sm:min-h-[min(72vh,46rem)] sm:pb-12 sm:pt-0"
+      className={cn(
+        "marketing-hero-section relative flex min-h-0 items-center overflow-hidden pb-6 pt-4 sm:pb-12 sm:pt-0",
+        // Base min-height for roomy viewports
+        "sm:min-h-[min(72vh,46rem)]",
+        // On constrained viewports (e.g. ~950x1000), make the hero fill the
+        // full viewport (minus the header) as its own section. This keeps
+        // it as a clean "single screen" — the trust bar sits right below
+        // in normal document flow and only comes into view on scroll,
+        // instead of being squeezed into the same screen.
+        "[@media(max-height:1050px)]:sm:min-h-[calc(100dvh-var(--header-height,4.5rem))]"
+      )}
       containerClassName="marketing-container"
     >
       <div className="relative w-full">
         <div className="pointer-events-none absolute inset-x-0 top-[-14rem] -z-10 h-[20rem] bg-[var(--gradient-primary)] opacity-12 blur-3xl" />
 
-        <div className="marketing-hero-grid grid items-center gap-6 py-8 sm:gap-10 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-20">
-          <div className="marketing-hero-copy flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 lg:max-w-none lg:gap-7">
+        <div
+          className={cn(
+            "marketing-hero-grid grid items-center gap-6 py-8 sm:gap-10 sm:py-16",
+            // Switch to 2-column layout earlier than lg (1024px) so widths
+            // like 950px still get the side-by-side layout instead of
+            // stacking the copy + visual card, which was blowing out
+            // total page height and pushing the trust bar off-screen.
+            "min-[880px]:grid-cols-[1.05fr_0.95fr] min-[880px]:gap-12",
+            "lg:py-20",
+            // Tighten vertical rhythm on height-constrained viewports.
+            "[@media(max-height:1050px)]:py-4 [@media(max-height:1050px)]:sm:py-6 [@media(max-height:1050px)]:gap-4"
+          )}
+        >
+          <div className="marketing-hero-copy flex max-w-xl flex-col gap-5 sm:max-w-2xl sm:gap-6 min-[880px]:max-w-none min-[880px]:gap-7">
             {/* 1. Badge Text */}
             <FadeIn direction="down" distance={20} duration={0.7}>
               <Text
@@ -72,7 +94,10 @@ function HeroSection() {
                 id="home-hero-title"
                 level={1}
                 size="hero"
-                className="marketing-scroll-target max-w-[13ch] text-balance leading-[1.02] sm:max-w-[11.5ch]"
+                className={cn(
+                  "marketing-scroll-target max-w-[13ch] text-balance leading-[1.02] sm:max-w-[11.5ch]",
+                  "[@media(max-height:1050px)]:text-[clamp(1.75rem,4vw,2.5rem)]"
+                )}
               >
                 Turn more visitors <br className="hidden sm:inline" />
                 into <span className="bg-gradient-to-r from-[var(--accent)] to-[#9e91ff] bg-clip-text text-transparent">revenue.</span>
@@ -85,7 +110,7 @@ function HeroSection() {
                 variant="muted"
                 size="lg"
                 balanced
-                className="max-w-[42ch] text-foreground/68"
+                className="max-w-[42ch] text-foreground/68 [@media(max-height:1050px)]:text-sm"
               >
                 Convertly analyzes your website experience and highlights the
                 highest-impact opportunities to improve conversion — with clarity
@@ -138,21 +163,21 @@ function HeroSection() {
           </div>
 
           {/* 6. Visual Card Section */}
-          <FadeIn delay={0.2} duration={1} className="marketing-hero-visual w-full lg:pl-4">
+          <FadeIn delay={0.2} duration={1} className="marketing-hero-visual w-full min-[880px]:pl-4">
             <div className="relative mx-auto w-full max-w-xl">
               {/* Background Glows (Stationary) */}
               <div aria-hidden="true" className="pointer-events-none absolute inset-x-8 -top-4 z-0 hidden h-full rounded-[calc(var(--radius-xl)+2px)] border border-[color-mix(in_srgb,var(--border)_72%,transparent)] bg-[color-mix(in_srgb,var(--surface)_58%,transparent)] sm:block" />
-              
+
               <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                 className="relative z-10"
               >
-                <Card className="overflow-hidden marketing-card-compact p-5 sm:p-6 flex flex-col gap-4 sm:gap-5 border-[color-mix(in_srgb,var(--border)_85%,transparent)]">
+                <Card className="overflow-hidden marketing-card-compact p-5 sm:p-6 flex flex-col gap-4 sm:gap-5 border-[color-mix(in_srgb,var(--border)_85%,transparent)] [@media(max-height:1050px)]:p-4 [@media(max-height:1050px)]:gap-3">
                   <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,color-mix(in_srgb,var(--accent)_12%,transparent),transparent_58%)]" />
-                  
+
                   {/* Card Header (Staggered) */}
-                  <div className="relative flex items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_50%,transparent)] pb-4 z-10">
+                  <div className="relative flex items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_50%,transparent)] pb-4 z-10 [@media(max-height:1050px)]:pb-2.5">
                     <div className="space-y-0.5">
                       <FadeIn delay={0.8} distance={5}>
                         <Text size="sm" variant="muted" className="max-w-none text-[0.66rem] font-bold tracking-widest uppercase text-foreground/45">
@@ -172,14 +197,14 @@ function HeroSection() {
                   </div>
 
                   {/* Card Body Grid */}
-                  <div className="relative flex flex-col gap-4 sm:gap-5 z-10">
+                  <div className="relative flex flex-col gap-4 sm:gap-5 z-10 [@media(max-height:1050px)]:gap-3">
                     <div className="grid grid-cols-2 gap-3">
                       {/* Tile 1 */}
                       <FadeIn delay={1.1} distance={15} className="marketing-tile border border-[color-mix(in_srgb,var(--border)_95%,transparent)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)]">
                         <Text size="sm" variant="muted" className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54">
                           Opportunity Lift
                         </Text>
-                        <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-emerald-400 font-extrabold">
+                        <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-emerald-400 font-extrabold [@media(max-height:1050px)]:text-[1.4rem]">
                           <CountUp value={31.4} prefix="+" suffix="%" />
                         </Heading>
                         <div className="h-1 rounded-full bg-[color-mix(in_srgb,var(--surface)_76%,black)] overflow-hidden mt-3">
@@ -197,7 +222,7 @@ function HeroSection() {
                         <Text size="sm" variant="muted" className="max-w-none text-[0.72rem] tracking-[0.08em] uppercase text-foreground/54">
                           Confidence Score
                         </Text>
-                        <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-foreground font-extrabold">
+                        <Heading level={3} size="subsection" className="mt-2 text-[1.75rem] leading-none text-foreground font-extrabold [@media(max-height:1050px)]:text-[1.4rem]">
                           <CountUp value={89} />
                         </Heading>
                         <div className="mt-3 flex gap-1">
@@ -238,7 +263,11 @@ function HeroSection() {
                     </FadeIn>
 
                     {/* AI Recommendation Tile */}
-                    <FadeIn delay={1.4} distance={15} className="marketing-tile border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)]">
+                    <FadeIn
+                      delay={1.4}
+                      distance={15}
+                      className="marketing-tile border border-[color-mix(in_srgb,var(--border)_92%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] [@media(max-height:1050px)]:hidden min-[880px]:[@media(max-height:1050px)]:block"
+                    >
                       <div className="flex items-center justify-between border-b border-[color-mix(in_srgb,var(--border)_50%,transparent)] pb-2 mb-3">
                         <div className="flex items-center gap-1.5 text-foreground/80">
                           <svg className="size-3.5 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
