@@ -99,7 +99,7 @@ function SettingsPreferencesPage() {
         <select
           value={currentTimezone}
           onChange={(event) => setTimezone(event.target.value)}
-          className="app-input min-w-[14rem]"
+          className="app-input w-full max-w-full min-w-0 sm:min-w-[14rem]"
         >
           {TIMEZONES.map((tz) => (
             <option key={tz} value={tz}>

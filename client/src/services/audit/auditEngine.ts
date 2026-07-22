@@ -23,6 +23,7 @@ import {
   serializeIntelligenceSnapshot,
   type IntelligenceSnapshot,
 } from "@/services/audit/intelligence/diagnostics/intelligenceSnapshot"
+import { getSnapshotMetrics } from "@/services/audit/rules/snapshotMetrics"
 import { SCORING_ENGINE_VERSION } from "@/services/audit/intelligence/scoring/scoringPolicy"
 import * as auditListRepository from "@/services/internal/auditListRepository"
 import {
@@ -292,6 +293,19 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       pagesSkippedAnalysis: Math.max(0, savedPages.length - pagesForAnalysis.length),
     }
 
+    const pagePreviews = Object.fromEntries(
+      pageSnapshots.map((snapshot) => {
+        const metrics = getSnapshotMetrics(snapshot)
+        return [
+          snapshot.page.id,
+          {
+            openGraphImage: metrics.openGraphImage,
+            faviconUrl: metrics.faviconUrl,
+          },
+        ]
+      })
+    )
+
     const intelligenceSnapshot: IntelligenceSnapshot = {
       version: 1,
       pageScores,
@@ -314,6 +328,7 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       reliabilityReport: execution.reliabilityReport,
       auditConfidenceTier: scoring.auditConfidence.tier,
       manualVerificationRecommended: scoring.auditConfidence.manualVerificationRecommended,
+      pagePreviews,
       engineDiagnostics: execution.engineDiagnostics
         ? {
             ...execution.engineDiagnostics,

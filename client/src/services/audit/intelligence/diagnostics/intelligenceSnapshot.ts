@@ -24,6 +24,12 @@ export type AuditComparisonRecord = {
   auditEngineVersion: string
 }
 
+/** Optional Open Graph / favicon URLs captured from already-parsed page documents */
+export type PagePreviewMeta = {
+  openGraphImage: string | null
+  faviconUrl: string | null
+}
+
 export type IntelligenceSnapshot = {
   version: 1
   pageScores: Record<string, number>
@@ -43,6 +49,8 @@ export type IntelligenceSnapshot = {
   reliabilityReport?: ReliabilityReport
   auditConfidenceTier?: "High" | "Medium" | "Low"
   manualVerificationRecommended?: boolean
+  /** Report-only page previews from OG/favicon meta — optional, ignored by scoring */
+  pagePreviews?: Record<string, PagePreviewMeta>
   /** V5 internal engine diagnostics — debugging only */
   engineDiagnostics?: EngineDiagnostics
 }

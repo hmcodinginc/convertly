@@ -20,3 +20,8 @@ supabase/verification/audit_usage_reset_verification.sql
 Plan.md
 Architecture.md
 LAUNCH-CHECKLIST.md
+
+# Local scratch / agent UI captures
+tmp-ui-shots/
+repomix-output.txt
+repomix-output.xml

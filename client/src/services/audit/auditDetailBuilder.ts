@@ -348,6 +348,7 @@ function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
 
     const fallbackScore = calculatePageScoreFromAuditFindings(page, data.findings)
     const score = getPageScoreFromSnapshot(intelligenceSnapshot, page.id, fallbackScore)
+    const preview = intelligenceSnapshot?.pagePreviews?.[page.id]
 
     return {
       id: page.id,
@@ -365,6 +366,8 @@ function mapPagesToFindings(data: AuditSessionData): PageFinding[] {
       categoryBreakdown: buildCategoryBreakdown(
         data.findings.filter((finding) => finding.pageId === page.id)
       ),
+      openGraphImage: preview?.openGraphImage ?? null,
+      faviconUrl: preview?.faviconUrl ?? null,
     }
   })
 }
@@ -657,6 +660,7 @@ export function buildAuditListEntryFromSummary(
     domain,
     websiteUrl: session.websiteUrl,
     completedAt: formatAuditDateTime(session.updatedAt),
+    updatedAtIso: session.updatedAt,
     pagesScanned: pageCount,
     conversionScore: resolveGrowthScoreFromScores(scores),
     status: session.status,

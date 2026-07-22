@@ -59,7 +59,7 @@ function PlanCard({
   return (
     <Card
       className={cn(
-        "app-card-body flex h-full min-h-0 flex-col gap-5 sm:min-h-[18rem] hover:translate-y-0",
+        "app-card-body billing-plan-card flex h-full min-h-0 flex-col gap-5 sm:min-h-[18rem] max-sm:min-h-0 hover:translate-y-0",
         (plan.highlight || isSelected) &&
           "border-[color-mix(in_srgb,var(--accent)_35%,var(--border))] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_20%,transparent)]",
         animateCurrentBadge &&
@@ -103,7 +103,7 @@ function PlanCard({
       <Button
         variant={isCurrent || isSelected ? "outline" : "default"}
         size="sm"
-        className="mt-auto w-full shrink-0"
+        className="mt-auto h-auto min-h-9 w-full shrink-0 whitespace-normal py-2 text-balance"
         disabled={isCurrent || isSelected || isLoading}
         onClick={() => onSelect(plan.id)}
       >

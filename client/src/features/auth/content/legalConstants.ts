@@ -1,7 +1,7 @@
 const LEGAL_EFFECTIVE_DATE = "14 July 2026"
-const LEGAL_LAST_UPDATED = "14 July 2026"
+const LEGAL_LAST_UPDATED = "22 July 2026"
 const LEGAL_CONTACT_EMAIL = "hmcoding.h@gmail.com"
-const LEGAL_GRIEVANCE_EMAIL = "support@convertly.app"
+const LEGAL_GRIEVANCE_EMAIL = "hmcoding.h@gmail.com"
 const LEGAL_ENTITY_NAME = "HM Coding"
 
 export {

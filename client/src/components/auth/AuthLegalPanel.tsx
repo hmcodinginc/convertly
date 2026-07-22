@@ -33,11 +33,17 @@ function AuthLegalPanel({ view }: AuthLegalPanelProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <Heading level={2} size="section" className="max-w-none">
           {content.title}
         </Heading>
-        <Button variant="outline" size="sm" type="button" onClick={closeLegal}>
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          className="w-full shrink-0 sm:w-auto"
+          onClick={closeLegal}
+        >
           Back to product
         </Button>
       </div>

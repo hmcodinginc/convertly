@@ -120,7 +120,8 @@
     gap: 0.25rem;
     font-size: 0.75rem;
     line-height: 1.15;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
   }
 
   .settings-layout__nav:has(.settings-nav) .settings-nav__icon {

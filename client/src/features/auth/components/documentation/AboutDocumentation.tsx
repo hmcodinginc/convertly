@@ -1,8 +1,10 @@
 import {
   Bot,
   Code2,
+  Image,
   Layers,
   Mail,
+  MessageSquare,
   Rocket,
   Sparkles,
   Target,
@@ -24,23 +26,23 @@ const ROADMAP = [
   {
     id: "current",
     phase: "Current",
-    title: "MVP launch",
+    title: "Conversion intelligence MVP",
     description:
-      "Automated conversion audits, Growth Score, prioritized recommendations, implementation playbooks, workspace domains, and subscription billing.",
+      "Intent-aware conversion audits, Growth Score (Intelligence v4), SPA-aware reliability, Open Graph Page Previews, playbooks, Vertly product guidance, workspace ledger, Razorpay billing, and email notifications.",
   },
   {
     id: "next",
     phase: "Next",
-    title: "Team workflows",
+    title: "Team & reliability",
     description:
-      "Shared workspaces, audit comparisons, exportable reports, and deeper integration with analytics stacks.",
+      "Shared org workspaces, server-side audit job runner, real screenshot capture (separate from Page Preview), stronger crawl for blocked sites, and Razorpay live-mode cutover after QA.",
   },
   {
     id: "future",
     phase: "Future",
     title: "Continuous optimization",
     description:
-      "Scheduled audits, regression alerts, A/B experiment tracking, and enterprise compliance tooling.",
+      "Scheduled audits, score-drop workflows at scale, competitive benchmark audits, optional LLM-assisted Vertly answers, and enterprise packaging.",
   },
 ] as const
 
@@ -54,10 +56,17 @@ function AboutDocumentation() {
         </div>
         <h3 className="auth-doc-hero__title">Conversion intelligence for teams that ship</h3>
         <p className="auth-doc-hero__body">
-          Convertly turns website audits into prioritized, actionable growth work — so product and
-          marketing teams spend less time guessing and more time improving conversion.
+          Convertly audits public websites for conversion readiness — trust, UX, CTAs, forms, and
+          growth blockers — then returns a Growth Score with prioritized, consultant-grade
+          recommendations your team can act on.
         </p>
       </header>
+
+      <Callout title="Positioning">
+        Convertly is a conversion / CRO / business-readiness product — not an SEO suite, keyword
+        tracker, or Lighthouse replacement. Lightweight technical signals (headings, ALT, robots,
+        sitemap, OG/Twitter, schema) appear inside the conversion report as supporting context only.
+      </Callout>
 
       <DocumentationSection id="mission" title="Mission" icon={Target}>
         <p>
@@ -79,50 +88,75 @@ function AboutDocumentation() {
             Validate landing pages, signup flows, and pricing before major launches.
           </DocumentationCard>
           <DocumentationCard title="Growth & marketing">
-            Prioritize CRO experiments with estimated lift and playbook-ready fixes.
+            Prioritize CRO experiments with impact-weighted findings and playbook-ready fixes.
           </DocumentationCard>
           <DocumentationCard title="Founders & agencies">
-            Run professional-grade audits without building an internal CRO practice from scratch.
+            Run professional-grade conversion audits without building an internal CRO practice from
+            scratch.
           </DocumentationCard>
         </InfoGrid>
       </DocumentationSection>
 
       <DocumentationSection id="why" title="Why Convertly exists" icon={Sparkles}>
         <p>
-          Most audit tools produce generic checklists. Convertly combines deterministic rule
-          analysis with consultant-grade recommendations so teams know what to fix first and how
-          to fix it — not just that something is wrong.
+          Most audit tools produce generic checklists or SEO noise. Convertly combines
+          intent-aware rule analysis with consultant-grade recommendations so teams know what to
+          fix first and how to fix it — not just that something is wrong.
         </p>
       </DocumentationSection>
 
       <DocumentationSection id="capabilities" title="Platform capabilities" icon={Layers}>
         <FeatureList
           items={[
-            "Full-funnel conversion audits with Growth Score breakdown",
-            "100+ deterministic rules across CRO, UX, trust, mobile, and SEO",
+            "Page-specific and full-funnel conversion audits with intent-aware rule packs",
+            "Growth Score (Intelligence v4) — weighted conversion impact, not issue count",
+            "SPA-aware reliability that softens unverified form/DOM findings on JS-heavy sites",
+            "Open Graph Page Previews on report cards (og:image metadata — not live screenshots)",
             "Prioritized recommendations with implementation playbooks",
-            "Audit history, score trends, and workspace domain management",
-            "Premium execution experience with live pipeline visibility",
+            "Live audit execution UI, PDF/structured exports, and sample report",
+            "Workspace domains, usage ledger, drafts, and Razorpay subscription billing",
+            "Vertly — in-product Convertly specialist (rule-based guidance, not a general chatbot)",
+            "Optional email notifications (audit complete, score-drop, weekly digest)",
           ]}
         />
+      </DocumentationSection>
+
+      <DocumentationSection id="preview" title="Page Preview" icon={Image}>
+        <p>
+          Report page cards can show a compact Page Preview from the website&apos;s publicly
+          published Open Graph image (<code>og:image</code>) and favicon when available. Convertly
+          does not claim ownership of those assets — they remain third-party content used only as
+          reference thumbnails inside your audit report.
+        </p>
+      </DocumentationSection>
+
+      <DocumentationSection id="vertly" title="Vertly" icon={MessageSquare}>
+        <p>
+          Vertly is Convertly&apos;s in-app product specialist. It answers questions about audits,
+          plans, billing, and workspace using Convertly product memory and page context — not as an
+          open-ended SEO or marketing chatbot.
+        </p>
       </DocumentationSection>
 
       <DocumentationSection id="stack" title="Technology stack" icon={Code2}>
         <InfoGrid>
           <DocumentationCard title="Frontend">
-            React, TypeScript, Vite, Tailwind CSS v4, Framer Motion, shadcn/ui
+            React 19, TypeScript, Vite 8, Tailwind CSS v4, Framer Motion, shadcn/ui
           </DocumentationCard>
-          <DocumentationCard title="Backend">
-            Supabase (auth, database, edge functions), secure payment integrations
+          <DocumentationCard title="Backend & ops">
+            Supabase (auth, Postgres, edge functions, RLS), Razorpay billing, Resend email,
+            Playwright render worker, optional Sentry
           </DocumentationCard>
         </InfoGrid>
       </DocumentationSection>
 
       <DocumentationSection id="engine" title="Audit Engine" icon={Bot}>
         <p>
-          Convertly&apos;s audit engine crawls public pages, renders DOM snapshots, runs a
-          production rule catalog, and synthesizes consultant-style recommendations with score
-          explainability — all without requiring code access to your site.
+          Convertly&apos;s audit engine discovers public pages, acquires HTML via static fetch and
+          optional Playwright rendering, detects website and page intent, runs a production rule
+          catalog, applies render-reliability safeguards, then scores and recommends — without
+          requiring code access to your site. Audits run in the browser tab; keep the tab open until
+          completion.
         </p>
         <Callout title="Human in the loop">
           Recommendations are advisory. Convertly accelerates analysis; your team validates changes

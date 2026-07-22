@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, FileSearch } from "lucide-react"
+import { ChevronDown, ChevronUp, FileSearch, ImageOff, Info } from "lucide-react"
 import { useState } from "react"
 
 import { StatusBadge } from "@/components/dashboard/StatusBadge"
@@ -11,6 +11,9 @@ import { isAuditInProgress } from "@/lib/auditStatus"
 import type { AuditStatus, PageFinding } from "@/types/audit"
 
 const DEFAULT_VISIBLE = 4
+
+const PAGE_PREVIEW_HELP =
+  "This preview comes from the page's Open Graph image (og:image). It is provided by the website and is not a live screenshot."
 
 const pageStatusVariant = {
   Healthy: "success",
@@ -96,23 +99,95 @@ function PageScoreRing({ score }: { score: number }) {
   )
 }
 
+function PageFavicon({
+  faviconUrl,
+  label,
+}: {
+  faviconUrl?: string | null
+  label: string
+}) {
+  const [failed, setFailed] = useState(false)
+
+  if (!faviconUrl || failed) return null
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      width={16}
+      height={16}
+      loading="lazy"
+      decoding="async"
+      className="audit-page-card__favicon"
+      onError={() => setFailed(true)}
+      aria-hidden
+      title={`${label} favicon`}
+    />
+  )
+}
+
+function PagePreview({ imageUrl }: { imageUrl?: string | null }) {
+  const [failed, setFailed] = useState(false)
+  const showImage = Boolean(imageUrl) && !failed
+
+  return (
+    <div className="audit-page-preview">
+      <div className="audit-page-preview__label-row">
+        <p className="audit-page-preview__label">Page Preview</p>
+        <button
+          type="button"
+          className="audit-page-preview__info"
+          title={PAGE_PREVIEW_HELP}
+          aria-label={PAGE_PREVIEW_HELP}
+          data-tooltip={PAGE_PREVIEW_HELP}
+        >
+          <Info className="size-3" aria-hidden />
+        </button>
+      </div>
+
+      <div className="audit-page-preview__frame">
+        {showImage ? (
+          <img
+            src={imageUrl!}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="audit-page-preview__image"
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <div className="audit-page-preview__empty">
+            <ImageOff className="audit-page-preview__empty-glyph" aria-hidden />
+            <span className="audit-page-preview__empty-title">No preview</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function PageCard({ page }: { page: PageFinding }) {
   return (
     <Card className="audit-page-card audit-page-card--v2 app-card-metric hover:translate-y-0">
-      <div className="audit-page-card__top">
-        <div className="audit-page-card__identity min-w-0">
-          <div className="audit-page-card__header">
-            <h3 className="audit-page-card__title" title={page.label}>
-              {page.label}
-            </h3>
+      <div className="audit-page-card__body">
+        <div className="audit-page-card__primary">
+          <div className="audit-page-card__heading">
+            <div className="audit-page-card__title-row">
+              <PageFavicon faviconUrl={page.faviconUrl} label={page.label} />
+              <h3 className="audit-page-card__title" title={page.label}>
+                {page.label}
+              </h3>
+            </div>
             <StatusBadge
               label={page.status}
               variant={pageStatusVariant[page.status]}
             />
           </div>
+
           <p className="audit-page-card__path" title={page.url ?? page.path}>
-            {page.path}
+            {page.url ?? page.path}
           </p>
+
           <div className="audit-page-card__meta-row">
             {page.pageType ? (
               <span className="audit-page-card__meta-chip">{page.pageType}</span>
@@ -122,30 +197,34 @@ function PageCard({ page }: { page: PageFinding }) {
             ) : null}
           </div>
         </div>
+
+        <div className="audit-page-card__metrics">
+          <PageScoreRing score={page.score} />
+          <div className="audit-page-card__metrics-body">
+            <div className="audit-page-card__stat">
+              <p className="audit-page-card__stat-value tabular-nums">
+                {page.issuesCount}
+              </p>
+              <Text variant="muted" size="sm" className="mt-0 max-w-none text-xs">
+                Issue{page.issuesCount === 1 ? "" : "s"}
+              </Text>
+            </div>
+            {page.severityBreakdown ? (
+              <SeverityChips breakdown={page.severityBreakdown} />
+            ) : null}
+            {page.categoryBreakdown && page.categoryBreakdown.length > 0 ? (
+              <p className="audit-page-card__categories">
+                {page.categoryBreakdown
+                  .map((item) => `${item.category} ${item.count}`)
+                  .join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
 
-      <div className="audit-page-card__metrics">
-        <PageScoreRing score={page.score} />
-        <div className="audit-page-card__metrics-body">
-          <div className="audit-page-card__stat">
-            <p className="audit-page-card__stat-value tabular-nums">
-              {page.issuesCount}
-            </p>
-            <Text variant="muted" size="sm" className="mt-0.5 max-w-none text-xs">
-              Issue{page.issuesCount === 1 ? "" : "s"}
-            </Text>
-          </div>
-          {page.severityBreakdown ? (
-            <SeverityChips breakdown={page.severityBreakdown} />
-          ) : null}
-          {page.categoryBreakdown && page.categoryBreakdown.length > 0 ? (
-            <p className="audit-page-card__categories">
-              {page.categoryBreakdown
-                .map((item) => `${item.category} ${item.count}`)
-                .join(" · ")}
-            </p>
-          ) : null}
-        </div>
+      <div className="audit-page-card__footer">
+        <PagePreview imageUrl={page.openGraphImage} />
       </div>
     </Card>
   )
