@@ -28,7 +28,7 @@ function AboutPage() {
               About Convertly
             </Heading>
             <Text variant="muted" className="max-w-[64ch] leading-7">
-              Convertly is an AI-assisted conversion audit product by HM Coding. It helps product,
+              Convertly is an automated conversion audit product by HM Coding. It helps product,
               growth, and marketing teams review public website journeys, surface friction, and
               prioritize improvements with structured reports.
             </Text>

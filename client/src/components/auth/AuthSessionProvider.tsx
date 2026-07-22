@@ -145,10 +145,29 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const next = supabaseAuth.authStateFromUser(user)
-      handleAuthSessionPaymentBoundary(sessionUserIdRef.current, next.session?.userId ?? null)
-      sessionUserIdRef.current = next.session?.userId ?? null
-      applyAuthState(setSession, setAccount, next)
+      // authStateFromUser hardcodes plan: "Free". Enrich from subscriptions/
+      // overrides before painting Profile / Settings — otherwise TOKEN_REFRESHED
+      // and USER_UPDATED wipe the real plan back to Free.
+      void (async () => {
+        const next = supabaseAuth.authStateFromUser(user)
+        handleAuthSessionPaymentBoundary(sessionUserIdRef.current, next.session?.userId ?? null)
+        sessionUserIdRef.current = next.session?.userId ?? null
+
+        let account = next.account
+        if (account && isBusinessFoundationEnabled()) {
+          try {
+            await ensureBusinessFoundation(account.userId)
+            account = (await accountService.getEnrichedAccount()) ?? account
+          } catch {
+            /* keep base account if enrichment fails */
+          }
+        }
+
+        applyAuthState(setSession, setAccount, {
+          session: next.session,
+          account,
+        })
+      })()
     })
 
     return () => {

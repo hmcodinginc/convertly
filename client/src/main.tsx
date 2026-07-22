@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { resetBodyScrollLock } from '@/lib/bodyScrollLock'
 import { warnIfProductionMisconfigured } from '@/lib/env'
+import { initMonitoring } from '@/lib/monitoring'
 import './styles/theme.css'
 import './styles/app-layout.css'
 import './styles/audit-report.css'
@@ -13,6 +14,7 @@ import './styles/globals.css'
 import './index.css'
 import App from './App.tsx'
 
+initMonitoring()
 resetBodyScrollLock()
 warnIfProductionMisconfigured()
 

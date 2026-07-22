@@ -62,6 +62,15 @@ function ScoreSummaryCard({
           ) : null}
         </div>
       </div>
+      <Text size="sm" className="mt-3 max-w-none leading-relaxed text-muted">
+        Growth Score measures overall conversion readiness and weighted business impact. It is
+        not based solely on the number of issues.
+      </Text>
+      {explanation.scoreVsFindingsNote ? (
+        <Text size="sm" className="mt-2 max-w-none leading-relaxed text-foreground/85">
+          {explanation.scoreVsFindingsNote}
+        </Text>
+      ) : null}
     </Card>
   )
 }

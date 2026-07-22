@@ -53,6 +53,16 @@ export function handleProductRoute(
         prompt: "What plans does Convertly offer?",
         href: ROUTES.billing,
       },
+      {
+        id: "pm-score",
+        label: "Growth Score",
+        prompt: "What is Growth Score?",
+      },
+      {
+        id: "pm-first",
+        label: "Run an audit",
+        prompt: "How do I run my first audit?",
+      },
     ],
   }
 }

@@ -5,6 +5,7 @@ import { downloadBlob } from "@/services/export/download"
 import { buildAiReportFilename, buildPdfFilename } from "@/services/export/filenames"
 import type { ExportFormat, ExportPayload } from "@/services/export/types"
 import * as auditService from "@/services/auditService"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import type { AuditDetail } from "@/types/audit"
 
 async function loadExportAudit(auditId: string): Promise<{
@@ -53,6 +54,7 @@ export async function exportAuditReport(
 ): Promise<void> {
   const payload = await createExportPayload(auditId, format)
   downloadBlob(payload.blob, payload.filename)
+  trackProductEvent("report_exported", { auditId, format })
 }
 
 /**

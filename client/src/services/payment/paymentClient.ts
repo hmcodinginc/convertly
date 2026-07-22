@@ -6,6 +6,28 @@ const CHECKOUT_FUNCTION = "payment-checkout"
 const CHANGE_PLAN_FUNCTION = "payment-change-plan"
 const CANCEL_FUNCTION = "payment-cancel"
 
+/**
+ * Payment edge functions return friendly messages in their JSON error body
+ * (e.g. PLAN_CHANGE_UNSUPPORTED for UPI/eMandate plan changes), but
+ * FunctionsHttpError only exposes a generic message. Read the response body
+ * so users see the actual explanation.
+ */
+async function resolveFunctionErrorMessage(
+  error: { message?: string; context?: unknown },
+  fallback: string
+): Promise<string> {
+  const context = error.context
+  if (context instanceof Response) {
+    try {
+      const body = (await context.clone().json()) as { error?: string } | null
+      if (body?.error) return body.error
+    } catch {
+      // Body was not JSON — fall through to the generic message.
+    }
+  }
+  return error.message || fallback
+}
+
 export async function invokeCheckout(planId: PaidPlanId): Promise<CheckoutSessionResult> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.functions.invoke<CheckoutSessionResult>(
@@ -17,7 +39,7 @@ export async function invokeCheckout(planId: PaidPlanId): Promise<CheckoutSessio
   )
 
   if (error) {
-    throw new Error(error.message || "Unable to start checkout.")
+    throw new Error(await resolveFunctionErrorMessage(error, "Unable to start checkout."))
   }
 
   if (!data) {
@@ -48,7 +70,7 @@ export async function invokeChangePlan(
   )
 
   if (error) {
-    throw new Error(error.message || "Unable to change plan.")
+    throw new Error(await resolveFunctionErrorMessage(error, "Unable to change plan."))
   }
 
   if (!data?.direction) {
@@ -68,6 +90,6 @@ export async function invokeCancelSubscription(
   })
 
   if (error) {
-    throw new Error(error.message || "Unable to cancel subscription.")
+    throw new Error(await resolveFunctionErrorMessage(error, "Unable to cancel subscription."))
   }
 }

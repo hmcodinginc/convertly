@@ -203,7 +203,7 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
     `Add supporting copy on ${pagePath(c)} explaining what users get immediately after signing up.`,
 
   "login-missing-form": (c) =>
-    `Ensure ${pagePath(c)} includes a login form with clear fields and a recovery path for forgotten credentials.`,
+    `If ${pagePath(c)} uses a standard email/password form, ensure it is present in the rendered HTML with a recovery path. If login is OAuth- or JS-only, verify the flow manually — Convertly may not detect custom auth widgets.`,
 
   "hero-missing-subheadline": (c) =>
     `Add a supporting subheadline beneath the H1 on ${pagePath(c)} that explains the outcome or audience in one sentence.`,
@@ -242,7 +242,13 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
     `Set a canonical URL on ${pagePath(c)} to consolidate duplicate URLs and clarify the preferred page for search engines.`,
 
   "seo-missing-og-tags": (c) =>
-    `Add Open Graph title and description tags on ${pagePath(c)} for better link previews on social and messaging apps.`,
+    `Add complete Open Graph tags (og:title, og:description, and og:image) on ${pagePath(c)} for better link previews on social and messaging apps.`,
+
+  "seo-missing-twitter-cards": (c) =>
+    `Add Twitter Card metadata (twitter:card and twitter:title) on ${pagePath(c)} so shares on X render with a proper preview.`,
+
+  "seo-missing-schema": (c) =>
+    `Add Schema.org structured data (JSON-LD preferred) on ${pagePath(c)} for Organization, WebSite, or page-specific types that match the content.`,
 
   "seo-missing-lang": (c) =>
     `Set lang on the html element for ${pagePath(c)} so browsers and assistive tech use the correct language.`,
@@ -314,7 +320,19 @@ export const RULE_RECOMMENDATIONS: Record<string, (context: RecContext) => strin
     `Add a pricing or plans page on ${domain(c)} and link it from the main navigation for high-intent visitors.`,
 
   "site-missing-blog-link": (c) =>
-    `Surface blog or resources content on ${domain(c)} via navigation or footer links to support SEO and nurture.`,
+    `Surface blog or resources content on ${domain(c)} via navigation or footer links to support discovery and nurture.`,
+
+  "site-missing-robots-txt": (c) =>
+    `Publish a robots.txt at the site root on ${domain(c)} so crawlers know which paths are allowed.`,
+
+  "site-missing-sitemap": (c) =>
+    `Publish a sitemap.xml on ${domain(c)} (and reference it from robots.txt) to help crawlers discover key pages.`,
+
+  "site-unreachable-internal-pages": (c) =>
+    `Review internal links on ${domain(c)} that pointed to pages the crawler could not reach — fix 404s, redirects, or auth walls that block public visitors.`,
+
+  "site-mixed-content": (c) =>
+    `Replace http:// asset URLs with https:// on ${domain(c)} to avoid mixed-content warnings and blocked resources in modern browsers.`,
 }
 
 export function getRuleRecommendation(ruleId: string, context: RecContext): string {

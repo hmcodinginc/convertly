@@ -1,8 +1,20 @@
 import type { Issue, IssueSeverity, SiteFinding } from "@/types/audit"
+import type { FindingSeverity } from "@/types/auditEngine"
 
 export type SeverityCounts = Record<IssueSeverity, number>
 
 const SEVERITY_ORDER: IssueSeverity[] = ["Critical", "High", "Medium", "Low"]
+
+const FINDING_TO_ISSUE_SEVERITY: Record<FindingSeverity, IssueSeverity> = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+}
+
+export function toIssueSeverity(severity: FindingSeverity): IssueSeverity {
+  return FINDING_TO_ISSUE_SEVERITY[severity]
+}
 
 export function countSeverities(
   issues: Issue[],

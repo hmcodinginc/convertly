@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/feedback/EmptyState"
 import { AuditReportSection } from "@/features/audits/components/AuditReportSection"
 import { Card } from "@/components/surfaces/Card"
 import { Text } from "@/components/ui/typography/Text"
+import { severityItems } from "@/features/audits/utils/severityPresentation"
 import { isAuditInProgress } from "@/lib/auditStatus"
 import type { AuditStatus, PageFinding } from "@/types/audit"
 
@@ -14,7 +15,7 @@ const DEFAULT_VISIBLE = 4
 const pageStatusVariant = {
   Healthy: "success",
   "At risk": "warning",
-  Critical: "danger",
+  "Needs work": "danger",
 } as const
 
 type PageFindingsSectionProps = {
@@ -39,20 +40,20 @@ function SeverityChips({
 }: {
   breakdown: NonNullable<PageFinding["severityBreakdown"]>
 }) {
-  const items = [
-    { key: "critical", label: "Critical", count: breakdown.critical },
-    { key: "high", label: "High", count: breakdown.high },
-    { key: "medium", label: "Medium", count: breakdown.medium },
-    { key: "low", label: "Low", count: breakdown.low },
-  ].filter((item) => item.count > 0)
+  const items = severityItems({
+    Critical: breakdown.critical,
+    High: breakdown.high,
+    Medium: breakdown.medium,
+    Low: breakdown.low,
+  })
 
   if (items.length === 0) return null
 
   return (
     <div className="audit-page-card__severity">
       {items.map((item) => (
-        <span key={item.key} className="audit-page-card__severity-chip">
-          {item.label} {item.count}
+        <span key={item.severity} className="audit-page-card__severity-chip">
+          {item.severity} {item.count}
         </span>
       ))}
     </div>

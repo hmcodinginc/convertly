@@ -17,6 +17,7 @@ import {
   resolvePasswordRecoveryChannel,
 } from "@/lib/passwordRecoveryPersistence"
 import { getAuthSnapshot, getCachedAuthSession } from "@/lib/authSessionCache"
+import { setMonitoringUser } from "@/lib/monitoring"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
 import type { AccountInfo, ChangePasswordInput, UpdateProfileInput } from "@/types/account"
 import {
@@ -125,7 +126,7 @@ function mapUserToAccountInfo(user: User): AccountInfo {
     fullName: displayName,
     initials: buildInitials(profile.firstName, profile.lastName, profile.email),
     createdAt: profile.createdAt,
-    plan: "Free",
+    plan: "",
     authProvider: resolveAuthProvider(user),
   }
 }
@@ -205,6 +206,7 @@ export function subscribeToAuthChanges(
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((event, session) => {
+    setMonitoringUser(session?.user?.id ?? null)
     setTimeout(() => onChange(event, session), 0)
   })
 

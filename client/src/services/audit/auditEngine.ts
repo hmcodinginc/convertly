@@ -4,7 +4,6 @@ import { fetchPageContentSnapshots } from "@/services/audit/pageContentService"
 import { resolvePageDisplayTitle } from "@/services/audit/pageTitleResolver"
 import { createAuditFetchContext } from "@/services/audit/fetch/types"
 import { createScorePlaceholders, runAuditRules } from "@/services/audit/auditRules"
-import { attachScreenshotsToPages } from "@/services/audit/screenshotService"
 import {
   toPersistedFinding,
 } from "@/services/audit/scoring/calculateAuditScore"
@@ -16,7 +15,10 @@ import {
   throwIfEngineAborted,
 } from "@/services/audit/auditEngineAbort"
 import { shouldUseSupabaseAudits } from "@/lib/env"
+import { captureMonitoredError } from "@/lib/monitoring"
 import { getSupabaseClient } from "@/services/auth/supabaseClient"
+import { requestAuditCompletedEmail } from "@/services/notifications/notificationEmails"
+import { trackProductEvent } from "@/services/analytics/productAnalytics"
 import {
   serializeIntelligenceSnapshot,
   type IntelligenceSnapshot,
@@ -196,8 +198,9 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       throw new Error(detail)
     }
 
-    const pagesWithScreenshots = attachScreenshotsToPages(discovered)
-    const savedPages = await createPages(pagesWithScreenshots)
+    // Screenshot capture is not implemented — pages keep their "pending"
+    // capture status so no part of the system implies screenshots exist.
+    const savedPages = await createPages(discovered)
 
     const analyzingSession =
       (await updateSessionStatus(auditId, "analyzing")) ?? session
@@ -357,7 +360,14 @@ export async function runAuditEngine(auditId: string): Promise<void> {
       } catch {
         // Allow completion even if allowance sync fails at the edge.
       }
+      requestAuditCompletedEmail(auditId)
     }
+    trackProductEvent("audit_completed", {
+      auditId,
+      growthScore,
+      findingsCount: scoredFindings.length,
+      pagesAnalyzed: pagesForAnalysis.length,
+    })
     await auditListRepository.syncAuditFromSession(auditId)
   } catch (error) {
     if (error instanceof AuditEngineAbortedError) {
@@ -368,6 +378,9 @@ export async function runAuditEngine(auditId: string): Promise<void> {
 
     const message =
       error instanceof Error ? error.message : "Audit session failed unexpectedly"
+
+    captureMonitoredError(error, { auditId, phase: "audit-engine" })
+    trackProductEvent("audit_failed", { auditId, reason: message })
 
     try {
       await createHistoryEvent(auditId, "failed", message)

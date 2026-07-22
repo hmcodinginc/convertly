@@ -13,6 +13,8 @@ export type ReportScoreExplanation = {
   overallScore: number
   scoreBand: string
   websiteIntent: string
+  /** Plain-language note when finding count and score appear to disagree. */
+  scoreVsFindingsNote?: string
   majorDeductions: ScoreExplanationFactor[]
   positiveFactors: ScoreExplanationFactor[]
   categorySummary: Array<{
@@ -47,9 +49,24 @@ export function buildReportScoreExplanation(input: {
   scoring: ScoringEngineV3Result
   scoreExplanation: ScoreExplanation
   positiveScoring?: PositiveScoringResult
+  findingsCount?: number
 }): ReportScoreExplanation {
   const { scoring, scoreExplanation, positiveScoring } = input
   const websiteIntent = scoreExplanation.websiteIntent ?? scoring.websiteIntent?.websiteIntent ?? "unknown"
+  const findingsCount = input.findingsCount ?? 0
+  const overallScore = scoring.growthScore
+
+  let scoreVsFindingsNote: string | undefined
+  if (findingsCount >= 20 && overallScore >= 80) {
+    scoreVsFindingsNote =
+      "Many findings are present, but most appear lower-impact. Growth Score weighs conversion and business impact — not raw issue count."
+  } else if (findingsCount > 0 && findingsCount <= 5 && overallScore > 0 && overallScore <= 78) {
+    scoreVsFindingsNote =
+      "Few findings can still lower Growth Score when they are high-weight conversion or trust blockers."
+  } else if (findingsCount >= 8) {
+    scoreVsFindingsNote =
+      "Growth Score measures overall conversion readiness and weighted business impact. It is not based solely on the number of issues."
+  }
 
   const majorDeductions: ScoreExplanationFactor[] = []
 
@@ -106,6 +123,7 @@ export function buildReportScoreExplanation(input: {
     overallScore: scoring.growthScore,
     scoreBand: scoreExplanation.scoreBand ?? scoring.scoreBand?.label ?? "Scored",
     websiteIntent,
+    scoreVsFindingsNote,
     majorDeductions: majorDeductions.slice(0, 6),
     positiveFactors,
     categorySummary,

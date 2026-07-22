@@ -8,8 +8,8 @@ const STAGE_INSIGHTS: Partial<Record<AuditExecutionStageId, string[]>> = {
     "Mapping your site structure.",
   ],
   "capturing-screenshots": [
-    "Capturing page screenshots...",
-    "Recording desktop and mobile views.",
+    "Collecting page content snapshots...",
+    "Gathering markup from discovered pages.",
   ],
   "rendering-dom": ["Rendering page content...", "Loading your homepage..."],
   "detecting-navigation": [

@@ -117,6 +117,45 @@ export const SITE_DETECTORS: Record<string, SiteDetector> = {
     if (hasBlog) return pass()
     return fail(64, [{ label: "Blog link", value: "No blog or resources link discovered" }])
   },
+
+  "site-missing-robots-txt": (c) => {
+    const found = c.technicalProbes?.robotsTxtFound
+    if (found == null) return pass()
+    if (found) return pass()
+    return fail(70, [{ label: "robots.txt", value: "Not found at /robots.txt" }])
+  },
+
+  "site-missing-sitemap": (c) => {
+    const found = c.technicalProbes?.sitemapXmlFound
+    if (found == null) return pass()
+    if (found) return pass()
+    const referenced = /sitemap\.xml|rel=["']sitemap["']/i.test(c.combinedHtml)
+    if (referenced) return pass()
+    return fail(68, [{ label: "sitemap.xml", value: "Not found at /sitemap.xml" }])
+  },
+
+  "site-unreachable-internal-pages": (c) => {
+    const unreachable = c.pages.filter((page) => page.discoveryStatus === "unreachable")
+    if (unreachable.length === 0) return pass()
+    const sample = unreachable
+      .slice(0, 3)
+      .map((page) => page.path)
+      .join(", ")
+    return fail(74, [
+      { label: "Unreachable discovered pages", value: String(unreachable.length) },
+      { label: "Examples", value: sample },
+    ])
+  },
+
+  "site-mixed-content": (c) => {
+    if (!c.technicalProbes?.mixedContentHint) return pass()
+    return fail(72, [
+      {
+        label: "Mixed content",
+        value: "http:// resource URLs detected on analyzed HTTPS pages",
+      },
+    ])
+  },
 }
 
 export function runSiteDetector(

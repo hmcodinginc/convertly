@@ -6,6 +6,7 @@ type EnvConfig = {
   appUrl: string
   useLocalAuth: boolean
   turnstileSiteKey: string
+  sentryDsn: string
 }
 
 function readEnv(key: string): string {
@@ -18,6 +19,7 @@ export const env: EnvConfig = {
   appUrl: readEnv("VITE_APP_URL"),
   useLocalAuth: readEnv("VITE_USE_LOCAL_AUTH") !== "false",
   turnstileSiteKey: readEnv("VITE_TURNSTILE_SITE_KEY"),
+  sentryDsn: readEnv("VITE_SENTRY_DSN"),
 }
 
 export function isSupabaseConfigured(): boolean {

@@ -19,3 +19,4 @@ supabase/verification/audit_usage_reset_verification.sql
 # Internal developer notes (local only)
 Plan.md
 Architecture.md
+LAUNCH-CHECKLIST.md

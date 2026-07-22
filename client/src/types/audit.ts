@@ -92,7 +92,7 @@ export type RecommendationPlaybook = {
   recommendation?: string
 }
 
-export type PageFindingStatus = "Healthy" | "At risk" | "Critical"
+export type PageFindingStatus = "Healthy" | "At risk" | "Needs work"
 
 export type PageSeverityBreakdown = {
   critical: number

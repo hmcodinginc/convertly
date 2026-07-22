@@ -36,8 +36,8 @@ function AuditRecommendationsSection({
     return (
       <AuditReportSection
         id="recommendations"
-        eyebrow="AI insights"
-        title="AI recommendations"
+        eyebrow="Audit insights"
+        title="Recommendations"
         description="Consolidated recommendations across affected pages. Open a playbook for implementation guidance."
       >
         <EmptyState
@@ -57,7 +57,7 @@ function AuditRecommendationsSection({
     <>
       <AuditReportSection
         id="recommendations"
-        eyebrow="AI insights"
+        eyebrow="Audit insights"
         title="Additional recommendations"
         description="Further improvements beyond the top priority fixes. Each includes an implementation playbook."
       >

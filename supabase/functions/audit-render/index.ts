@@ -95,6 +95,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")
     const workerUrl = Deno.env.get("AUDIT_RENDER_WORKER_URL")
+    // Shared secret expected by the worker; must match RENDER_WORKER_TOKEN there.
+    const workerToken = Deno.env.get("AUDIT_RENDER_WORKER_TOKEN")
 
     if (!supabaseUrl || !supabaseAnonKey) {
       return jsonResponse({ error: "Server configuration error" }, 500)
@@ -132,7 +134,10 @@ Deno.serve(async (req) => {
     try {
       workerResponse = await fetch(`${workerUrl.replace(/\/$/, "")}/render`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(workerToken ? { "x-render-token": workerToken } : {}),
+        },
         body: JSON.stringify({ url: safeUrl.toString() }),
         signal: controller.signal,
       })

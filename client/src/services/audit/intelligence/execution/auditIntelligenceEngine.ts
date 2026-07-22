@@ -1,4 +1,8 @@
-import type { PageContentSnapshot } from "@/services/audit/pageContentService"
+import {
+  getSuccessfulHtml,
+  type PageContentSnapshot,
+} from "@/services/audit/pageContentService"
+import { probeSiteTechnicalSignals } from "@/services/audit/intelligence/detectors/siteTechnicalProbes"
 import {
   dedupeFindings,
   executePageRules,
@@ -120,10 +124,16 @@ export async function runIntelligenceEngine(
     await options.onPageAnalyzed?.(snapshot, findings.length)
   }
 
+  const technicalProbes = await probeSiteTechnicalSignals({
+    websiteUrl: context.session.websiteUrl,
+    combinedHtml: getSuccessfulHtml(context.pageSnapshots),
+  })
+
   const siteContext: SiteRuleContext = {
     session: context.session,
     pages: context.pages,
     pageSnapshots: context.pageSnapshots,
+    technicalProbes,
   }
 
   const siteFindings = await executeSiteRules(siteContext, tracker, {
@@ -227,6 +237,7 @@ export async function runIntelligenceEngine(
     scoring,
     scoreExplanation,
     positiveScoring: scoring.positiveScoring,
+    findingsCount: annotatedFindings.length,
   })
 
   const pageIntentMap = Object.fromEntries(

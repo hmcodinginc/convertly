@@ -1,6 +1,6 @@
 # Convertly
 
-AI-powered conversion intelligence for modern product and growth teams. Convertly analyzes website experiences, surfaces high-impact opportunities, and helps teams ship higher-converting funnels with clarity and speed.
+Automated conversion intelligence for modern product and growth teams. Convertly analyzes website experiences, surfaces high-impact opportunities, and helps teams ship higher-converting funnels with clarity and speed.
 
 **Owner:** [HM Coding](https://hmcoding.com)
 

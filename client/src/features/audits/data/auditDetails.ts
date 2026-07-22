@@ -97,7 +97,7 @@ function buildPageFindings(overall: number): PageFinding[] {
   return pages.map((page) => ({
     ...page,
     status:
-      page.score >= 75 ? "Healthy" : page.score >= 60 ? "At risk" : ("Critical" as const),
+      page.score >= 75 ? "Healthy" : page.score >= 60 ? "At risk" : ("Needs work" as const),
   }))
 }
 

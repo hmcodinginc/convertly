@@ -1,4 +1,5 @@
 import { isInternalHistoryMessage } from "@/features/audits/utils/timelinePresentation"
+import { toIssueSeverity } from "@/features/audits/utils/severityPresentation"
 import { isAuditInProgress } from "@/lib/auditStatus"
 import { calculatePageScoreFromAuditFindings } from "@/services/audit/intelligence/scoring/scoringEngineV2"
 import { parseIntelligenceSnapshotFromHistory, getPageScoreFromSnapshot } from "@/services/audit/intelligence/diagnostics/intelligenceSnapshot"
@@ -43,13 +44,6 @@ import type {
   FindingSeverity,
   PageDiscoveryStatus,
 } from "@/types/auditEngine"
-
-const SEVERITY_TO_ISSUE: Record<FindingSeverity, Issue["severity"]> = {
-  critical: "Critical",
-  high: "High",
-  medium: "Medium",
-  low: "Low",
-}
 
 const SCORE_LABELS: Record<string, ScoreBreakdownItem["label"]> = {
   growth: "Growth",
@@ -119,7 +113,7 @@ function scoreStatus(score: number): ScoreBreakdownItem["status"] {
 function pageStatus(issuesCount: number): PageFindingStatus {
   if (issuesCount === 0) return "Healthy"
   if (issuesCount <= 2) return "At risk"
-  return "Critical"
+  return "Needs work"
 }
 
 function priorityFromSeverity(severity: FindingSeverity, index: number): RecommendationPriority {
@@ -143,7 +137,7 @@ function mapPageFindingsToIssues(data: AuditSessionData): Issue[] {
     .map((finding) => ({
       id: finding.id,
       issue: finding.title,
-      severity: SEVERITY_TO_ISSUE[finding.severity],
+      severity: toIssueSeverity(finding.severity),
       impact: finding.description,
       recommendation: finding.recommendation,
       category: CATEGORY_LABELS[finding.category],
@@ -158,7 +152,7 @@ function mapSiteFindings(data: AuditSessionData): SiteFinding[] {
     .map((finding) => ({
       id: finding.id,
       issue: finding.title,
-      severity: SEVERITY_TO_ISSUE[finding.severity],
+      severity: toIssueSeverity(finding.severity),
       impact: finding.description,
       recommendation: finding.recommendation,
       category: CATEGORY_LABELS[finding.category],
@@ -217,7 +211,7 @@ function buildTopImpacts(findings: AuditFinding[], limit = 4): ScoreImpactItem[]
     .map((item) => ({
       title: item.title,
       count: item.count,
-      severity: SEVERITY_TO_ISSUE[item.severity],
+      severity: toIssueSeverity(item.severity),
     }))
 }
 

@@ -103,8 +103,16 @@ export function auditPageToInsert(page: AuditPage): Database["public"]["Tables"]
     path: page.path,
     title: page.title,
     discovery_status: page.discoveryStatus,
-    desktop_screenshot_key: page.screenshots.desktop.storageKey || null,
-    mobile_screenshot_key: page.screenshots.mobile.storageKey || null,
+    // Only persist storage keys for real captures — placeholder keys point at
+    // files that were never uploaded and would be misleading metadata.
+    desktop_screenshot_key:
+      page.screenshots.desktop.captureStatus === "captured"
+        ? page.screenshots.desktop.storageKey || null
+        : null,
+    mobile_screenshot_key:
+      page.screenshots.mobile.captureStatus === "captured"
+        ? page.screenshots.mobile.storageKey || null
+        : null,
     discovered_at: page.discoveredAt,
   }
 }

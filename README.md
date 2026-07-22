@@ -1,8 +1,23 @@
 # Convertly
 
-**AI-powered conversion intelligence for modern product and growth teams.**
+**Conversion intelligence for modern product and growth teams.**
 
-Convertly analyzes public websites, detects intent, runs a deterministic audit engine, and delivers scored reports with consultant-grade recommendations. Built by [HM Coding](https://hmcoding.com).
+Convertly audits public websites for conversion readiness — trust, UX, CTAs, forms, and growth blockers — then returns a **Growth Score** with prioritized, consultant-grade recommendations.
+
+Built by [HM Coding](https://hmcoding.com).
+
+### Positioning
+
+Convertly is a **conversion / CRO / business-readiness** product.
+
+| We are | We are not |
+|--------|------------|
+| Conversion, trust, growth, UX | An SEO platform |
+| Weighted business-impact scoring | Keyword / rank tracking |
+| Prioritized conversion fixes | Lighthouse / full Core Web Vitals lab suite |
+| Supporting technical signals (light) | Search Console replacement |
+
+Lightweight technical checks (H1, ALT, robots/sitemap, OG/Twitter cards, schema presence, mixed content) appear **inside the existing conversion report** as supporting signals — not a separate SEO product.
 
 ---
 
@@ -10,25 +25,23 @@ Convertly analyzes public websites, detects intent, runs a deterministic audit e
 
 ### Audit engine
 
-- **Conversion audits** — Page discovery, static and rendered content acquisition, UX/CRO rule execution
-- **Intent detection** — Website and page intent drive rule applicability
-- **Scoring** — Growth Score with category breakdowns, blocker ceilings, and confidence signals
-- **Recommendations** — Rule-linked consultant recommendations with evidence
-- **Recommendation playbooks** — Structured implementation guides per finding
-- **Live execution UI** — Stage timeline, progress ring, bot-protection handling, completion summary
+- **Conversion audits** — Page discovery, static + rendered acquisition, intent-aware rule packs
+- **Growth Score (Intelligence v4)** — Weighted conversion impact (not issue count); category breakdowns and confidence
+- **SPA-aware reliability** — Softens form/DOM findings when render confidence is low or OAuth/JS shells are detected
+- **Recommendations + playbooks** — Rule-linked fixes with implementation guidance
+- **Live execution UI** — Stage timeline, progress, bot-protection handling
 - **Exports** — PDF and structured report exports
-- **Diagnostics** — Crawl and engine diagnostics (development tooling)
 
 ### Product app
 
-- **Marketing site** — Home, pricing, sample report; Vertly available on public pages
-- **Dashboard** — Metrics, priority insights, recommendations, recent audits
-- **Audits** — History, detail reports, live execution view, report actions
-- **Vertly** — Convertly-only AI product specialist with message-first routing and page-aware context
-- **Workspace** — Usage, audit ledger, domain management
-- **Billing** — Free, Starter, Growth, and Scale plans with Razorpay subscriptions (provider abstraction)
+- **Marketing** — Home, sample report; Vertly on public pages
+- **Dashboard** — Metrics, opportunity queue, recommendations, drafts
+- **Audits** — History, detail reports, live execution, report actions
+- **Vertly** — Rule-based Convertly product specialist (message-first routing + page context; not a general LLM chatbot)
+- **Workspace** — Usage, audit ledger, domains
+- **Billing** — Free / Starter / Growth / Scale via Razorpay (Stripe-ready abstraction)
 - **Settings** — Profile, preferences, notifications, security, danger zone
-- **Auth** — Supabase auth (production) or local auth (development); password recovery flows
+- **Ops** — Email notifications (Resend), Sentry (optional), product analytics events
 
 ---
 
@@ -38,60 +51,53 @@ Convertly analyzes public websites, detects intent, runs a deterministic audit e
 |-------|------------|
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS v4 |
 | UI | shadcn/ui, Framer Motion, Lucide |
-| Auth & DB | Supabase (Auth, Postgres, Edge Functions) |
-| Payments | Razorpay subscriptions via edge functions (Stripe-ready abstraction) |
+| Auth & DB | Supabase (Auth, Postgres, Edge Functions, RLS) |
+| Payments | Razorpay subscriptions via edge functions |
+| Email | Resend via `email-notifications` edge function |
 | Render | Playwright render worker (Node.js) |
+| Monitoring | Optional Sentry (`VITE_SENTRY_DSN`, production builds only) |
 | Deploy | Vercel (client), Render/Fly (worker), Supabase (backend) |
+
+Production client build uses `vite build` (see [Vite CLI](https://vite.dev/guide/cli)).
 
 ---
 
-## Architecture
+## Architecture (summary)
+
+Full detail: [`Architecture.md`](./Architecture.md).
 
 ### Audit pipeline
 
 ```
 Website → Discovery → Acquisition (static / render)
        → Website intent → Page intent → Applicability
-       → Rule execution → Reliability → Scoring → Recommendations
-       → Snapshot → Persistence
+       → Rule execution → Render reliability → Scoring → Recommendations
+       → Snapshot → Persistence → Entitlement consume → Optional email
 ```
 
-### Vertly (in-app AI)
+Audits run **in the browser tab**. Keep the tab open until completion.
 
-Vertly answers **Convertly product questions only** — not general-purpose chat.
+### Vertly
 
 ```
-Message → Scope detection → Domain classification → Subtopic (message-first)
-       → Local handler provider → Response
+Message → Conversational intents → Scope → Domain → Subtopic
+       → Local handler (product memory / audit / billing / …) → Response
 ```
 
-Page context enriches answers; it does not override user intent. Handlers cover product memory, audit/report expertise, billing, workspace, dashboard, account state, greetings, and out-of-scope refusal.
-
-Future provider swaps (e.g. hosted LLM) replace the response provider only; routing stays the same.
+Page-context suggestions enrich prompts; product answers come from the Vertly dataset/handlers — not an open-ended SEO chatbot.
 
 ### Repository layout
 
 ```
 Convertly/
-├── client/                     # React SPA (Vite)
-│   ├── src/
-│   │   ├── app/                # Router
-│   │   ├── pages/              # Route screens
-│   │   ├── features/           # Domain UI (home, audits, vertly, dashboard, …)
-│   │   ├── components/         # Shared UI (auth, billing, audit, layout, …)
-│   │   ├── hooks/              # Shared React hooks
-│   │   ├── services/           # Business logic
-│   │   │   ├── audit/          # Engine, crawl, intelligence, playbooks
-│   │   │   ├── auth/           # Supabase auth provider
-│   │   │   ├── payment/        # Payment edge function client
-│   │   │   └── repositories/   # Data access (audit, business)
-│   │   ├── lib/                # Env, routes, billing, utilities
-│   │   └── styles/             # Global and layout CSS
-│   └── scripts/                # Verification and dev scripts
-├── render-worker/              # Playwright page renderer (POST /render)
+├── client/                 # React SPA (Vite)
+├── render-worker/          # Playwright POST /render
 ├── supabase/
-│   ├── migrations/             # Database schema
-│   └── functions/              # Edge functions (audit, payments, account)
+│   ├── migrations/
+│   ├── functions/          # Edge functions + _shared
+│   └── scripts/            # OPERATIONS.md runbook
+├── Architecture.md
+├── LAUNCH-CHECKLIST.md
 └── README.md
 ```
 
@@ -102,7 +108,7 @@ Convertly/
 | Route | Access | Screen |
 |-------|--------|--------|
 | `/` | Public | Marketing home |
-| `/sample-report` | Public | Sample audit report |
+| `/sample-report` | Public | Sample conversion audit report |
 | `/login`, `/signup`, `/forgot-password` | Guest | Auth |
 | `/reset-password` | Public | Password recovery |
 | `/dashboard` | Authenticated | Dashboard |
@@ -111,17 +117,6 @@ Convertly/
 | `/workspace` | Authenticated | Workspace |
 | `/billing`, `/billing/return` | Authenticated | Plans and checkout return |
 | `/settings/*` | Authenticated | Profile, preferences, notifications, security, danger zone |
-
-Authenticated routes are wrapped in `ProtectedRoute`. Guest auth routes redirect signed-in users to the dashboard.
-
----
-
-## Prerequisites
-
-- Node.js 20+
-- npm 10+
-- Supabase CLI (optional — migrations and linked DB)
-- Playwright Chromium for the render worker: `npx playwright install chromium`
 
 ---
 
@@ -132,172 +127,99 @@ cd client
 npm install
 cp .env.example .env
 npm run dev          # http://localhost:5173
-npm run typecheck    # TypeScript check
-npm run lint         # ESLint
-npm run build        # Production bundle (vite build)
+npm run typecheck
+npm run lint
+npm run build        # vite build
 ```
 
-For local development without Supabase, set `VITE_USE_LOCAL_AUTH=true` in `client/.env`. Production deployments must use Supabase auth (`VITE_USE_LOCAL_AUTH=false`).
+Prerequisites: Node.js 20+, npm 10+. For the render worker: `npx playwright install chromium`.
 
-Optional render worker (SPA sites without Supabase edge proxy):
+Local auth without Supabase: `VITE_USE_LOCAL_AUTH=true`. Production must use `VITE_USE_LOCAL_AUTH=false`.
+
+Optional local render worker:
 
 ```bash
 cd render-worker
-npm install
-npx playwright install chromium
+npm install && npx playwright install chromium
 npm run dev          # http://localhost:3100
 ```
 
-Then set `VITE_AUDIT_RENDER_URL` in `client/.env` to your local worker `/render` endpoint (see `client/.env.example`).
+Set `VITE_AUDIT_RENDER_URL` in `client/.env` (see `client/.env.example`).
 
 ---
 
-## Environment variables
-
-Copy `client/.env.example` to `client/.env`. **Do not commit `.env` files.**
+## Environment variables (client)
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL (project root, not `/rest/v1/`) |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key — safe for client bundles |
-| `VITE_APP_URL` | Public app URL for auth and billing redirects (no trailing slash) |
-| `VITE_USE_LOCAL_AUTH` | `true` = localStorage dev auth; `false` = Supabase auth (production) |
-| `VITE_AUDIT_RENDER_URL` | Optional local render worker URL |
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Anon (public) key |
+| `VITE_APP_URL` | Public app origin for auth/billing redirects (no trailing slash) |
+| `VITE_USE_LOCAL_AUTH` | `true` localStorage auth; `false` for production |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile (optional) |
+| `VITE_AUDIT_RENDER_URL` | Optional local render worker |
+| `VITE_SENTRY_DSN` | Optional Sentry DSN (production only) |
 
-Supabase **edge function secrets** (payment credentials, render worker URL, webhook signing keys) belong in the Supabase dashboard or CLI — never in the client repo. See `supabase/functions/PAYMENTS.md` for payment provider setup (no secrets in git).
+Edge secrets (Resend, Razorpay, render worker token, service role, `APP_URL`) live in Supabase — never in the client bundle. See `supabase/functions/PAYMENTS.md` and `NOTIFICATIONS.md`.
 
-Production builds log a console warning if local auth is enabled or Supabase variables are missing (`warnIfProductionMisconfigured` in `client/src/lib/env.ts`).
+---
+
+## Supabase
+
+### Migrations
+
+Apply in timestamp order (`supabase db push`). Notable recent migrations:
+
+| Migration | Purpose |
+|-----------|---------|
+| `…_audit_engine.sql` … business/payment foundation | Core schema |
+| `…_audit_entitlement_consumption.sql` | Entitlement ledger |
+| `…_vertly_conversations.sql` | Vertly history |
+| `…_fail_stale_audits_watchdog.sql` | Stuck-audit cleanup |
+| `…_atomic_audit_start_entitlement.sql` | Start-race entitlement fix |
+| `…_product_events.sql` | Product analytics |
+| `…_service_role_notification_grants.sql` | Email function table grants |
+
+### Edge functions
+
+| Function | Role |
+|----------|------|
+| `audit-fetch` | Server-side HTML / robots / sitemap fetch |
+| `audit-render` | Playwright render proxy |
+| `email-notifications` | Audit complete, score-drop, weekly digest (Resend) |
+| `delete-account` | Account deletion |
+| `payment-checkout` | Start subscription checkout |
+| `payment-portal` | Subscription management |
+| `payment-cancel` | Cancel subscription |
+| `payment-change-plan` | Plan change flow |
+| `payment-webhook` | Provider webhook ingestion (no user JWT) |
+
+Ops runbook: [`supabase/scripts/OPERATIONS.md`](./supabase/scripts/OPERATIONS.md).
+
+---
+
+## Production launch
+
+Follow [`LAUNCH-CHECKLIST.md`](./LAUNCH-CHECKLIST.md) for Razorpay live cutover, render worker token, Resend, Sentry, migrations, and Vercel env.
 
 ---
 
 ## Security
 
-- **Secrets** — Never commit API keys, webhook secrets, service role keys, or `.env` files. Use `.env.example` as a template only.
-- **Client bundle** — Only `VITE_*` public variables ship to the browser. The Supabase anon key is designed for client use with Row Level Security.
-- **Service role** — Restricted to edge functions and server-side tooling; never expose in the SPA.
-- **Auth** — Protected routes require a valid session. Unauthenticated users are redirected to login with a safe return path.
-- **Errors** — User-facing load errors use generic copy; technical details are logged via `createLogger()` only.
-- **Payments** — Checkout and webhooks run through authenticated edge functions; provider secrets stay in Supabase function configuration.
-
----
-
-## TypeScript configuration
-
-| File | Purpose |
-|------|---------|
-| `tsconfig.json` | Root project references |
-| `tsconfig.app.json` | Application source (`src/`) |
-| `tsconfig.node.json` | Vite config (Node types) |
-| `tsconfig.typecheck.json` | Used by `npm run typecheck` |
-
-Path alias: `@/*` → `src/*` (defined in `tsconfig.app.json`, resolved by Vite).
-
----
-
-## Scripts
-
-From `client/`:
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Vite dev server |
-| `npm run build` | Production build |
-| `npm run typecheck` | TypeScript check |
-| `npm run lint` | ESLint |
-| `npm run preview` | Preview production build |
-
-Verification scripts:
-
-```bash
-node scripts/verify-vertly-intent.mjs
-node scripts/verify-v5-intent.mjs
-node scripts/verify-v5-applicability.mjs
-```
-
----
-
-## Supabase setup
-
-1. Create a Supabase project.
-2. Apply migrations in timestamp order:
-
-```bash
-supabase link --project-ref <your-project-ref>
-supabase db push
-```
-
-| Migration | Purpose |
-|-----------|---------|
-| `20250623000000_audit_engine.sql` | Core audit schema |
-| `20250623100000_audit_score_categories.sql` | Score categories |
-| `20250706100000_audit_findings_rule_id.sql` | `rule_id` on findings |
-| `20250706120000_business_foundation.sql` | Profiles, workspaces, subscriptions |
-| `20250706130000_payment_provider.sql` | Payment provider fields |
-| `20250707120000_user_plan_overrides.sql` | Internal plan overrides |
-| `20250707140000_business_table_grants.sql` | Business table grants |
-| `20250707150000_ensure_business_foundation.sql` | Bootstrap RPC |
-| `20250707160000_service_role_business_grants.sql` | Service role grants |
-| `20250713160000_subscription_scheduled_plan.sql` | Scheduled plan changes |
-| `20250713180000_subscription_pending_plan.sql` | Pending plan state |
-| `20250713213000_audit_draft_lifecycle.sql` | Audit draft lifecycle |
-
-3. Deploy edge functions: `audit-fetch`, `audit-render`, `delete-account`, `payment-checkout`, `payment-portal`, `payment-cancel`, `payment-webhook`.
-4. Configure function secrets in Supabase (render worker URL, payment provider — see `PAYMENTS.md`).
-5. Allowlist auth redirect URLs: `/reset-password`, `/settings/profile`, `/billing/return`.
-
-### Edge functions
-
-| Function | JWT | Role |
-|----------|-----|------|
-| `audit-fetch` | yes | Server-side static HTML fetch |
-| `audit-render` | yes | Playwright render proxy |
-| `delete-account` | yes | Account deletion |
-| `payment-checkout` | yes | Start subscription checkout |
-| `payment-portal` | yes | Subscription management URL |
-| `payment-cancel` | yes | Cancel subscription |
-| `payment-webhook` | no | Provider webhook ingestion |
-
----
-
-## Render worker
-
-Local or hosted Node service:
-
-- `POST /render` — Playwright render with multi-strategy navigation
-- `GET /health` — Health check
-
-Point Supabase `audit-render` at the deployed worker URL via function secrets.
-
----
-
-## Production deployment
-
-### Client (Vercel)
-
-- Root directory: `client`
-- Build command: `vite build`
-- Output: `dist`
-- Set `VITE_*` variables in the hosting dashboard (not in the repo)
-
-### Render worker
-
-Deploy `render-worker/` to Render, Fly.io, or similar. Install Playwright Chromium in the runtime image.
-
-### Supabase
-
-- Run pending migrations on production before or with each release
-- Deploy edge functions after schema changes
-- Configure payment webhooks and secrets in the Supabase dashboard
+- Never commit secrets or `.env` files
+- Only `VITE_*` public values ship to the browser; RLS protects data
+- Service role stays in edge functions
+- Payments and webhooks run server-side
+- Render worker requires `RENDER_WORKER_TOKEN` in production
 
 ---
 
 ## Coding standards
 
-- **TypeScript** — Use `@/*` imports; run `npm run typecheck` before merge
-- **Logging** — Use `createLogger()` from `src/lib/logger.ts`
-- **UI** — Premium dark SaaS aesthetic; reusable components; mobile-first
-- **Scope** — Minimal focused diffs; avoid unrelated refactors
-- **Engine** — Do not change scoring logic or pipeline topology without explicit approval
+- Prefer `@/*` imports; run `npm run typecheck` before merge
+- Log with `createLogger()` — no sensitive data in client logs
+- Premium dark SaaS UI; mobile-first; minimal focused diffs
+- **Do not** redesign the audit engine, rewrite scoring, or reposition as SEO without explicit approval
 
 ---
 
@@ -305,9 +227,8 @@ Deploy `render-worker/` to Render, Fly.io, or similar. Install Playwright Chromi
 
 | Branch | Purpose |
 |--------|---------|
-| `main` | Production — release-ready work merges here |
-| `develop` | Experimental spikes (not a merge bridge) |
-| `fix/*`, `feat/*` | Feature and fix branches → `main` when ready |
+| `main` | Production |
+| `fix/*`, `feat/*` | Work → `main` when ready |
 
 ---
 
@@ -315,18 +236,18 @@ Deploy `render-worker/` to Render, Fly.io, or similar. Install Playwright Chromi
 
 ### Shipped
 
-- Intent detection and applicability engine
-- Business foundation (profiles, workspaces, subscriptions, billing)
-- Vertly Convertly-only routing with page context
-- Live audit execution experience
-- Marketing site with sample report and Vertly
-- Settings, security, and account deletion flows
+- Conversion audit engine + Growth Score + confidence / SPA softening
+- Business foundation, billing, workspace ledger
+- Vertly Convertly-only routing + expanded context suggestions
+- Live execution, sample report, notifications plumbing
+- Lightweight supporting technical signals in-report
 
 ### Next
 
-- Team invitations and organization workspaces
+- Team invitations / org workspaces
 - Optional hosted LLM provider for Vertly (routing unchanged)
-- Enhanced crawl for geo-restricted sites
+- Stronger crawl for geo-restricted / heavily blocked sites
+- Razorpay live-mode cutover after QA (see launch checklist)
 
 ---
 
@@ -334,13 +255,9 @@ Deploy `render-worker/` to Render, Fly.io, or similar. Install Playwright Chromi
 
 Proprietary. © 2026 Convertly · HM Coding. All rights reserved.
 
----
-
 ## Contributing
 
-1. Branch from `main` (or `fix/*` / `feat/*`)
-2. From `client/`, run `npm run typecheck`, `npm run lint`, and `npm run build`
-3. Keep changes scoped; include migration notes if schema changes
-4. Never commit secrets, `.env` files, or credentials
-
-For internal HM Coding contributors: apply Supabase migrations to staging before production.
+1. Branch from `main`
+2. From `client/`: `npm run typecheck`, `npm run lint`, `npm run build`
+3. Keep changes scoped; note migrations if schema changes
+4. Never commit secrets

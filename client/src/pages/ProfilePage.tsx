@@ -382,7 +382,7 @@ function ProfilePage() {
 
   const readOnlyValues: Record<ReadOnlyFieldKey, string> = {
     createdAt: formatAccountDate(account.createdAt),
-    plan: account.plan,
+    plan: account.plan.trim() || "—",
     authProvider: account.authProvider,
   }
 

@@ -30,7 +30,7 @@ const features = [
     visual: "queue",
   },
   {
-    title: "AI Guidance",
+    title: "Actionable Guidance",
     description:
       "Turn findings into concise recommendations with clear ownership and implementation direction.",
     gridClassName: "sm:col-span-1 lg:col-span-1",
@@ -250,7 +250,7 @@ function FeaturesSection() {
                       {feature.visual === "guidance" ? (
                         <div className="marketing-tile border border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] lg:mt-auto p-4 flex flex-col gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                           <span className="text-[0.55rem] font-bold tracking-widest text-[var(--accent)] uppercase leading-none">
-                            AI ANALYSIS FRAGMENT
+                            ANALYSIS FRAGMENT
                           </span>
                           <Text size="sm" className="italic text-foreground/80 leading-relaxed max-w-none pt-1">
                             "Shorten the hero copy above the fold and elevate the primary CTA — expected lift +12.4%."

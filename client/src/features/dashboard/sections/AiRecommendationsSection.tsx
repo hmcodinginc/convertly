@@ -21,8 +21,8 @@ function AiRecommendationsSection({
     <>
       <AppPageSection
         className="dashboard-ai-recommendations"
-        eyebrow="AI insights"
-        title="AI recommendations"
+        eyebrow="Audit insights"
+        title="Recommendations"
         description={
           auditDomain
             ? `Recommendations generated for ${auditDomain}`

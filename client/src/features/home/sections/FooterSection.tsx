@@ -53,7 +53,7 @@ function FooterSection() {
             <div className="space-y-4 md:col-span-6 lg:col-span-5">
               <ConvertlyLogoLink to={ROUTES.home} className="text-foreground/90 transition-transform duration-300 hover:scale-[1.02] active:scale-95 inline-flex" />
               <Text variant="muted" size="sm" className="max-w-[42ch] leading-6 text-foreground/60">
-                AI growth intelligence for teams that care about conversion quality – from insight to shipped experiment.
+                Growth intelligence for teams that care about conversion quality – from insight to shipped experiment.
               </Text>
             </div>
             {/* Nav Columns — rendered using grid layout for balanced distribution */}

@@ -19,6 +19,9 @@ export const RENDER_SENSITIVE_RULE_IDS = new Set([
   "conversion-no-urgency",
   "trust-no-testimonials",
   "trust-no-social-proof",
+  "login-missing-form",
+  "signup-missing-form",
+  "contact-no-form",
 ])
 
 /** DOM structure rules — H1, viewport, meta, headings, landmarks */
@@ -53,6 +56,15 @@ export const CONVERSION_DOM_RULE_IDS = new Set([
   "conversion-no-urgency",
   "trust-no-testimonials",
   "trust-no-social-proof",
+  "login-missing-form",
+  "signup-missing-form",
+  "contact-no-form",
+])
+
+export const FORM_DETECTION_RULE_IDS = new Set([
+  "login-missing-form",
+  "signup-missing-form",
+  "contact-no-form",
 ])
 
 export function isRenderSensitiveRule(ruleId: string): boolean {
@@ -65,4 +77,8 @@ export function isDomDependentRule(ruleId: string): boolean {
 
 export function isConversionDomRule(ruleId: string): boolean {
   return CONVERSION_DOM_RULE_IDS.has(ruleId)
+}
+
+export function isFormDetectionRule(ruleId: string): boolean {
+  return FORM_DETECTION_RULE_IDS.has(ruleId)
 }

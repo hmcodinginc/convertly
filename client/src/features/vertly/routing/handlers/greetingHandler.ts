@@ -12,7 +12,7 @@ export function handleGreetingRoute(
 
   return {
     content:
-      "Hey — good to see you. I'm Vertly, Convertly's AI Product Specialist.\n\n" +
+      "Hey — good to see you. I'm Vertly, Convertly's product specialist.\n\n" +
       "Ask me about audits, reports, your plan, billing, or workspace.",
     suggestions: [
       {

@@ -26,7 +26,7 @@ const ROADMAP = [
     phase: "Current",
     title: "MVP launch",
     description:
-      "AI conversion audits, Growth Score, prioritized recommendations, implementation playbooks, workspace domains, and subscription billing.",
+      "Automated conversion audits, Growth Score, prioritized recommendations, implementation playbooks, workspace domains, and subscription billing.",
   },
   {
     id: "next",
@@ -61,7 +61,7 @@ function AboutDocumentation() {
 
       <DocumentationSection id="mission" title="Mission" icon={Target}>
         <p>
-          Help modern teams improve website conversion with focused AI analysis, clear
+          Help modern teams improve website conversion with focused automated analysis, clear
           prioritization, and implementation guidance they can actually ship.
         </p>
       </DocumentationSection>
@@ -118,7 +118,7 @@ function AboutDocumentation() {
         </InfoGrid>
       </DocumentationSection>
 
-      <DocumentationSection id="engine" title="AI Audit Engine" icon={Bot}>
+      <DocumentationSection id="engine" title="Audit Engine" icon={Bot}>
         <p>
           Convertly&apos;s audit engine crawls public pages, renders DOM snapshots, runs a
           production rule catalog, and synthesizes consultant-style recommendations with score
