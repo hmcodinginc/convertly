@@ -19,6 +19,7 @@ function ForgotPasswordPage() {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
@@ -47,6 +48,7 @@ function ForgotPasswordPage() {
       setIsSubmitted(true)
     } catch (error) {
       setCaptchaToken(null)
+      setCaptchaResetNonce((value) => value + 1)
       setFormError(
         error instanceof Error ? error.message : "Unable to process reset request."
       )
@@ -95,8 +97,8 @@ function ForgotPasswordPage() {
           {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
 
           <AuthCaptcha
-            key={formError ?? "forgot-captcha"}
             onToken={setCaptchaToken}
+            resetNonce={captchaResetNonce}
           />
 
           <Button

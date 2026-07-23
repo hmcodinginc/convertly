@@ -9,12 +9,15 @@ import { ChangePasswordForm } from "@/features/profile/components/ChangePassword
 import { DeleteAccountModal } from "@/features/profile/components/DeleteAccountModal"
 import { ProfileActionBar } from "@/features/profile/components/ProfileActionBar"
 import {
-  ProfileDetailsEditField,
   ProfileDetailsGrid,
   ProfileDetailsRow,
   ProfileDetailsValue,
 } from "@/features/profile/components/ProfileDetailsGrid"
 import { ProfileEditDrawer } from "@/features/profile/components/ProfileEditDrawer"
+import { ProfileEditForm } from "@/features/profile/components/ProfileEditForm"
+import { UserAvatar } from "@/features/profile/components/UserAvatar"
+import { getCountryName } from "@/features/profile/content/countries"
+import { formatBirthdateDisplay } from "@/features/profile/utils/birthday"
 import { Card } from "@/components/surfaces/Card"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/typography/Text"
@@ -31,7 +34,6 @@ import {
   finalizePasswordRecovery,
   isInAppPasswordRecoveryActive,
 } from "@/lib/passwordRecoveryPersistence"
-import { validateProfileNameFields } from "@/lib/profileValidation"
 import { shouldUseLocalAuth } from "@/lib/env"
 import { ROUTES } from "@/lib/routes"
 import * as accountService from "@/services/accountService"
@@ -85,26 +87,12 @@ function ProfilePage() {
     () => persistedPassword?.open ?? recoveryActiveOnLoad
   )
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [mobileFirstName, setMobileFirstName] = useState("")
-  const [mobileLastName, setMobileLastName] = useState("")
-  const [mobileFieldErrors, setMobileFieldErrors] = useState<{
-    firstName?: string
-    lastName?: string
-  }>({})
-  const [mobileFormError, setMobileFormError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const recoveryDismissedRef = useRef(false)
-
-  const resetMobileEdit = useCallback((firstName: string, lastName: string) => {
-    setMobileFirstName(firstName)
-    setMobileLastName(lastName)
-    setMobileFieldErrors({})
-    setMobileFormError(null)
-  }, [])
 
   const syncEditPersistence = useCallback(
     (open: boolean, firstName: string, lastName: string) => {
@@ -193,17 +181,11 @@ function ProfilePage() {
       if (persistedEdit?.open && !editFirstName && !editLastName) {
         setEditFirstName(account.firstName)
         setEditLastName(account.lastName)
-        resetMobileEdit(account.firstName, account.lastName)
-        return
-      }
-
-      if (!persistedEdit?.open) {
-        resetMobileEdit(account.firstName, account.lastName)
       }
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [account, editFirstName, editLastName, persistedEdit?.open, resetMobileEdit])
+  }, [account, editFirstName, editLastName, persistedEdit?.open])
 
   const openEdit = useCallback(() => {
     if (!account) return
@@ -211,7 +193,6 @@ function ProfilePage() {
     setSaveError(null)
     setEditFirstName(account.firstName)
     setEditLastName(account.lastName)
-    resetMobileEdit(account.firstName, account.lastName)
 
     if (isDesktop) {
       setEditDrawerOpen(true)
@@ -222,7 +203,7 @@ function ProfilePage() {
     setMobilePasswordMode(false)
     setMobileEditMode(true)
     syncEditPersistence(true, account.firstName, account.lastName)
-  }, [account, isDesktop, resetMobileEdit, syncEditPersistence])
+  }, [account, isDesktop, syncEditPersistence])
 
   const closeEdit = useCallback(() => {
     if (!account) return
@@ -230,9 +211,8 @@ function ProfilePage() {
     setMobileEditMode(false)
     setEditFirstName(account.firstName)
     setEditLastName(account.lastName)
-    resetMobileEdit(account.firstName, account.lastName)
     syncEditPersistence(false, account.firstName, account.lastName)
-  }, [account, resetMobileEdit, syncEditPersistence])
+  }, [account, syncEditPersistence])
 
   const closeMobilePassword = useCallback(() => {
     setMobilePasswordMode(false)
@@ -296,27 +276,6 @@ function ProfilePage() {
     },
     [isDesktop, refreshSession, syncEditPersistence]
   )
-
-  const handleMobileSave = useCallback(async () => {
-    setMobileFormError(null)
-    const errors = validateProfileNameFields({
-      firstName: mobileFirstName,
-      lastName: mobileLastName,
-    })
-    setMobileFieldErrors(errors)
-    if (Object.keys(errors).length > 0) return
-
-    try {
-      await handleSaveProfile({
-        firstName: mobileFirstName.trim(),
-        lastName: mobileLastName.trim(),
-      })
-    } catch (error) {
-      setMobileFormError(
-        error instanceof Error ? error.message : "Unable to save profile."
-      )
-    }
-  }, [handleSaveProfile, mobileFirstName, mobileLastName])
 
   const handleChangePassword = useCallback(
     async (input: ChangePasswordInput) => {
@@ -391,6 +350,9 @@ function ProfilePage() {
   const hideMobileActionBar =
     !isDesktop && (isEditing || isMobilePasswordActive || deleteModalOpen)
 
+  const countryLabel = getCountryName(account.country)
+  const birthdayLabel = account.birthdate ? formatBirthdateDisplay(account.birthdate) : null
+
   return (
     <>
       <Card className="app-card-body profile-card app-card-stack hover:translate-y-0">
@@ -400,12 +362,12 @@ function ProfilePage() {
           }
         >
           <div className="profile-identity">
-            <span
-              aria-hidden
-              className="flex size-14 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#7c6cff_0%,#5d7dff_52%,#35b3ff_100%)] text-base font-semibold tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"
-            >
-              {account.initials}
-            </span>
+            <UserAvatar
+              initials={account.initials}
+              avatarUrl={account.avatarUrl}
+              size="lg"
+              alt={`${account.fullName} profile photo`}
+            />
             <div className="min-w-0">
               <Text size="sm" className="max-w-none font-medium">
                 {account.fullName}
@@ -455,74 +417,55 @@ function ProfilePage() {
           />
         ) : null}
 
-        {!isMobilePasswordActive ? (
-        <div className="profile-details-panel">
-          <ProfileDetailsGrid>
-            <ProfileDetailsRow label="First Name">
-              {isEditing ? (
-                <ProfileDetailsEditField
-                  label="First Name"
-                  value={mobileFirstName}
-                  onChange={setMobileFirstName}
-                  error={mobileFieldErrors.firstName}
-                  disabled={isSaving}
-                  autoComplete="given-name"
-                />
-              ) : (
-                <ProfileDetailsValue value={account.firstName} />
-              )}
-            </ProfileDetailsRow>
-
-            <ProfileDetailsRow label="Last Name">
-              {isEditing ? (
-                <ProfileDetailsEditField
-                  label="Last Name"
-                  value={mobileLastName}
-                  onChange={setMobileLastName}
-                  error={mobileFieldErrors.lastName}
-                  disabled={isSaving}
-                  autoComplete="family-name"
-                />
-              ) : (
-                <ProfileDetailsValue value={account.lastName} />
-              )}
-            </ProfileDetailsRow>
-
-            <ProfileDetailsRow label="Email">
-              <ProfileDetailsValue value={account.email} />
-            </ProfileDetailsRow>
-
-            {readOnlyFields.map((field) => (
-              <ProfileDetailsRow key={field.key} label={field.label}>
-                <ProfileDetailsValue value={readOnlyValues[field.key]} />
-              </ProfileDetailsRow>
-            ))}
-          </ProfileDetailsGrid>
-        </div>
+        {isEditing ? (
+          <ProfileEditForm
+            initialFirstName={account.firstName}
+            initialLastName={account.lastName}
+            initialBirthdate={account.birthdate}
+            initialCountry={account.country}
+            initialAvatarUrl={account.avatarUrl}
+            initials={account.initials}
+            email={account.email}
+            onSave={handleSaveProfile}
+            onCancel={closeEdit}
+            isSubmitting={isSaving}
+            onPersistValues={({ firstName, lastName }) => {
+              setEditFirstName(firstName)
+              setEditLastName(lastName)
+              syncEditPersistence(true, firstName, lastName)
+            }}
+          />
         ) : null}
 
-        {isEditing ? (
-          <div className="mt-4 space-y-3 border-t border-[color-mix(in_srgb,var(--border)_50%,transparent)] pt-4">
-            {mobileFormError ? <AuthFormMessage>{mobileFormError}</AuthFormMessage> : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={closeEdit}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void handleMobileSave()}
-                disabled={isSaving}
-              >
-                {isSaving ? "Saving…" : "Save"}
-              </Button>
-            </div>
+        {!isMobilePasswordActive && !isEditing ? (
+          <div className="profile-details-panel">
+            <ProfileDetailsGrid>
+              <ProfileDetailsRow label="First Name">
+                <ProfileDetailsValue value={account.firstName} />
+              </ProfileDetailsRow>
+
+              <ProfileDetailsRow label="Last Name">
+                <ProfileDetailsValue value={account.lastName} />
+              </ProfileDetailsRow>
+
+              <ProfileDetailsRow label="Email">
+                <ProfileDetailsValue value={account.email} />
+              </ProfileDetailsRow>
+
+              <ProfileDetailsRow label="Birthday">
+                <ProfileDetailsValue value={birthdayLabel ?? "Not set"} />
+              </ProfileDetailsRow>
+
+              <ProfileDetailsRow label="Country">
+                <ProfileDetailsValue value={countryLabel ?? "Not set"} />
+              </ProfileDetailsRow>
+
+              {readOnlyFields.map((field) => (
+                <ProfileDetailsRow key={field.key} label={field.label}>
+                  <ProfileDetailsValue value={readOnlyValues[field.key]} />
+                </ProfileDetailsRow>
+              ))}
+            </ProfileDetailsGrid>
           </div>
         ) : null}
       </Card>
@@ -531,6 +474,10 @@ function ProfilePage() {
         open={editDrawerOpen && isDesktop}
         firstName={editFirstName || account.firstName}
         lastName={editLastName || account.lastName}
+        birthdate={account.birthdate}
+        country={account.country}
+        avatarUrl={account.avatarUrl}
+        initials={account.initials}
         email={account.email}
         isSubmitting={isSaving}
         onClose={closeEdit}

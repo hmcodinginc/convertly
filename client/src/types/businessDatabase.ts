@@ -10,6 +10,9 @@ export type BusinessDatabase = {
           email: string
           first_name: string
           last_name: string
+          birthdate: string | null
+          country: string | null
+          avatar_url: string | null
           created_at: string
           updated_at: string
         }
@@ -18,6 +21,9 @@ export type BusinessDatabase = {
           email: string
           first_name?: string
           last_name?: string
+          birthdate?: string | null
+          country?: string | null
+          avatar_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -25,6 +31,9 @@ export type BusinessDatabase = {
           email?: string
           first_name?: string
           last_name?: string
+          birthdate?: string | null
+          country?: string | null
+          avatar_url?: string | null
           updated_at?: string
         }
         Relationships: []

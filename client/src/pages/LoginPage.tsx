@@ -21,6 +21,7 @@ function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -59,6 +60,7 @@ function LoginPage() {
       navigate(redirectTo, { replace: true })
     } catch (error) {
       setCaptchaToken(null)
+      setCaptchaResetNonce((value) => value + 1)
       setFormError(error instanceof Error ? error.message : "Unable to sign in.")
     } finally {
       setIsSubmitting(false)
@@ -117,8 +119,8 @@ function LoginPage() {
         {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
 
         <AuthCaptcha
-          key={formError ?? "login-captcha"}
           onToken={setCaptchaToken}
+          resetNonce={captchaResetNonce}
         />
 
         <Button

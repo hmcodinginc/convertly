@@ -6,6 +6,10 @@ type ProfileEditDrawerProps = {
   open: boolean
   firstName: string
   lastName: string
+  birthdate?: string | null
+  country?: string | null
+  avatarUrl?: string | null
+  initials: string
   email: string
   isSubmitting: boolean
   onClose: () => void
@@ -17,6 +21,10 @@ function ProfileEditDrawer({
   open,
   firstName,
   lastName,
+  birthdate,
+  country,
+  avatarUrl,
+  initials,
   email,
   isSubmitting,
   onClose,
@@ -28,14 +36,19 @@ function ProfileEditDrawer({
       open={open}
       onClose={onClose}
       title="Edit profile"
-      description="Update your name and review your sign-in email."
+      description="Update your details. Birthday, country, and photo are optional."
       side="right"
-      className="max-w-md"
+      className="profile-edit-drawer max-w-[min(100vw-1rem,36rem)]"
       contentClassName="!py-5"
     >
       <ProfileEditForm
+        key={`${firstName}-${lastName}-${birthdate ?? ""}-${country ?? ""}-${avatarUrl ?? ""}-${open}`}
         initialFirstName={firstName}
         initialLastName={lastName}
+        initialBirthdate={birthdate}
+        initialCountry={country}
+        initialAvatarUrl={avatarUrl}
+        initials={initials}
         email={email}
         onSave={onSave}
         onCancel={onClose}

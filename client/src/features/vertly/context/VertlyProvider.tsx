@@ -342,13 +342,15 @@ function VertlyProvider({
     setPageOverride(context)
   }, [])
 
-  const { speechBubble, dismissSpeechBubble } = useVertlyLifeEngine({
+  const { speechBubble, dismissSpeechBubble, showSpeechBubble } = useVertlyLifeEngine({
     userKey,
     variant,
     isOpen,
     pageContext,
     unreadCount,
   })
+
+  const [launcherSuppressed, setLauncherSuppressed] = useState(false)
 
   const value = useMemo(
     () => ({
@@ -362,6 +364,7 @@ function VertlyProvider({
       position,
       showProactive,
       speechBubble,
+      launcherSuppressed,
       open,
       close,
       toggle,
@@ -369,6 +372,8 @@ function VertlyProvider({
       selectSuggestion,
       dismissProactive: dismissProactiveSuggestion,
       dismissSpeechBubble,
+      showSpeechBubble,
+      setLauncherSuppressed,
       setDragging: setIsDragging,
       setPosition,
       registerPageContext,
@@ -384,6 +389,7 @@ function VertlyProvider({
       position,
       showProactive,
       speechBubble,
+      launcherSuppressed,
       open,
       close,
       toggle,
@@ -391,6 +397,7 @@ function VertlyProvider({
       selectSuggestion,
       dismissProactiveSuggestion,
       dismissSpeechBubble,
+      showSpeechBubble,
       setPosition,
       registerPageContext,
     ]

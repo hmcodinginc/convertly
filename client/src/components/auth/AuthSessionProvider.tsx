@@ -46,9 +46,11 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
     const task = (async () => {
       const next = await authService.loadAuthState({ validate: true })
       let account = next.account
-      if (account && isBusinessFoundationEnabled()) {
+      if (account) {
         try {
-          await ensureBusinessFoundation(account.userId)
+          if (isBusinessFoundationEnabled()) {
+            await ensureBusinessFoundation(account.userId)
+          }
           account = (await accountService.getEnrichedAccount()) ?? account
         } catch {
           /* keep base account */
@@ -91,9 +93,11 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
         const next = await authService.loadAuthState({ validate: true })
         if (!cancelled) {
           let account = next.account
-          if (account && isBusinessFoundationEnabled()) {
+          if (account) {
             try {
-              await ensureBusinessFoundation(account.userId)
+              if (isBusinessFoundationEnabled()) {
+                await ensureBusinessFoundation(account.userId)
+              }
               account = (await accountService.getEnrichedAccount()) ?? account
             } catch {
               /* bootstrap may fail offline — keep base account */
@@ -154,9 +158,11 @@ function AuthSessionProvider({ children }: { children: React.ReactNode }) {
         sessionUserIdRef.current = next.session?.userId ?? null
 
         let account = next.account
-        if (account && isBusinessFoundationEnabled()) {
+        if (account) {
           try {
-            await ensureBusinessFoundation(account.userId)
+            if (isBusinessFoundationEnabled()) {
+              await ensureBusinessFoundation(account.userId)
+            }
             account = (await accountService.getEnrichedAccount()) ?? account
           } catch {
             /* keep base account if enrichment fails */
