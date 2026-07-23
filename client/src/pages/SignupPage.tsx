@@ -30,6 +30,7 @@ function SignupPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [accountExists, setAccountExists] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard
@@ -78,6 +79,7 @@ function SignupPage() {
       navigate(redirectTo, { replace: true })
     } catch (error) {
       setCaptchaToken(null)
+      setCaptchaResetNonce((value) => value + 1)
       if (error instanceof AccountExistsError) {
         setAccountExists(true)
         setFormError(error.message)
@@ -192,8 +194,8 @@ function SignupPage() {
         {formError ? <AuthFormMessage>{formError}</AuthFormMessage> : null}
 
         <AuthCaptcha
-          key={formError ?? "signup-captcha"}
           onToken={setCaptchaToken}
+          resetNonce={captchaResetNonce}
         />
 
         {accountExists ? (

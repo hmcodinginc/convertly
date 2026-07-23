@@ -30,6 +30,12 @@ import {
   type SignupInput,
   type UserProfile,
 } from "@/types/auth"
+import {
+  deleteAvatarObject,
+  updateProfileRow,
+  uploadAvatarBlob,
+} from "@/services/profile/profileExtrasService"
+import { formatPersonName } from "@/features/profile/utils/profileName"
 
 function readMetadataString(user: User, key: string): string {
   const metadata = user.user_metadata ?? {}
@@ -115,19 +121,22 @@ function resolveAuthProvider(user: User): string {
 
 function mapUserToAccountInfo(user: User): AccountInfo {
   const profile = mapUserToProfile(user)
-  const fullName = `${profile.firstName} ${profile.lastName}`.trim()
-  const displayName = fullName || profile.email
+  const named = formatPersonName(profile.firstName, profile.lastName)
+  const displayName = named.fullName || profile.email
 
   return {
     userId: profile.userId,
     email: profile.email,
-    firstName: profile.firstName,
-    lastName: profile.lastName,
+    firstName: named.firstName,
+    lastName: named.lastName,
     fullName: displayName,
-    initials: buildInitials(profile.firstName, profile.lastName, profile.email),
+    initials: buildInitials(named.firstName, named.lastName, profile.email),
     createdAt: profile.createdAt,
     plan: "",
     authProvider: resolveAuthProvider(user),
+    birthdate: null,
+    country: null,
+    avatarUrl: null,
   }
 }
 
@@ -260,6 +269,7 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
 export async function signUpWithSupabase(input: SignupInput): Promise<AuthResult> {
   const supabase = getSupabaseClient()
   const email = input.email.trim().toLowerCase()
+  const named = formatPersonName(input.firstName, input.lastName)
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -268,8 +278,8 @@ export async function signUpWithSupabase(input: SignupInput): Promise<AuthResult
       emailRedirectTo: getEmailConfirmationRedirectUrl(),
       captchaToken: input.captchaToken,
       data: {
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
+        firstName: named.firstName,
+        lastName: named.lastName,
         email,
       },
     },
@@ -369,12 +379,25 @@ export async function updateProfileWithSupabase(input: UpdateProfileInput): Prom
     throw new Error("Not signed in.")
   }
 
+  const userId = userData.user.id
   const email = userData.user.email ?? ""
+  const named = formatPersonName(input.firstName, input.lastName)
+  const firstName = named.firstName
+  const lastName = named.lastName
+
+  let nextAvatarUrl: string | null | undefined = input.avatarUrl
+
+  if (input.removeAvatar) {
+    await deleteAvatarObject(userId).catch(() => undefined)
+    nextAvatarUrl = null
+  } else if (input.avatarBlob) {
+    nextAvatarUrl = await uploadAvatarBlob(userId, input.avatarBlob)
+  }
 
   const { error } = await supabase.auth.updateUser({
     data: {
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
+      firstName,
+      lastName,
       email,
     },
   })
@@ -382,6 +405,14 @@ export async function updateProfileWithSupabase(input: UpdateProfileInput): Prom
   if (error) {
     throw toAuthError(error)
   }
+
+  await updateProfileRow(userId, {
+    firstName,
+    lastName,
+    birthdate: input.birthdate,
+    country: input.country,
+    avatarUrl: nextAvatarUrl,
+  })
 
   const { error: refreshError } = await supabase.auth.refreshSession()
   if (refreshError) {

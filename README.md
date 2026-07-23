@@ -41,8 +41,10 @@ Lightweight technical checks (H1, ALT, robots/sitemap, OG/Twitter cards, schema 
 - **Vertly** — Rule-based Convertly product specialist (message-first routing + page context; not a general LLM chatbot)
 - **Workspace** — Usage, audit ledger, domains
 - **Billing** — Free / Starter / Growth / Scale via Razorpay (Stripe-ready abstraction)
-- **Settings** — Profile, preferences, notifications, security, danger zone
+- **Settings** — Profile (optional birthdate, country, avatar upload/crop), preferences, notifications, security, danger zone
+- **Birthday UX** — On the user’s birthday (local timezone), Vertly hosts a one-time celebration card; corner launcher is suppressed while open
 - **Ops** — Email notifications (Resend), Sentry (optional), product analytics events
+- **Auth** — Cloudflare Turnstile on login/signup/forgot-password with a stable explicit render (avoids remount / StrictMode iframe races)
 
 ---
 
@@ -89,6 +91,8 @@ Message → Conversational intents → Scope → Domain → Subtopic
 ```
 
 Page-context suggestions enrich prompts; product answers come from the Vertly dataset/handlers — not an open-ended SEO chatbot.
+
+Vertly can also host lightweight in-app moments (e.g. birthday celebration): the floating launcher can be suppressed while an overlay shows the companion character, then restore with an optional speech bubble on dismiss.
 
 ### Repository layout
 
@@ -183,6 +187,7 @@ Apply in timestamp order (`supabase db push`). Notable recent migrations:
 | `…_atomic_audit_start_entitlement.sql` | Start-race entitlement fix |
 | `…_product_events.sql` | Product analytics |
 | `…_service_role_notification_grants.sql` | Email function table grants |
+| `…_profile_enrichment.sql` | Optional `profiles.birthdate` / `country` / `avatar_url` + public `avatars` storage bucket (RLS: own folder only) |
 
 ### Edge functions
 
@@ -244,6 +249,8 @@ Follow [`LAUNCH-CHECKLIST.md`](./LAUNCH-CHECKLIST.md) for Razorpay live cutover,
 - Open Graph **Page Preview** on report page cards (metadata thumbnails, not screenshots)
 - Business foundation, billing, workspace ledger
 - Vertly Convertly-only routing + expanded context suggestions
+- Profile enrichment — optional birthdate, country, avatar; Vertly-hosted birthday card
+- Turnstile captcha stability on auth forms
 - Live execution, sample report, notifications plumbing
 - Lightweight supporting technical signals in-report
 

@@ -1,5 +1,6 @@
 import { clearAllPaymentClientState } from "@/lib/checkoutPersistence"
 import { clearVertlyLocalCache } from "@/features/vertly/services/vertlyPersistence"
+import { formatPersonName } from "@/features/profile/utils/profileName"
 import { getInAppPasswordResetRedirectUrl } from "@/lib/authRedirects"
 import { shouldUseLocalAuth, shouldUseSupabaseAudits } from "@/lib/env"
 import { abortAuditEngines } from "@/services/audit/auditEngineAbort"
@@ -124,6 +125,8 @@ async function signUpLocal(input: SignupInput): Promise<AuthResult> {
 
 
 
+  const named = formatPersonName(input.firstName, input.lastName)
+
   const storedUser: StoredAuthUser = {
 
     userId,
@@ -132,9 +135,9 @@ async function signUpLocal(input: SignupInput): Promise<AuthResult> {
 
     password: input.password,
 
-    firstName: input.firstName.trim(),
+    firstName: named.firstName,
 
-    lastName: input.lastName.trim(),
+    lastName: named.lastName,
 
     createdAt,
 
@@ -243,47 +246,29 @@ export async function loadAuthState(options?: {
 
 
 function buildAccountFromSession(session: AuthSession): AccountInfo {
-
-  const fullName = `${session.firstName} ${session.lastName}`.trim()
-
-  const displayName = fullName || session.email
-
-  const firstInitial = session.firstName.trim().charAt(0)
-
-  const lastInitial = session.lastName.trim().charAt(0)
-
+  const named = formatPersonName(session.firstName, session.lastName)
+  const displayName = named.fullName || session.email
+  const firstInitial = named.firstName.charAt(0)
+  const lastInitial = named.lastName.charAt(0)
   const initials =
-
     firstInitial && lastInitial
-
       ? `${firstInitial}${lastInitial}`.toUpperCase()
-
       : (firstInitial || session.email.charAt(0)).toUpperCase()
 
-
-
   return {
-
     userId: session.userId,
-
     email: session.email,
-
-    firstName: session.firstName,
-
-    lastName: session.lastName,
-
+    firstName: named.firstName,
+    lastName: named.lastName,
     fullName: displayName,
-
     initials,
-
     createdAt: session.createdAt,
-
     plan: "",
-
     authProvider: "Email",
-
+    birthdate: null,
+    country: null,
+    avatarUrl: null,
   }
-
 }
 
 

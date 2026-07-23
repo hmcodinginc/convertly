@@ -290,3 +290,432 @@
   gap: 1.125rem;
   min-width: 0;
 }
+
+.profile-avatar-cropper {
+  width: 100%;
+  height: min(24rem, 62vh);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.profile-avatar-editor__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.profile-avatar-editor__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+
+.profile-avatar-editor__actions > button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .profile-avatar-editor__row {
+    flex-direction: column;
+  }
+
+  .profile-avatar-editor__actions {
+    flex-wrap: wrap;
+  }
+
+  .profile-avatar-editor__actions > button {
+    flex: 1 1 calc(50% - 0.25rem);
+  }
+}
+
+.profile-edit-drawer.app-drawer-panel {
+  width: min(100vw - 1rem, 36rem);
+}
+
+
+.profile-avatar-camera {
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  min-height: min(22rem, 56vh);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.profile-avatar-camera__video {
+  width: 100%;
+  max-height: min(22rem, 56vh);
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: #000;
+  transform: scaleX(-1);
+}
+
+
+.date-field-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.date-field-input::-webkit-datetime-edit {
+  color: var(--foreground);
+}
+
+.date-field-input:not(:focus):invalid::-webkit-datetime-edit {
+  color: color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+
+
+.birthday-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.birthday-celebration__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: color-mix(in srgb, var(--background) 72%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.birthday-celebration__fx {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.birthday-celebration__confetti {
+  position: absolute;
+  top: -12%;
+  width: 0.55rem;
+  height: 0.9rem;
+  border-radius: 0.15rem;
+  opacity: 0.9;
+  transform: rotate(var(--birthday-rotate, 20deg));
+  animation-name: birthday-confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.birthday-celebration__bubble {
+  position: absolute;
+  bottom: -10%;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #ffffff 35%, transparent);
+  background: color-mix(in srgb, #7c6cff 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 12%, transparent);
+  animation-name: birthday-bubble-rise;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+.birthday-celebration__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 26rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, transparent);
+  box-shadow: var(--shadow-medium);
+  padding: 1.5rem 1.4rem 1.35rem;
+  text-align: center;
+}
+
+.birthday-celebration__vertly {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 0.85rem;
+  perspective: 300px;
+  perspective-origin: 50% 42%;
+}
+
+.birthday-celebration__speech {
+  margin: 0;
+  max-width: 14rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--background) 78%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000000 28%, transparent);
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.birthday-celebration__vertly-stage {
+  position: relative;
+  width: 4.75rem;
+  height: 6.35rem;
+  display: grid;
+  place-items: end center;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.birthday-celebration__vertly-rig {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 5.75rem;
+  transform: rotateX(12deg);
+  transform-origin: center 68%;
+  transform-style: preserve-3d;
+}
+
+.birthday-celebration__vertly-rig--spin {
+  animation: birthday-vertly-spin-jump 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.birthday-celebration__vertly-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.birthday-celebration__vertly-face--front {
+  transform: translateZ(11px);
+}
+
+.birthday-celebration__vertly-face--front .vertly-robot {
+  width: 3.6rem;
+  height: 4.9rem;
+  filter: drop-shadow(0 10px 14px color-mix(in srgb, #000000 28%, transparent));
+}
+
+.birthday-celebration__vertly-face--back {
+  transform: rotateY(180deg) translateZ(11px);
+  border-radius: 1.35rem 1.35rem 1.05rem 1.05rem;
+  background:
+    linear-gradient(
+      160deg,
+      #f6f6fb 0%,
+      #e2e2ec 38%,
+      #b9b9c8 72%,
+      #8f8f9f 100%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent),
+    inset 0 -10px 18px color-mix(in srgb, #000000 18%, transparent);
+}
+
+.birthday-celebration__vertly-face--back::before {
+  content: "";
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 0.55rem;
+  transform: translateX(-50%);
+  background: linear-gradient(145deg, #d8d8e4, #9a9aab);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 25%, transparent);
+}
+
+.birthday-celebration__vertly-face--back::after {
+  content: "";
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: 2.15rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #cfcfda, #8e8e9e);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent);
+}
+
+.birthday-celebration__vertly-edge {
+  position: absolute;
+  top: 14%;
+  bottom: 10%;
+  left: 50%;
+  width: 22px;
+  margin-left: -11px;
+  border-radius: 5px;
+  background: linear-gradient(
+    180deg,
+    #efeff6 0%,
+    #c4c4d2 42%,
+    #8d8d9d 100%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 22%, transparent);
+  transform-style: preserve-3d;
+}
+
+.birthday-celebration__vertly-edge--left {
+  transform: rotateY(-90deg) translateZ(11px);
+}
+
+.birthday-celebration__vertly-edge--right {
+  transform: rotateY(90deg) translateZ(11px);
+}
+
+.birthday-celebration__vertly-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 0.12rem;
+  z-index: 0;
+  width: 2.7rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, #000000 42%, transparent) 0%,
+    transparent 72%
+  );
+  transform: translateX(-50%) scaleX(1);
+  opacity: 0.45;
+  filter: blur(1.5px);
+}
+
+.birthday-celebration__vertly-shadow--spin {
+  animation: birthday-vertly-shadow 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.birthday-celebration__eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+
+.birthday-celebration__title {
+  margin: 0.65rem 0 0;
+  font-size: clamp(1.35rem, 3vw, 1.7rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+}
+
+.birthday-celebration__body {
+  margin: 0.75rem 0 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--muted) 95%, transparent);
+}
+
+@keyframes birthday-confetti-fall {
+  0% {
+    transform: translate3d(0, -10%, 0) rotate(var(--birthday-rotate, 20deg));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(12px, 110vh, 0) rotate(calc(var(--birthday-rotate, 20deg) + 180deg));
+    opacity: 0;
+  }
+}
+
+@keyframes birthday-bubble-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate3d(10px, -110vh, 0) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@keyframes birthday-vertly-spin-jump {
+  0% {
+    transform: translate3d(0, 0, 0) rotateX(12deg) rotateY(0deg);
+    filter: brightness(1);
+  }
+  12% {
+    transform: translate3d(0, -12px, 16px) rotateX(16deg) rotateY(-48deg);
+    filter: brightness(0.94);
+  }
+  24% {
+    transform: translate3d(0, -3px, 4px) rotateX(14deg) rotateY(-90deg);
+    filter: brightness(0.72);
+  }
+  38% {
+    transform: translate3d(0, 0, 0) rotateX(12deg) rotateY(-150deg);
+    filter: brightness(0.82);
+  }
+  50% {
+    transform: translate3d(0, -8px, 10px) rotateX(15deg) rotateY(-180deg);
+    filter: brightness(0.88);
+  }
+  64% {
+    transform: translate3d(0, -2px, 4px) rotateX(14deg) rotateY(-270deg);
+    filter: brightness(0.72);
+  }
+  78% {
+    transform: translate3d(0, 0, 0) rotateX(13deg) rotateY(-320deg);
+    filter: brightness(0.92);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotateX(12deg) rotateY(-360deg);
+    filter: brightness(1);
+  }
+}
+
+@keyframes birthday-vertly-shadow {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.45;
+  }
+  12% {
+    transform: translateX(-50%) scaleX(0.7);
+    opacity: 0.22;
+  }
+  24% {
+    transform: translateX(-50%) scaleX(0.42);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(0.78);
+    opacity: 0.26;
+  }
+  64% {
+    transform: translateX(-50%) scaleX(0.42);
+    opacity: 0.3;
+  }
+  78% {
+    transform: translateX(-50%) scaleX(0.88);
+    opacity: 0.38;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birthday-celebration__confetti,
+  .birthday-celebration__bubble {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .birthday-celebration__vertly-rig--spin,
+  .birthday-celebration__vertly-shadow--spin {
+    animation: none;
+  }
+}
+

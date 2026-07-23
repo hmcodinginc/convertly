@@ -32,6 +32,9 @@ export type UserProfile = {
   email: string
   createdAt: string
   updatedAt: string
+  birthdate?: string | null
+  country?: string | null
+  avatarUrl?: string | null
 }
 
 export type StoredAuthUser = {
@@ -41,6 +44,9 @@ export type StoredAuthUser = {
   firstName: string
   lastName: string
   createdAt: string
+  birthdate?: string | null
+  country?: string | null
+  avatarUrl?: string | null
 }
 
 export type AuthResult = {

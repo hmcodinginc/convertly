@@ -19,6 +19,8 @@ export type VertlyContextValue = {
   position: VertlyPosition
   showProactive: boolean
   speechBubble: VertlySpeechBubble | null
+  /** When true, the floating launcher is hidden (e.g. birthday overlay hosts Vertly). */
+  launcherSuppressed: boolean
   open: () => void
   close: () => void
   toggle: () => void
@@ -26,6 +28,8 @@ export type VertlyContextValue = {
   selectSuggestion: (prompt: string) => Promise<void>
   dismissProactive: () => void
   dismissSpeechBubble: () => void
+  showSpeechBubble: (bubble: Omit<VertlySpeechBubble, "id">) => void
+  setLauncherSuppressed: (suppressed: boolean) => void
   setDragging: (dragging: boolean) => void
   setPosition: (position: VertlyPosition, options?: { snap?: boolean }) => void
   registerPageContext: (context: Partial<VertlyPageContext> | null) => void

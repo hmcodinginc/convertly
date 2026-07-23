@@ -18,6 +18,7 @@ function VertlyWidget() {
     position,
     showProactive,
     speechBubble,
+    launcherSuppressed,
     variant,
     toggle,
     open,
@@ -74,17 +75,19 @@ function VertlyWidget() {
         ) : null}
       </AnimatePresence>
 
-      <VertlyLauncher
-        position={position}
-        isOpen={isOpen}
-        isDragging={isDragging}
-        isTyping={isTyping}
-        speechBubble={speechBubble}
-        onDismissSpeechBubble={dismissSpeechBubble}
-        onSpeechBubbleActivate={open}
-        onPointerDown={dragHandlers.handlePointerDown}
-        onClick={dragHandlers.handleClick}
-      />
+      {!launcherSuppressed ? (
+        <VertlyLauncher
+          position={position}
+          isOpen={isOpen}
+          isDragging={isDragging}
+          isTyping={isTyping}
+          speechBubble={speechBubble}
+          onDismissSpeechBubble={dismissSpeechBubble}
+          onSpeechBubbleActivate={open}
+          onPointerDown={dragHandlers.handlePointerDown}
+          onClick={dragHandlers.handleClick}
+        />
+      ) : null}
     </div>
   )
 }
