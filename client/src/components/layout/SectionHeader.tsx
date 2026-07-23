@@ -38,10 +38,9 @@ function SectionHeader({
       >
         {eyebrow ? (
           <Text
-            variant="muted"
             size="sm"
             data-slot="section-header-eyebrow"
-            className="w-full max-w-none text-center font-medium uppercase tracking-[0.16em]"
+            className="w-full max-w-none text-center font-semibold uppercase tracking-[0.16em] text-[var(--accent)]"
           >
             {eyebrow}
           </Text>
@@ -90,9 +89,8 @@ function SectionHeader({
         <div className="flex w-full flex-col gap-2">
           {eyebrow ? (
             <Text
-              variant="muted"
               size="sm"
-              className="max-w-none font-medium uppercase tracking-[0.16em]"
+              className="max-w-none font-semibold uppercase tracking-[0.16em] text-[var(--accent)]"
             >
               {eyebrow}
             </Text>
