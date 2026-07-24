@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react"
 import { useMemo, useState, type FormEvent } from "react"
 
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha"
 import { AuthFormMessage } from "@/components/auth/AuthFormMessage"
 import { TextField } from "@/components/forms/TextField"
 import { Button } from "@/components/ui/button"
@@ -9,12 +10,13 @@ import {
   validateRecoveryPasswordFields,
   type ChangePasswordField,
 } from "@/lib/authValidation"
+import { isCaptchaEnabled } from "@/lib/env"
 import type { ChangePasswordInput } from "@/types/account"
 
 type ChangePasswordFormProps = {
   email: string
   onChangePassword: (input: ChangePasswordInput) => Promise<void>
-  onForgotPassword: () => Promise<void>
+  onForgotPassword: (captchaToken?: string) => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
   recoveryMode?: boolean
@@ -37,12 +39,17 @@ function ChangePasswordForm({
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState(initialNewPassword)
   const [confirmPassword, setConfirmPassword] = useState(initialConfirmPassword)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ChangePasswordField, string>>>(
     {}
   )
   const [formError, setFormError] = useState<string | null>(null)
   const [forgotSuccess, setForgotSuccess] = useState<string | null>(null)
   const [isSendingReset, setIsSendingReset] = useState(false)
+
+  const captchaRequired = isCaptchaEnabled() && !recoveryMode
+  const captchaReady = !captchaRequired || Boolean(captchaToken)
 
   const passwordHint = useMemo(
     () =>
@@ -55,6 +62,11 @@ function ChangePasswordForm({
       newPassword: nextNewPassword,
       confirmPassword: nextConfirmPassword,
     })
+  }
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null)
+    setCaptchaResetNonce((value) => value + 1)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -89,16 +101,24 @@ function ChangePasswordForm({
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
 
+    if (captchaRequired && !captchaToken) {
+      setFormError("Please complete the security check before updating your password.")
+      return
+    }
+
     try {
       await onChangePassword({
         currentPassword,
         newPassword,
         confirmPassword,
+        captchaToken: captchaToken ?? undefined,
       })
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
+      resetCaptcha()
     } catch (error) {
+      resetCaptcha()
       setFormError(error instanceof Error ? error.message : "Unable to change password.")
     }
   }
@@ -106,14 +126,22 @@ function ChangePasswordForm({
   async function handleForgotPassword() {
     setFormError(null)
     setForgotSuccess(null)
+
+    if (captchaRequired && !captchaToken) {
+      setFormError("Please complete the security check before requesting a reset link.")
+      return
+    }
+
     setIsSendingReset(true)
 
     try {
-      await onForgotPassword()
+      await onForgotPassword(captchaToken ?? undefined)
       setForgotSuccess(
         `If an account exists for ${email}, reset instructions will be sent to your inbox.`
       )
+      resetCaptcha()
     } catch (error) {
+      resetCaptcha()
       setFormError(
         error instanceof Error ? error.message : "Unable to send reset instructions."
       )
@@ -186,21 +214,25 @@ function ChangePasswordForm({
       </div>
 
       {!recoveryMode ? (
-        <div className="profile-recovery-box">
-          <p className="profile-recovery-text">
-            Forgot your current password?
-            <br />
-            Send a password reset email to your account inbox.
-          </p>
-          <button
-            type="button"
-            className="profile-recovery-link"
-            onClick={() => void handleForgotPassword()}
-            disabled={isSubmitting || isSendingReset}
-          >
-            {isSendingReset ? "Sending password reset email…" : "Send password reset email"}
-          </button>
-        </div>
+        <>
+          <AuthCaptcha onToken={setCaptchaToken} resetNonce={captchaResetNonce} />
+
+          <div className="profile-recovery-box">
+            <p className="profile-recovery-text">
+              Forgot your current password?
+              <br />
+              Send a password reset email to your account inbox.
+            </p>
+            <button
+              type="button"
+              className="profile-recovery-link"
+              onClick={() => void handleForgotPassword()}
+              disabled={isSubmitting || isSendingReset || !captchaReady}
+            >
+              {isSendingReset ? "Sending password reset email…" : "Send password reset email"}
+            </button>
+          </div>
+        </>
       ) : null}
 
       {forgotSuccess ? (
@@ -218,7 +250,7 @@ function ChangePasswordForm({
         >
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={isSubmitting}>
+        <Button type="submit" size="sm" disabled={isSubmitting || !captchaReady}>
           {isSubmitting ? (
             <>
               <Loader2 className="size-4 animate-spin" aria-hidden />

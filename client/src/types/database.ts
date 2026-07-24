@@ -133,6 +133,29 @@ export type Database = {
         }
         Relationships: []
       }
+      free_email_entitlement: {
+        Row: {
+          email_normalized: string
+          lifetime_audits_used: number
+          last_user_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          email_normalized: string
+          lifetime_audits_used?: number
+          last_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          email_normalized?: string
+          lifetime_audits_used?: number
+          last_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_pages: {
         Row: {
           id: string
