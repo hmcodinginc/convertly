@@ -308,10 +308,13 @@ function ProfilePage() {
     [account, dismissRecoveryUi, isRecoveryMode, refreshSession, syncPasswordPersistence]
   )
 
-  const handleForgotPassword = useCallback(async () => {
-    if (!account) return
-    await accountService.requestAccountPasswordReset(account.email)
-  }, [account])
+  const handleForgotPassword = useCallback(
+    async (captchaToken?: string) => {
+      if (!account) return
+      await accountService.requestAccountPasswordReset(account.email, captchaToken)
+    },
+    [account]
+  )
 
   const handleDeleteAccount = useCallback(async () => {
     await accountService.deleteAccount()

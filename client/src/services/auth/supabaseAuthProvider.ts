@@ -504,17 +504,39 @@ export async function completePasswordRecoveryWithSupabase(
   }
 }
 
+function isInvalidCredentialsError(error: { message?: string }): boolean {
+  const message = (error.message ?? "").toLowerCase()
+  return (
+    message.includes("invalid login credentials") ||
+    message.includes("invalid credentials") ||
+    message.includes("invalid email or password")
+  )
+}
+
 async function reauthenticateWithPassword(
   supabase: ReturnType<typeof getSupabaseClient>,
   email: string,
-  password: string
+  password: string,
+  captchaToken?: string
 ): Promise<void> {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
+    options: captchaToken
+      ? {
+          captchaToken,
+        }
+      : undefined,
   })
 
-  if (error || !data.session) {
+  if (error) {
+    if (isInvalidCredentialsError(error)) {
+      throw new Error("Current password is incorrect.")
+    }
+    throw toAuthError(error)
+  }
+
+  if (!data.session) {
     throw new Error("Current password is incorrect.")
   }
 }
@@ -526,7 +548,12 @@ export async function changePasswordWithSupabase(
   const supabase = getSupabaseClient()
   const normalizedEmail = email.trim().toLowerCase()
 
-  await reauthenticateWithPassword(supabase, normalizedEmail, input.currentPassword)
+  await reauthenticateWithPassword(
+    supabase,
+    normalizedEmail,
+    input.currentPassword,
+    input.captchaToken
+  )
 
   const { error: updateError } = await supabase.auth.updateUser({
     password: input.newPassword,

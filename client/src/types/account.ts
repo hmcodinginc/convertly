@@ -35,4 +35,6 @@ export type ChangePasswordInput = {
   currentPassword: string
   newPassword: string
   confirmPassword: string
+  /** Required when Supabase Auth CAPTCHA (Turnstile) is enabled. */
+  captchaToken?: string
 }

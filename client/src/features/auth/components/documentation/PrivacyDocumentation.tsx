@@ -147,7 +147,8 @@ function PrivacyDocumentation() {
           Audit reports and session history are retained while your account is active so you can
           compare runs over time. You may delete individual audits from your history. Account
           deletion triggers removal of associated personal data subject to legal, tax, accounting, or
-          fraud-prevention retention requirements.
+          fraud-prevention retention requirements. Free-plan audit usage may be retained against your
+          email address after account deletion solely to prevent free-tier entitlement abuse.
         </p>
       </DocumentationSection>
 

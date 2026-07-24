@@ -138,8 +138,11 @@ export async function changePassword(email: string, input: ChangePasswordInput):
   await supabaseAuth.changePasswordWithSupabase(email, input)
 }
 
-export async function requestAccountPasswordReset(email: string): Promise<void> {
-  await authService.requestInAppPasswordReset({ email })
+export async function requestAccountPasswordReset(
+  email: string,
+  captchaToken?: string
+): Promise<void> {
+  await authService.requestInAppPasswordReset({ email, captchaToken })
 }
 
 async function mergeProfileExtras(account: AccountInfo): Promise<AccountInfo> {

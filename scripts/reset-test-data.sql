@@ -18,3 +18,6 @@ set entitlement_consumed_at = null
 where entitlement_consumed_at is not null;
 
 delete from public.audit_entitlement_ledger;
+
+-- Also clears durable free-email usage so recreate tests start clean.
+delete from public.free_email_entitlement;

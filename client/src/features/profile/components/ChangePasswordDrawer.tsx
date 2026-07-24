@@ -11,7 +11,7 @@ type ChangePasswordDrawerProps = {
   initialConfirmPassword?: string
   onClose: () => void
   onChangePassword: (input: ChangePasswordInput) => Promise<void>
-  onForgotPassword: () => Promise<void>
+  onForgotPassword: (captchaToken?: string) => Promise<void>
   onPersistValues?: (values: { newPassword: string; confirmPassword: string }) => void
 }
 
